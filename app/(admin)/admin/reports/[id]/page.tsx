@@ -107,7 +107,7 @@ export default async function AdminReportDetailPage({
           <ROW label="Business Refunds"     value={Number(report.total_refunds) > 0 ? `− ${formatTHB(Number(report.total_refunds))}` : '—'}
                warning={Number(report.total_refunds) > 0} />
           <ROW label="Adjusted NET"         value={formatTHB(Number(report.adjusted_net))}
-               warning={report.has_negative_adjusted_net} />
+               warning={report.has_negative_adjusted_net ?? false} />
           <div style={{ height:'8px' }}/>
           <ROW label={`Revenue Share (${report.revenue_share_pct_snapshot}%)`}
                value={formatTHB(Number(report.partner_share_base))} />

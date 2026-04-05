@@ -131,7 +131,7 @@ export default async function PartnerReportDetailPage({
           )}
           <ROW label="Adjusted NET"
                value={formatTHB(Number(report.adjusted_net))}
-               warning={report.has_negative_adjusted_net} />
+               warning={report.has_negative_adjusted_net ?? false} />
 
           <div style={{ height: '8px' }} />
 
