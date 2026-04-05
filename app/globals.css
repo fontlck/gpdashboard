@@ -1,0 +1,101 @@
+/* ── Google Fonts ──────────────────────────────────────────────
+   Must come before @import "tailwindcss" — CSS spec requires all
+   @import rules to precede other rules (Tailwind v4 expands to CSS).
+   ─────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+/* ── CSS Custom Properties ─────────────────────────────────── */
+:root {
+  --font-dm-sans: 'DM Sans', system-ui, sans-serif;
+  --font-prompt:  'Prompt', system-ui, sans-serif;
+
+  /* Canvas */
+  --color-canvas:    #080A10;
+  --color-surface:   #0D0F1A;
+  --color-surface-2: #13151F;
+  --color-surface-3: #1A1D2A;
+
+  /* Borders */
+  --color-border:    rgba(255, 255, 255, 0.06);
+  --color-border-md: rgba(255, 255, 255, 0.10);
+  --color-border-lg: rgba(255, 255, 255, 0.16);
+
+  /* Gold */
+  --color-gold:         #C4A35E;
+  --color-gold-light:   #D4BB82;
+  --color-gold-muted:   rgba(196, 163, 94, 0.18);
+  --color-gold-border:  rgba(196, 163, 94, 0.45);
+
+  /* Text */
+  --color-text-primary:   #F0ECE4;
+  --color-text-secondary: rgba(240, 236, 228, 0.65);
+  --color-text-muted:     rgba(240, 236, 228, 0.35);
+  --color-text-faint:     rgba(240, 236, 228, 0.20);
+
+  /* Semantic */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger:  #EF4444;
+  --color-info:    #3B82F6;
+}
+
+/* ── Base Reset ────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-dm-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  min-height: 100dvh;
+  line-height: 1.6;
+}
+
+/* Thai text — apply Prompt font via lang attribute or .thai class */
+:lang(th),
+.font-thai {
+  font-family: var(--font-prompt);
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.10); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+/* ── Focus ring ────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection ─────────────────────────────────────────────── */
+::selection {
+  background: rgba(196, 163, 94, 0.25);
+  color: var(--color-text-primary);
+}
+
+/* ── Utility: hide scrollbar ───────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Status badge colours ──────────────────────────────────── */
+.badge-draft          { background: rgba(255,255,255,0.06); color: rgba(240,236,228,0.5); }
+.badge-pending_review { background: rgba(245,158,11,0.12);  color: #F59E0B; }
+.badge-approved       { background: rgba(34,197,94,0.12);   color: #22C55E; }
+.badge-paid           { background: rgba(196,163,94,0.15);  color: #C4A35E; }
