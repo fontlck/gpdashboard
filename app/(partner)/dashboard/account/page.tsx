@@ -27,11 +27,15 @@ export default async function PartnerAccountPage() {
     .eq('id', user.id)
     .single()
 
-  let partner: { name: string; is_vat_registered: boolean; vat_number: string | null; contact_email: string | null; contact_phone: string | null } | null = null
-  let branches: { name: string; code: string | null; revenue_share_pct: number; location: string | null; is_active: boolean }[] = []
+  type BranchAccountJoin = { name: string; code: string | null; revenue_share_pct: number; location: string | null; is_active: boolean }
+  type PartnerInfo = { name: string; is_vat_registered: boolean; vat_number: string | null; contact_email: string | null; contact_phone: string | null }
+  type PartnerAccountRow = PartnerInfo & { branches: BranchAccountJoin | BranchAccountJoin[] | null }
+
+  let partner: PartnerInfo | null = null
+  let branches: BranchAccountJoin[] = []
 
   if (profile?.partner_id) {
-    const { data: p } = await supabase
+    const { data: rawP } = await supabase
       .from('partners')
       .select(`
         name, is_vat_registered, vat_number, contact_email, contact_phone,
@@ -40,10 +44,11 @@ export default async function PartnerAccountPage() {
       .eq('id', profile.partner_id)
       .single()
 
+    const p = rawP as unknown as PartnerAccountRow | null
     if (p) {
-      partner   = p
+      partner   = { name: p.name, is_vat_registered: !!p.is_vat_registered, vat_number: p.vat_number, contact_email: p.contact_email, contact_phone: p.contact_phone }
       const raw = Array.isArray(p.branches) ? p.branches : (p.branches ? [p.branches] : [])
-      branches  = raw
+      branches  = raw as BranchAccountJoin[]
     }
   }
 

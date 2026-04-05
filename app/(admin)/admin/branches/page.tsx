@@ -6,10 +6,24 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Branches' }
 
+type PartnerJoin = { name: string }
+type BranchRow = {
+  id: string
+  name: string
+  code: string | null
+  location: string | null
+  revenue_share_pct: number
+  is_active: boolean
+  partnership_start_date: string | null
+  partnership_start_date_source: string | null
+  created_at: string
+  partners: PartnerJoin | PartnerJoin[] | null
+}
+
 export default async function AdminBranchesPage() {
   const supabase = await createClient()
 
-  const { data: branches } = await supabase
+  const { data: rawBranches } = await supabase
     .from('branches')
     .select(`
       id, name, code, location, revenue_share_pct,
@@ -18,6 +32,8 @@ export default async function AdminBranchesPage() {
       partners ( name )
     `)
     .order('name', { ascending: true })
+
+  const branches = (rawBranches as unknown as BranchRow[] | null) ?? []
 
   return (
     <div>
@@ -40,7 +56,7 @@ export default async function AdminBranchesPage() {
         background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: '16px', overflow: 'hidden',
       }}>
-        {!branches || branches.length === 0 ? (
+        {branches.length === 0 ? (
           <EmptyState
             icon="⑂"
             title="No branches yet"

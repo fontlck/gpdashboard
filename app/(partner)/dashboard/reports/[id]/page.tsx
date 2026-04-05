@@ -8,6 +8,21 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Report Detail' }
 
+type PartnerReportJoin = { name: string }
+type BranchReportJoin = {
+  name: string; revenue_share_pct: number; partner_id: string
+  partners: PartnerReportJoin | PartnerReportJoin[] | null
+}
+type PartnerReportDetailRow = {
+  id: string; reporting_month: number; reporting_year: number; status: string
+  gross_sales: number | string | null; total_net: number | string | null
+  total_refunds: number | string | null; adjusted_net: number | string | null
+  partner_share_base: number | string | null; vat_amount: number | string | null
+  final_payout: number | string | null; has_negative_adjusted_net: boolean | null
+  recalculated_at: string | null
+  branches: BranchReportJoin | BranchReportJoin[] | null
+}
+
 const ROW = ({ label, value, accent = false, warning = false, muted = false }: {
   label: string; value: ReactNode; accent?: boolean; warning?: boolean; muted?: boolean
 }) => (
@@ -43,7 +58,7 @@ export default async function PartnerReportDetailPage({
   if (!profile?.partner_id) redirect('/dashboard')
 
   // Verify this report belongs to a branch of the partner (RLS also enforces this)
-  const { data: report } = await supabase
+  const { data: rawReport } = await supabase
     .from('monthly_reports')
     .select(`
       *,
@@ -55,6 +70,7 @@ export default async function PartnerReportDetailPage({
     .eq('id', id)
     .single()
 
+  const report = rawReport as unknown as PartnerReportDetailRow | null
   if (!report) notFound()
 
   // Extra ownership check (belt-and-suspenders on top of RLS)

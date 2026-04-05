@@ -2,13 +2,25 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnershipHero } from '@/components/partner/PartnershipHero'
+import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: { default: 'Dashboard', template: '%s | Partner — GP Dashboard' },
 }
 
-export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
+type BranchHeroJoin = {
+  name: string
+  partnership_start_date: string | null
+  partnership_start_date_source: string | null
+  is_active: boolean
+}
+type PartnerHeroRow = {
+  name: string
+  branches: BranchHeroJoin | BranchHeroJoin[] | null
+}
+
+export default async function PartnerLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -29,7 +41,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
   let startSource: string | null = null
 
   if (profile?.partner_id) {
-    const { data: partner } = await supabase
+    const { data: rawPartner } = await supabase
       .from('partners')
       .select(`
         name,
@@ -38,12 +50,14 @@ export default async function PartnerLayout({ children }: { children: React.Reac
       .eq('id', profile.partner_id)
       .single()
 
+    const partner = rawPartner as unknown as PartnerHeroRow | null
+
     if (partner) {
       partnerName = partner.name
 
       // Resolve branches — find the earliest partnership_start_date across active branches
       const branches = Array.isArray(partner.branches) ? partner.branches : (partner.branches ? [partner.branches] : [])
-      const activeBranches = branches.filter((b: { is_active: boolean }) => b.is_active)
+      const activeBranches = branches.filter((b: BranchHeroJoin) => b.is_active)
 
       if (activeBranches.length === 1) {
         branchName  = activeBranches[0].name
@@ -51,7 +65,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
         startSource = activeBranches[0].partnership_start_date_source ?? null
       } else if (activeBranches.length > 1) {
         // Multiple branches — show earliest start date (show partner name, not branch name)
-        const sorted = [...activeBranches].sort((a: { partnership_start_date: string | null }, b: { partnership_start_date: string | null }) => {
+        const sorted = [...activeBranches].sort((a: BranchHeroJoin, b: BranchHeroJoin) => {
           if (!a.partnership_start_date) return 1
           if (!b.partnership_start_date) return -1
           return a.partnership_start_date.localeCompare(b.partnership_start_date)

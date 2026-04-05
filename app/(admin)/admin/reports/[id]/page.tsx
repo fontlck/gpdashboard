@@ -9,6 +9,21 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Report Detail' }
 
+type PartnerDetailJoin = { name: string; is_vat_registered: boolean | null; vat_number: string | null }
+type BranchDetailJoin = {
+  name: string; code: string | null; revenue_share_pct: number; location: string | null
+  partners: PartnerDetailJoin | PartnerDetailJoin[] | null
+}
+type ReportDetailRow = {
+  id: string; reporting_month: number; reporting_year: number; status: string
+  gross_sales: number | string | null; total_net: number | string | null
+  total_refunds: number | string | null; adjusted_net: number | string | null
+  partner_share_base: number | string | null; vat_amount: number | string | null
+  final_payout: number | string | null; has_negative_adjusted_net: boolean | null
+  recalculated_at: string | null
+  branches: BranchDetailJoin | BranchDetailJoin[] | null
+}
+
 export default async function AdminReportDetailPage({
   params,
 }: {
@@ -17,7 +32,7 @@ export default async function AdminReportDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: report } = await supabase
+  const { data: rawReport } = await supabase
     .from('monthly_reports')
     .select(`
       *,
@@ -29,6 +44,7 @@ export default async function AdminReportDetailPage({
     .eq('id', id)
     .single()
 
+  const report = rawReport as unknown as ReportDetailRow | null
   if (!report) notFound()
 
   const [refundRes, artistRes] = await Promise.all([

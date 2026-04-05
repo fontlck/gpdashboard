@@ -8,10 +8,27 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Refunds' }
 
+type BranchRefundJoin = { name: string }
+type ReportRefundJoin = {
+  id: string
+  reporting_month: number
+  reporting_year: number
+  status: string
+  branches: BranchRefundJoin | BranchRefundJoin[] | null
+}
+type RefundRow = {
+  id: string
+  amount: number | string
+  reason: string | null
+  reference_number: string | null
+  created_at: string
+  monthly_reports: ReportRefundJoin | ReportRefundJoin[] | null
+}
+
 export default async function AdminRefundsPage() {
   const supabase = await createClient()
 
-  const { data: refunds } = await supabase
+  const { data: rawRefunds } = await supabase
     .from('refunds')
     .select(`
       id, amount, reason, reference_number, created_at,
@@ -21,6 +38,8 @@ export default async function AdminRefundsPage() {
       )
     `)
     .order('created_at', { ascending: false })
+
+  const refunds = (rawRefunds as unknown as RefundRow[] | null) ?? []
 
   return (
     <div>
@@ -44,7 +63,7 @@ export default async function AdminRefundsPage() {
         background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: '16px', overflow: 'hidden',
       }}>
-        {!refunds || refunds.length === 0 ? (
+        {refunds.length === 0 ? (
           <EmptyState
             icon="↩"
             title="No refunds recorded"

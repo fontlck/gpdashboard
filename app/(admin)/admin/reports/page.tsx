@@ -9,10 +9,34 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Reports' }
 
+type PartnerReportsJoin = { name: string; is_vat_registered: boolean | null }
+type BranchReportsJoin = {
+  name: string
+  code: string | null
+  revenue_share_pct: number
+  partners: PartnerReportsJoin | PartnerReportsJoin[] | null
+}
+type ReportRow = {
+  id: string
+  reporting_month: number
+  reporting_year: number
+  status: string
+  gross_sales: number | string
+  total_net: number | string
+  total_refunds: number | string
+  adjusted_net: number | string
+  partner_share_base: number | string
+  vat_amount: number | string
+  final_payout: number | string
+  has_negative_adjusted_net: boolean | null
+  recalculated_at: string | null
+  branches: BranchReportsJoin | BranchReportsJoin[] | null
+}
+
 export default async function AdminReportsPage() {
   const supabase = await createClient()
 
-  const { data: reports } = await supabase
+  const { data: rawReports } = await supabase
     .from('monthly_reports')
     .select(`
       id, reporting_month, reporting_year, status,
@@ -25,6 +49,8 @@ export default async function AdminReportsPage() {
     `)
     .order('reporting_year',  { ascending: false })
     .order('reporting_month', { ascending: false })
+
+  const reports = (rawReports as unknown as ReportRow[] | null) ?? []
 
   return (
     <div>
@@ -47,7 +73,7 @@ export default async function AdminReportsPage() {
         background:'#0D0F1A', border:'1px solid rgba(255,255,255,0.06)',
         borderRadius:'16px', overflow:'hidden',
       }}>
-        {!reports || reports.length === 0 ? (
+        {reports.length === 0 ? (
           <EmptyState
             icon="◫"
             title="No reports yet"
