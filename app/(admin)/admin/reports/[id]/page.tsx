@@ -20,7 +20,14 @@ type ReportDetailRow = {
   total_refunds: number | string | null; adjusted_net: number | string | null
   partner_share_base: number | string | null; vat_amount: number | string | null
   final_payout: number | string | null; has_negative_adjusted_net: boolean | null
-  recalculated_at: string | null
+  recalculated_at: string | null; approved_at: string | null
+  total_opn_fee: number | string | null
+  revenue_share_pct_snapshot: number
+  vat_rate_snapshot: number
+  is_vat_registered_snapshot: boolean
+  total_transaction_count: number
+  total_skipped_currency: number
+  total_skipped_date: number
   branches: BranchDetailJoin | BranchDetailJoin[] | null
 }
 
