@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const NAV_ITEMS = [
+type NavItem = { href: string; label: string; icon: string; accent?: boolean }
+const NAV_ITEMS: NavItem[] = [
   { href: '/admin',           label: 'Overview',    icon: '▦' },
   { href: '/admin/reports',   label: 'Reports',     icon: '◫' },
   { href: '/admin/upload',    label: 'Upload CSV',  icon: '↑', accent: true },
@@ -15,7 +16,7 @@ const NAV_ITEMS = [
   { href: '/admin/users',     label: 'Users',       icon: '○' },
   { href: '/admin/audit',     label: 'Audit Log',   icon: '≡' },
   { href: '/admin/settings',  label: 'Settings',    icon: '⚙' },
-] as const
+]
 
 export function AdminSidebar() {
   const pathname = usePathname()
