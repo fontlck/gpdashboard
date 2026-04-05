@@ -104,8 +104,8 @@ export default async function AdminReportDetailPage({
           <ROW label="Gross Sales"          value={formatTHB(Number(report.gross_sales))} />
           <ROW label="OPN Gateway Fee"      value={`− ${formatTHB(Number(report.total_opn_fee))}`} />
           <ROW label="NET (from OPN)"       value={formatTHB(Number(report.total_net))} />
-          <ROW label="Business Refunds"     value={report.total_refunds > 0 ? `− ${formatTHB(Number(report.total_refunds))}` : '—'}
-               warning={report.total_refunds > 0} />
+          <ROW label="Business Refunds"     value={Number(report.total_refunds) > 0 ? `− ${formatTHB(Number(report.total_refunds))}` : '—'}
+               warning={Number(report.total_refunds) > 0} />
           <ROW label="Adjusted NET"         value={formatTHB(Number(report.adjusted_net))}
                warning={report.has_negative_adjusted_net} />
           <div style={{ height:'8px' }}/>
