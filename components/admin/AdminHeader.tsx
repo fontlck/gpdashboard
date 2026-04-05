@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
+
 interface AdminHeaderProps {
   title:    string
   subtitle?: string
-  actions?: React.ReactNode
+  actions?: ReactNode
 }
 
 export function AdminHeader({ title, subtitle, actions }: AdminHeaderProps) {

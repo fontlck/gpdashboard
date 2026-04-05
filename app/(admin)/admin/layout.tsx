@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: { default: 'Admin', template: '%s | Admin — GP Dashboard' } }
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
