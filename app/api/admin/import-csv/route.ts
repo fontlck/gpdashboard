@@ -42,7 +42,9 @@ function parseCSV(text: string): Record<string, string>[] {
 // ── Column Detection ─────────────────────────────────────────────────────────
 
 function detectColumns(headers: string[]): Record<string, string> {
-  const norm = (s: string) => s.toLowerCase().replace(/[\s_\-\[\]\.]/g, '')
+  // Strip spaces, underscores, dashes, brackets, dots AND parentheses so that
+  // "branchName (metadata)" and "metadata[branchName]" both normalise correctly.
+  const norm = (s: string) => s.toLowerCase().replace(/[\s_\-\[\]\.\(\)]/g, '')
   const idx: Record<string, string> = {}
   headers.forEach(h => { idx[norm(h)] = h })
 
@@ -55,20 +57,25 @@ function detectColumns(headers: string[]): Record<string, string> {
   }
 
   return {
-    charge_id:       find('id', 'charge_id', 'chargeid', 'transaction_id'),
-    amount:          find('amount', 'gross_amount'),
-    fee:             find('fee', 'opn_fee', 'charge_fee'),
-    fee_vat:         find('vat', 'fee_vat', 'opn_fee_vat', 'feevat', 'interest_vat'),
-    net:             find('net', 'net_amount'),
-    currency:        find('currency'),
-    status:          find('status'),
-    created:         find('created', 'created_at', 'transaction_date', 'date', 'charge_date'),
-    refunded:        find('refunded', 'is_refunded'),
-    refunded_amount: find('amount_refunded', 'refunded_amount', 'opn_refunded_amount'),
-    source:          find('source_type', 'payment_method', 'funding_source_type', 'source', 'type'),
-    branch_name:     find('metadata[branchName]', 'metadatabranchname', 'branchname', 'branch_name', 'branch', 'Branch Name'),
-    artist_name:     find('metadata[artistName]', 'metadataartistname', 'artistname', 'artist_name', 'artist'),
-    email:           find('customer_email', 'email', 'customeremail', 'customer[email]'),
+    charge_id:            find('id', 'charge_id', 'chargeid', 'transaction_id'),
+    amount:               find('amount', 'gross_amount'),
+    fee:                  find('fee', 'opn_fee', 'charge_fee'),
+    fee_vat:              find('vat', 'fee_vat', 'opn_fee_vat', 'feevat', 'interest_vat'),
+    net:                  find('net', 'net_amount'),
+    currency:             find('currency'),
+    status:               find('status'),
+    created:              find('created', 'created_at', 'transaction_date', 'date', 'charge_date'),
+    refunded:             find('refunded', 'is_refunded'),
+    refunded_amount:      find('amount_refunded', 'refunded_amount', 'opn_refunded_amount'),
+    source:               find('source_type', 'payment_method', 'funding_source_type', 'source', 'type'),
+    // Two branch-name columns exist in the wild:
+    //   "branchName (metadata)" — newer app version
+    //   "branch (metadata)"     — older app version
+    // We detect both and merge per-row (primary wins over fallback).
+    branch_name_primary:  find('branchName (metadata)', 'metadata[branchName]', 'branchname', 'branch_name'),
+    branch_name_fallback: find('branch (metadata)', 'metadata[branch]', 'branch'),
+    artist_name:          find('artistName (metadata)', 'metadata[artistName]', 'artistname', 'artist_name', 'artist'),
+    email:                find('customer_email', 'email', 'customeremail', 'customer[email]'),
   }
 }
 
@@ -178,7 +185,13 @@ export async function POST(request: NextRequest) {
       refunded:        parseBool(row[colMap.refunded]),
       refunded_amount: parseNum(row[colMap.refunded_amount]) / amountDivisor,
       source:          row[colMap.source] ?? '',
-      branch_name_raw: row[colMap.branch_name] ?? '',
+      // Merge the two branch-name columns: primary wins, fall back to secondary,
+      // then empty string if neither column exists or both are blank.
+      branch_name_raw: (
+        (colMap.branch_name_primary  ? row[colMap.branch_name_primary]?.trim()  : '') ||
+        (colMap.branch_name_fallback ? row[colMap.branch_name_fallback]?.trim() : '') ||
+        ''
+      ),
       artist_name:     row[colMap.artist_name] ?? '',
       email:           row[colMap.email] ?? '',
       raw:             row,
@@ -191,8 +204,13 @@ export async function POST(request: NextRequest) {
       skippedCurrency, skippedStatus,
     }, { status: 400 })
 
-  // Validate that every branch_name_raw in the data has an explicit mapping
-  const uniqueBranchNames = [...new Set(txRows.map(r => r.branch_name_raw))]
+  // Validate that every non-empty branch_name_raw has an explicit mapping.
+  // Rows with an empty branch_name_raw (no branch column / blank value) are
+  // auto-skipped — they cannot be assigned to a monthly report and do not
+  // require a mapping entry.
+  const uniqueBranchNames = [...new Set(
+    txRows.map(r => r.branch_name_raw).filter(n => n !== '')
+  )]
   const unmapped = uniqueBranchNames.filter(n => !(n in branchMapping))
   if (unmapped.length > 0)
     return NextResponse.json({
@@ -245,8 +263,10 @@ export async function POST(request: NextRequest) {
   let skippedBranch = 0
 
   for (const row of txRows) {
+    // Rows with no branch name cannot be assigned to a report — skip silently
+    if (!row.branch_name_raw) { skippedBranch++; continue }
     const resolution = branchMapping[row.branch_name_raw]
-    if (resolution === 'skip') { skippedBranch++; continue }
+    if (!resolution || resolution === 'skip') { skippedBranch++; continue }
     ;(byBranch[resolution] ??= []).push(row)
   }
 

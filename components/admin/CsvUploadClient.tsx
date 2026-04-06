@@ -95,7 +95,9 @@ function parseCsvLine(line: string): string[] {
   return result
 }
 
-function norm(s: string) { return s.toLowerCase().replace(/[\s_\-\[\]\.]/g, '') }
+// Strip spaces, underscores, dashes, brackets, dots AND parentheses so that
+// "branchName (metadata)" and "metadata[branchName]" both normalise the same way.
+function norm(s: string) { return s.toLowerCase().replace(/[\s_\-\[\]\.\(\)]/g, '') }
 
 function findCol(headers: string[], ...candidates: string[]): string {
   const idx: Record<string, string> = {}
@@ -284,13 +286,15 @@ export function CsvUploadClient() {
 
     const headers = parseCsvLine(lines[0])
 
-    const currencyCol = findCol(headers, 'currency')
-    const statusCol   = findCol(headers, 'status')
-    const createdCol  = findCol(headers, 'created', 'created_at', 'transaction_date', 'date', 'charge_date')
-    const branchCol   = findCol(headers, 'metadata[branchName]', 'metadatabranchname', 'branchname', 'branch_name', 'branch', 'Branch Name')
-    const chargeCol   = findCol(headers, 'id', 'charge_id', 'chargeid', 'transaction_id')
-    const amountCol   = findCol(headers, 'amount', 'gross_amount')
-    const netCol      = findCol(headers, 'net', 'net_amount')
+    const currencyCol       = findCol(headers, 'currency')
+    const statusCol         = findCol(headers, 'status')
+    const createdCol        = findCol(headers, 'created', 'created_at', 'transaction_date', 'date', 'charge_date')
+    // Two branch-name columns: newer app uses "branchName (metadata)", older uses "branch (metadata)"
+    const branchColPrimary  = findCol(headers, 'branchName (metadata)', 'metadata[branchName]', 'branchname', 'branch_name')
+    const branchColFallback = findCol(headers, 'branch (metadata)', 'metadata[branch]', 'branch')
+    const chargeCol         = findCol(headers, 'id', 'charge_id', 'chargeid', 'transaction_id')
+    const amountCol         = findCol(headers, 'amount', 'gross_amount')
+    const netCol            = findCol(headers, 'net', 'net_amount')
 
     const missingCols: string[] = []
     if (!chargeCol) missingCols.push('id / charge_id')
@@ -315,7 +319,13 @@ export function CsvUploadClient() {
       if (statusCol && !VALID.has(status)) continue
 
       thbRows++
-      if (branchCol && row[branchCol]) branchSet.add(row[branchCol])
+      // Merge branch name: primary wins over fallback, skip blank values
+      const branchVal = (
+        (branchColPrimary  ? row[branchColPrimary]?.trim()  : '') ||
+        (branchColFallback ? row[branchColFallback]?.trim() : '') ||
+        ''
+      )
+      if (branchVal) branchSet.add(branchVal)
       if (createdCol && row[createdCol]) {
         const d = new Date(row[createdCol])
         if (!isNaN(d.getTime())) {
