@@ -46,8 +46,9 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
     <div style={{
       background:   '#0D0F1A',
       border:       '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '16px',
-      padding:      '24px',
+      borderRadius: '20px',
+      boxShadow:    '0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 40px rgba(0,0,0,0.4)',
+      padding:      '24px 28px',
       position:     'relative',
       overflow:     'hidden',
     }}>

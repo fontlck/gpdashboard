@@ -19,6 +19,17 @@ function parseLocalDate(ymd: string): Date {
   return new Date(y, m - 1, d)
 }
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+
+const CARD: React.CSSProperties = {
+  background:   '#0D0F1A',
+  border:       '1px solid rgba(255,255,255,0.06)',
+  borderRadius: '20px',
+  boxShadow:    '0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 40px rgba(0,0,0,0.4)',
+  overflow:     'hidden',
+  position:     'relative',
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function PartnerOverviewPage() {
@@ -34,7 +45,7 @@ export default async function PartnerOverviewPage() {
 
   if (!profile?.partner_id) {
     return (
-      <div style={{ padding: '60px', textAlign: 'center', color: 'rgba(240,236,228,0.35)', fontSize: '14px' }}>
+      <div style={{ padding: '60px', textAlign: 'center', color: 'rgba(240,236,228,0.3)', fontSize: '14px' }}>
         Your account has not been linked to a partner yet. Please contact your administrator.
       </div>
     )
@@ -50,7 +61,6 @@ export default async function PartnerOverviewPage() {
   const branchIds   = (branches ?? []).map(b => b.id)
   const branchNames = Object.fromEntries((branches ?? []).map(b => [b.id, b.name]))
 
-  // Earliest partnership start date across all active branches
   const partnerStartDate: string | null = (branches ?? [])
     .map(b => b.partnership_start_date)
     .filter((d): d is string => Boolean(d))
@@ -58,7 +68,7 @@ export default async function PartnerOverviewPage() {
 
   if (branchIds.length === 0) {
     return (
-      <div style={{ padding: '60px', textAlign: 'center', color: 'rgba(240,236,228,0.35)', fontSize: '14px' }}>
+      <div style={{ padding: '60px', textAlign: 'center', color: 'rgba(240,236,228,0.3)', fontSize: '14px' }}>
         No active branches. Contact your administrator to set up your branch.
       </div>
     )
@@ -124,53 +134,66 @@ export default async function PartnerOverviewPage() {
       totalPayout:    v.paid + v.approved,
     }))
 
+  // ── KPI metric definitions ────────────────────────────────────────────────────
+  const kpis = [
+    {
+      label: 'Total Earned',
+      value: formatTHB(totalPayout),
+      sub:   'Paid reports only',
+      color: '#C4A35E',
+    },
+    {
+      label: 'Awaiting Payment',
+      value: awaitingPayment > 0 ? formatTHB(awaitingPayment) : '—',
+      sub:   `${approvedReports.length} approved, unpaid`,
+      color: awaitingPayment > 0 ? '#E8A030' : 'rgba(240,236,228,0.35)',
+    },
+    {
+      label: 'Total Reports',
+      value: String(totalCount),
+      sub:   `${paidCount} paid · ${approvedReports.length} approved`,
+      color: 'rgba(240,236,228,0.75)',
+    },
+    {
+      label: 'Avg / Month',
+      value: paidCount > 0 ? formatTHB(avgPerMonth) : '—',
+      sub:   'Based on paid months',
+      color: '#C4A35E',
+    },
+  ]
+
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-      {/* ── Financial Hero Card ─────────────────────────────────────────────── */}
-      <div style={{
-        background:   'linear-gradient(140deg, #10132A 0%, #0D0F1A 55%, #12100C 100%)',
-        border:       '1px solid rgba(196,163,94,0.16)',
-        borderRadius: '20px',
-        padding:      '32px 36px',
-        position:     'relative',
-        overflow:     'hidden',
-      }}>
-        {/* Ambient glow — top-right */}
+      {/* ── Layer 2: Unified Hero + KPI Card ────────────────────────────────── */}
+      <div style={CARD}>
+
+        {/* Ambient radial glow — top right corner */}
         <div style={{
-          position:      'absolute', top: '-80px', right: '60px',
-          width:         '280px',   height: '280px',
-          background:    'radial-gradient(ellipse, rgba(196,163,94,0.08) 0%, transparent 70%)',
+          position:      'absolute', top: '-60px', right: '-20px',
+          width:         '340px',   height: '260px',
+          background:    'radial-gradient(ellipse at top right, rgba(196,163,94,0.09) 0%, transparent 65%)',
           pointerEvents: 'none',
         }} />
-        {/* Gold bottom accent line */}
-        <div style={{
-          position:   'absolute', bottom: 0, left: '6%', right: '6%', height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(196,163,94,0.32), transparent)',
-        }} />
 
-        <div style={{
-          display:    'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap:        '32px',
-          flexWrap:   'wrap',
-        }}>
-          {/* Left — main earnings figure */}
+        {/* Hero section */}
+        <div style={{ padding: '32px 32px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap' }}>
+
+          {/* Left — primary earnings figure */}
           <div>
             <div style={{
               fontSize:      '10px',
-              letterSpacing: '0.16em',
+              letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              color:         'rgba(196,163,94,0.55)',
+              color:         'rgba(196,163,94,0.5)',
               marginBottom:  '10px',
               fontWeight:    '600',
             }}>
               Total Lifetime Earnings
             </div>
             <div style={{
-              fontSize:           '54px',
+              fontSize:           '52px',
               fontWeight:         '800',
               color:              '#C4A35E',
               letterSpacing:      '-0.03em',
@@ -179,196 +202,102 @@ export default async function PartnerOverviewPage() {
             }}>
               {formatTHB(totalPayout)}
             </div>
-            <div style={{
-              marginTop: '10px',
-              fontSize:  '13px',
-              color:     'rgba(240,236,228,0.35)',
-            }}>
-              {paidCount} paid {paidCount === 1 ? 'report' : 'reports'} · paid out to date
+            <div style={{ marginTop: '9px', fontSize: '12px', color: 'rgba(240,236,228,0.28)', letterSpacing: '0.01em' }}>
+              {paidCount} paid {paidCount === 1 ? 'report' : 'reports'} · cumulative paid out
             </div>
           </div>
 
-          {/* Right — supplementary stats */}
-          <div style={{ display: 'flex', gap: '36px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          {/* Right — secondary stats */}
+          <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap', paddingTop: '2px' }}>
+
             {awaitingPayment > 0 && (
               <div>
-                <div style={{
-                  fontSize:      '10px',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color:         'rgba(240,236,228,0.3)',
-                  marginBottom:  '5px',
-                }}>
+                <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)', marginBottom: '7px' }}>
                   Awaiting Payment
                 </div>
-                <div style={{
-                  fontSize:           '22px',
-                  fontWeight:         '700',
-                  color:              '#F59E0B',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#E8A030', fontVariantNumeric: 'tabular-nums' }}>
                   {formatTHB(awaitingPayment)}
                 </div>
-                <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '3px' }}>
-                  {approvedReports.length} approved {approvedReports.length === 1 ? 'report' : 'reports'}
+                <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.24)', marginTop: '4px' }}>
+                  {approvedReports.length} {approvedReports.length === 1 ? 'report' : 'reports'} approved
                 </div>
               </div>
             )}
 
             {partnerStartDate && (
               <div>
-                <div style={{
-                  fontSize:      '10px',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color:         'rgba(240,236,228,0.3)',
-                  marginBottom:  '5px',
-                }}>
+                <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)', marginBottom: '7px' }}>
                   Partner Since
                 </div>
-                <div style={{
-                  fontSize:   '15px',
-                  fontWeight: '600',
-                  color:      'rgba(240,236,228,0.7)',
-                }}>
+                <div style={{ fontSize: '15px', fontWeight: '600', color: 'rgba(240,236,228,0.65)', letterSpacing: '-0.01em' }}>
                   {formatFullDate(parseLocalDate(partnerStartDate))}
                 </div>
-                <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.32)', marginTop: '3px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.28)', marginTop: '4px' }}>
                   {formatDuration(partnerStartDate)}
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* ── Layer 3: KPI metric row — inside the card, separated by divider ── */}
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.055)', margin: '0' }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          {kpis.map(({ label, value, sub, color }, idx) => (
+            <div key={label} style={{
+              padding:     '22px 28px',
+              borderRight: idx < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            }}>
+              <div style={{
+                fontSize:      '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color:         'rgba(240,236,228,0.3)',
+                marginBottom:  '8px',
+                fontWeight:    '500',
+              }}>
+                {label}
+              </div>
+              <div style={{
+                fontSize:           '24px',
+                fontWeight:         '700',
+                color,
+                letterSpacing:      '-0.02em',
+                lineHeight:         1.1,
+                fontVariantNumeric: 'tabular-nums',
+                marginBottom:       '5px',
+              }}>
+                {value}
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.24)' }}>
+                {sub}
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
 
-      {/* ── KPI Strip ───────────────────────────────────────────────────────── */}
-      <div style={{
-        display:             'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap:                 '12px',
-      }}>
-        {([
-          {
-            label:  'Total Earned',
-            value:  formatTHB(totalPayout),
-            sub:    'Paid reports only',
-            accent: '#C4A35E' as const,
-          },
-          {
-            label:  'Awaiting Payment',
-            value:  awaitingPayment > 0 ? formatTHB(awaitingPayment) : '—',
-            sub:    'Approved, not yet paid',
-            accent: awaitingPayment > 0 ? '#F59E0B' as const : 'rgba(240,236,228,0.35)' as const,
-          },
-          {
-            label:  'Total Reports',
-            value:  String(totalCount),
-            sub:    `${paidCount} paid · ${approvedReports.length} approved`,
-            accent: 'rgba(240,236,228,0.6)' as const,
-          },
-          {
-            label:  'Avg per Month',
-            value:  paidCount > 0 ? formatTHB(avgPerMonth) : '—',
-            sub:    'Based on paid months',
-            accent: '#C4A35E' as const,
-          },
-        ] as { label: string; value: string; sub: string; accent: string }[]).map(({ label, value, sub, accent }) => (
-          <div key={label} style={{
-            background:   '#0D0F1A',
-            border:       '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '16px',
-            padding:      '22px 24px',
-            position:     'relative',
-            overflow:     'hidden',
-          }}>
-            {/* Top accent line */}
-            <div style={{
-              position:   'absolute',
-              top:        0, left: '18%', right: '18%', height: '1px',
-              background: `linear-gradient(90deg, transparent, ${accent}55, transparent)`,
-            }} />
-            <div style={{
-              fontSize:      '10px',
-              fontWeight:    '600',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color:         'rgba(240,236,228,0.35)',
-              marginBottom:  '10px',
-            }}>
-              {label}
-            </div>
-            <div style={{
-              fontSize:           '26px',
-              fontWeight:         '700',
-              color:              accent,
-              letterSpacing:      '-0.02em',
-              lineHeight:         1.1,
-              fontVariantNumeric: 'tabular-nums',
-            }}>
-              {value}
-            </div>
-            <div style={{
-              fontSize:  '11px',
-              color:     'rgba(240,236,228,0.28)',
-              marginTop: '6px',
-            }}>
-              {sub}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Monthly Trend Chart ─────────────────────────────────────────────── */}
+      {/* ── Layer 2: Monthly Trend Chart ────────────────────────────────────── */}
       {trendData.length > 0 && (
         <MonthlyTrendChart data={trendData} />
       )}
 
-      {/* ── Reports Table ───────────────────────────────────────────────────── */}
-      <div>
-        {/* Section header */}
-        <div style={{
-          display:        'flex',
-          alignItems:     'center',
-          justifyContent: 'space-between',
-          marginBottom:   '14px',
-        }}>
-          <h2 style={{
-            margin:        0,
-            fontSize:      '11px',
-            fontWeight:    '600',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color:         'rgba(240,236,228,0.35)',
-          }}>
-            Monthly Reports
-          </h2>
-          <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.22)' }}>
-            {totalCount} {totalCount === 1 ? 'report' : 'reports'} total
-          </div>
+      {/* ── Layer 2: Reports Table ───────────────────────────────────────────── */}
+      {reports.length === 0 ? (
+        <div style={{ ...CARD, padding: '64px 32px', textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', marginBottom: '12px', opacity: 0.2 }}>◫</div>
+          <p style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.28)', margin: 0 }}>
+            No reports yet
+          </p>
+          <p style={{ fontSize: '12px', color: 'rgba(240,236,228,0.18)', margin: '6px 0 0' }}>
+            Monthly payout reports appear here once approved.
+          </p>
         </div>
-
-        {/* Table or empty state */}
-        {reports.length === 0 ? (
-          <div style={{
-            background:   '#0D0F1A',
-            border:       '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '16px',
-            padding:      '60px 24px',
-            textAlign:    'center',
-          }}>
-            <div style={{ fontSize: '28px', marginBottom: '12px', opacity: 0.25 }}>◫</div>
-            <p style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.3)', margin: 0 }}>
-              No reports yet
-            </p>
-            <p style={{ fontSize: '12px', color: 'rgba(240,236,228,0.18)', margin: '6px 0 0' }}>
-              Your monthly payout reports will appear here once they have been approved.
-            </p>
-          </div>
-        ) : (
-          <PartnerReportsFilter reports={reports} />
-        )}
-      </div>
+      ) : (
+        <PartnerReportsFilter reports={reports} totalCount={totalCount} />
+      )}
 
     </div>
   )
