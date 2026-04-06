@@ -338,10 +338,17 @@ export async function POST(request: NextRequest) {
       final_payout  = partner_share + vat_amount
     }
 
-    // Check for existing report
+    // Check for existing report (fetch full snapshot for audit before_state)
     const { data: existingReport } = await admin
       .from('monthly_reports')
-      .select('id')
+      .select(`
+        id, status,
+        gross_sales, total_net, total_refunds, adjusted_net,
+        partner_share_base, vat_amount, final_payout,
+        revenue_share_pct_snapshot, payout_type_snapshot,
+        fixed_rent_snapshot, fixed_rent_vat_mode_snapshot,
+        is_vat_registered_snapshot, vat_rate_snapshot
+      `)
       .eq('branch_id', branchId)
       .eq('reporting_month', reportingMonth)
       .eq('reporting_year', reportingYear)
@@ -381,8 +388,12 @@ export async function POST(request: NextRequest) {
       status:                        'draft',
     }
 
-    if (existingReport && isOverwrite) {
+    const isOverwriteAction = !!(existingReport && isOverwrite)
+
+    if (isOverwriteAction) {
       await admin.from('report_rows').delete().eq('monthly_report_id', existingReport.id)
+      // Also clear existing artist_summaries — they'll be rebuilt below
+      await admin.from('artist_summaries').delete().eq('monthly_report_id', existingReport.id)
       await admin.from('monthly_reports').update(reportPayload).eq('id', existingReport.id)
       monthlyReportId = existingReport.id
     } else {
@@ -420,6 +431,62 @@ export async function POST(request: NextRequest) {
       }))
       await admin.from('report_rows').insert(batch)
     }
+
+    // ── Populate artist_summaries ─────────────────────────────────────────────
+    // Aggregate by artist name from this branch's transaction rows.
+    // Blank artist names are grouped under '(Unknown)'.
+    type ArtistStats = { order_count: number; gross_sales: number; total_net: number }
+    const artistMap: Record<string, ArtistStats> = {}
+    for (const r of rows) {
+      const name = r.artist_name.trim() || '(Unknown)'
+      const entry = artistMap[name] ?? { order_count: 0, gross_sales: 0, total_net: 0 }
+      if (!r.refunded) {
+        entry.order_count++
+        entry.gross_sales += r.amount
+      }
+      entry.total_net += r.net
+      artistMap[name] = entry
+    }
+
+    const artistRows = Object.entries(artistMap).map(([artist_name, stats]) => ({
+      monthly_report_id: monthlyReportId,
+      branch_id:         branchId,
+      reporting_month:   reportingMonth,
+      reporting_year:    reportingYear,
+      artist_name,
+      order_count:       stats.order_count,
+      gross_sales:       stats.gross_sales,
+      total_net:         stats.total_net,
+    }))
+
+    if (artistRows.length > 0) {
+      await admin.from('artist_summaries').insert(artistRows)
+    }
+
+    // ── Write audit_log ───────────────────────────────────────────────────────
+    // Captures who imported what, with before/after report state for overwrites.
+    await admin.from('audit_logs').insert({
+      actor_id:     user.id,
+      action:       isOverwriteAction ? 'csv_overwrite' : 'csv_import',
+      entity_type:  'monthly_report',
+      entity_id:    monthlyReportId,
+      before_state: isOverwriteAction ? existingReport! : null,
+      after_state:  {
+        ...reportPayload,
+        id:              monthlyReportId,
+        branch_id:       branchId,
+        reporting_month: reportingMonth,
+        reporting_year:  reportingYear,
+      },
+      metadata: {
+        csv_upload_id:   csvUploadId,
+        filename,
+        branch_id:       branchId,
+        rows_imported:   rows.length,
+        reporting_month: reportingMonth,
+        reporting_year:  reportingYear,
+      },
+    })
 
     totalImported += rows.length
     branchesProcessed++

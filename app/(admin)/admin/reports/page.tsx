@@ -1,145 +1,119 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminHeader } from '@/components/admin/AdminHeader'
-import { StatusBadge } from '@/components/shared/StatusBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { formatTHB } from '@/lib/utils/currency'
-import { formatReportingPeriod } from '@/lib/utils/date'
+import { ReportsClient } from '@/components/admin/ReportsClient'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Reports' }
+export const dynamic = 'force-dynamic'
 
-type PartnerReportsJoin = { name: string; is_vat_registered: boolean | null }
-type BranchReportsJoin = {
+// ── Supabase join types ───────────────────────────────────────────────────────
+
+type PartnerJoin = { name: string; is_vat_registered: boolean | null }
+type BranchJoin  = {
+  id: string
   name: string
   code: string | null
-  revenue_share_pct: number
-  partners: PartnerReportsJoin | PartnerReportsJoin[] | null
+  partners: PartnerJoin | PartnerJoin[] | null
 }
-type ReportRow = {
+type RawReport = {
   id: string
+  branch_id: string
   reporting_month: number
   reporting_year: number
   status: string
-  gross_sales: number | string
-  total_net: number | string
-  total_refunds: number | string
-  adjusted_net: number | string
-  partner_share_base: number | string
-  vat_amount: number | string
-  final_payout: number | string
+  gross_sales: string | number
+  total_net: string | number
+  total_refunds: string | number
+  final_payout: string | number
+  vat_amount: string | number
+  payout_type_snapshot: 'revenue_share' | 'fixed_rent'
+  revenue_share_pct_snapshot: string | number
+  fixed_rent_snapshot: string | number | null
   has_negative_adjusted_net: boolean | null
-  recalculated_at: string | null
-  branches: BranchReportsJoin | BranchReportsJoin[] | null
+  created_at: string
+  updated_at: string
+  branches: BranchJoin | BranchJoin[] | null
 }
 
 export default async function AdminReportsPage() {
-  const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { data: rawReports } = await supabase
+  const { data: rawReports } = await admin
     .from('monthly_reports')
     .select(`
-      id, reporting_month, reporting_year, status,
-      gross_sales, total_net, total_refunds, adjusted_net,
-      partner_share_base, vat_amount, final_payout,
-      has_negative_adjusted_net, recalculated_at,
-      branches ( name, code, revenue_share_pct,
+      id, branch_id, reporting_month, reporting_year, status,
+      gross_sales, total_net, total_refunds, final_payout, vat_amount,
+      payout_type_snapshot, revenue_share_pct_snapshot,
+      fixed_rent_snapshot,
+      has_negative_adjusted_net,
+      created_at, updated_at,
+      branches (
+        id, name, code,
         partners ( name, is_vat_registered )
       )
     `)
     .order('reporting_year',  { ascending: false })
     .order('reporting_month', { ascending: false })
+    .order('created_at',      { ascending: true  })
 
-  const reports = (rawReports as unknown as ReportRow[] | null) ?? []
+  const raw = (rawReports as unknown as RawReport[] | null) ?? []
+
+  // Flatten joins into a stable, serialisable shape for the client component
+  const reports = raw.map(r => {
+    const branch  = Array.isArray(r.branches) ? r.branches[0] : r.branches
+    const partner = branch && (Array.isArray(branch.partners) ? branch.partners[0] : branch.partners)
+    return {
+      id:                          r.id,
+      branch_id:                   r.branch_id,
+      reporting_month:             r.reporting_month,
+      reporting_year:              r.reporting_year,
+      status:                      r.status,
+      gross_sales:                 Number(r.gross_sales),
+      total_net:                   Number(r.total_net),
+      total_refunds:               Number(r.total_refunds),
+      final_payout:                Number(r.final_payout),
+      vat_amount:                  Number(r.vat_amount),
+      payout_type_snapshot:        r.payout_type_snapshot ?? 'revenue_share',
+      revenue_share_pct_snapshot:  Number(r.revenue_share_pct_snapshot ?? 50),
+      fixed_rent_snapshot:         r.fixed_rent_snapshot != null ? Number(r.fixed_rent_snapshot) : null,
+      has_negative_adjusted_net:   r.has_negative_adjusted_net ?? false,
+      created_at:                  r.created_at,
+      updated_at:                  r.updated_at,
+      branch_name:                 branch?.name   ?? '—',
+      branch_code:                 branch?.code   ?? null,
+      partner_name:                partner?.name  ?? '—',
+      is_vat_registered:           partner?.is_vat_registered ?? false,
+    }
+  })
 
   return (
     <div>
       <AdminHeader
         title="Monthly Reports"
-        subtitle="All branch reports across all periods"
+        subtitle={`${reports.length} report${reports.length !== 1 ? 's' : ''} across all branches and periods`}
         actions={
           <Link href="/admin/upload" style={{
-            padding:'10px 18px', borderRadius:'10px',
-            background:'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
-            color:'#080A10', fontSize:'13px', fontWeight:'700',
-            textDecoration:'none', letterSpacing:'0.04em',
+            padding: '10px 18px', borderRadius: '10px',
+            background: 'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
+            color: '#080A10', fontSize: '13px', fontWeight: '700',
+            textDecoration: 'none', letterSpacing: '0.04em',
           }}>
             ↑ Upload CSV
           </Link>
         }
       />
 
-      <div style={{
-        background:'#0D0F1A', border:'1px solid rgba(255,255,255,0.06)',
-        borderRadius:'16px', overflow:'hidden',
-      }}>
-        {reports.length === 0 ? (
-          <EmptyState
-            icon="◫"
-            title="No reports yet"
-            description="Upload a CSV file to generate monthly reports for each branch."
-          />
-        ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
-              <thead>
-                <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-                  {['Period','Branch','Partner','Gross Sales','NET','Refunds','Final Payout','Status',''].map(h => (
-                    <th key={h} style={{
-                      padding:'12px 20px', textAlign:'left',
-                      fontSize:'11px', fontWeight:'600', letterSpacing:'0.08em',
-                      textTransform:'uppercase', color:'rgba(240,236,228,0.35)',
-                      whiteSpace:'nowrap',
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map(r => {
-                  const branch  = Array.isArray(r.branches) ? r.branches[0] : r.branches
-                  const partner = branch && (Array.isArray(branch.partners) ? branch.partners[0] : branch.partners)
-                  return (
-                    <tr key={r.id} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding:'14px 20px', color:'#F0ECE4', whiteSpace:'nowrap' }}>
-                        {formatReportingPeriod(r.reporting_month, r.reporting_year)}
-                      </td>
-                      <td style={{ padding:'14px 20px', color:'rgba(240,236,228,0.7)' }}>
-                        {branch?.name ?? '—'}
-                      </td>
-                      <td style={{ padding:'14px 20px', color:'rgba(240,236,228,0.5)' }}>
-                        {partner?.name ?? '—'}
-                      </td>
-                      <td style={{ padding:'14px 20px', color:'rgba(240,236,228,0.7)', whiteSpace:'nowrap' }}>
-                        {formatTHB(Number(r.gross_sales))}
-                      </td>
-                      <td style={{ padding:'14px 20px', color:'rgba(240,236,228,0.7)', whiteSpace:'nowrap' }}>
-                        {formatTHB(Number(r.total_net))}
-                      </td>
-                      <td style={{ padding:'14px 20px', color: Number(r.total_refunds) > 0 ? '#F59E0B' : 'rgba(240,236,228,0.4)', whiteSpace:'nowrap' }}>
-                        {Number(r.total_refunds) > 0 ? `− ${formatTHB(Number(r.total_refunds))}` : '—'}
-                      </td>
-                      <td style={{ padding:'14px 20px', color:'#C4A35E', fontWeight:'700', whiteSpace:'nowrap' }}>
-                        {formatTHB(Number(r.final_payout))}
-                      </td>
-                      <td style={{ padding:'14px 20px' }}>
-                        <StatusBadge status={r.status as 'draft'} />
-                      </td>
-                      <td style={{ padding:'14px 20px' }}>
-                        <Link href={`/admin/reports/${r.id}`} style={{
-                          fontSize:'12px', color:'rgba(196,163,94,0.7)',
-                          textDecoration:'none', fontWeight:'500',
-                        }}>
-                          View →
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {reports.length === 0 ? (
+        <EmptyState
+          icon="◫"
+          title="No reports yet"
+          description="Upload a CSV file to generate monthly reports for each branch."
+        />
+      ) : (
+        <ReportsClient reports={reports} />
+      )}
     </div>
   )
 }
