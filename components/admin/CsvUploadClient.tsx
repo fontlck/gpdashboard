@@ -794,7 +794,7 @@ export function CsvUploadClient() {
                           onCreated={branch => {
                             setDbBranches(prev => [...prev, branch])
                             if (branch.partners && !dbPartners.find(p => p.id === branch.partner_id)) {
-                              setDbPartners(prev => [...prev, { id: branch.partner_id, name: branch.partners!.name }])
+                              setDbPartners(prev => [...prev, { id: branch.partner_id, name: branch.partners!.name, is_vat_registered: branch.partners!.is_vat_registered ?? false }])
                             }
                             setResolution(csvName, {
                               kind: 'mapped',
