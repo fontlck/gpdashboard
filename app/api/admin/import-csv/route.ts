@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-// ── CSV Parser ──────────────────────────────────────────────────────────────
+// ── CSV Parser ───────────────────────────────────────────────────────────────
 
 function parseCsvLine(line: string): string[] {
   const result: string[] = []
@@ -39,11 +39,9 @@ function parseCSV(text: string): Record<string, string>[] {
   return rows
 }
 
-// ── Column Detection ────────────────────────────────────────────────────────
+// ── Column Detection ─────────────────────────────────────────────────────────
 
-type ColMap = Record<string, string>
-
-function detectColumns(headers: string[]): ColMap {
+function detectColumns(headers: string[]): Record<string, string> {
   const norm = (s: string) => s.toLowerCase().replace(/[\s_\-\[\]\.]/g, '')
   const idx: Record<string, string> = {}
   headers.forEach(h => { idx[norm(h)] = h })
@@ -74,7 +72,7 @@ function detectColumns(headers: string[]): ColMap {
   }
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseNum(s: string | undefined): number {
   if (!s) return 0
@@ -93,19 +91,20 @@ function parseDate(s: string | undefined): Date | null {
   return isNaN(d.getTime()) ? null : d
 }
 
-function branchCode(name: string): string {
-  // Generate a short code from the branch name
-  return name
-    .replace(/[^a-zA-Z0-9\s]/g, '')
-    .trim()
-    .split(/\s+/)
-    .map(w => w[0] ?? '')
-    .join('')
-    .toUpperCase()
-    .slice(0, 6) || 'BR'
-}
-
-// ── POST Handler ─────────────────────────────────────────────────────────────
+// ── POST /api/admin/import-csv ───────────────────────────────────────────────
+//
+// Body:
+//   csvText        — full CSV file content
+//   filename       — original filename
+//   isOverwrite    — replace existing monthly_report for same branch+month
+//   amountDivisor  — 1 (THB) or 100 (satang)
+//   branchMapping  — Record<branch_name_raw, branch_id | 'skip'>
+//                    ALL branch names found in the CSV must be present.
+//                    'skip' means exclude those rows safely.
+//                    Import is rejected if any name is missing from the map.
+//
+// No partners or branches are created here. Branch creation is a separate
+// explicit admin action via POST /api/admin/branches.
 
 export async function POST(request: NextRequest) {
   // Auth
@@ -119,15 +118,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // Body
-  let body: { csvText: string; filename: string; isOverwrite?: boolean; amountDivisor?: number }
+  let body: {
+    csvText: string
+    filename: string
+    isOverwrite?: boolean
+    amountDivisor?: number
+    branchMapping: Record<string, string>   // branch_name_raw → branch_id | 'skip'
+  }
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }) }
 
-  const { csvText, filename, isOverwrite = false, amountDivisor = 1 } = body
+  const { csvText, filename, isOverwrite = false, amountDivisor = 1, branchMapping } = body
+
   if (!csvText || !filename)
     return NextResponse.json({ error: 'Missing csvText or filename' }, { status: 400 })
+  if (!branchMapping || typeof branchMapping !== 'object')
+    return NextResponse.json({ error: 'branchMapping is required' }, { status: 400 })
 
-  // Parse
+  // Parse CSV
   const allRows = parseCSV(csvText)
   if (allRows.length === 0)
     return NextResponse.json({ error: 'CSV has no data rows' }, { status: 400 })
@@ -140,15 +148,15 @@ export async function POST(request: NextRequest) {
       headersFound: Object.keys(allRows[0]),
     }, { status: 400 })
 
-  // Filter rows
+  // Filter rows — THB and successful only
   const VALID_STATUSES = new Set(['successful', 'paid', 'captured', ''])
   let skippedCurrency = 0, skippedStatus = 0
 
   type TxRow = {
     charge_id: string; amount: number; fee: number; fee_vat: number; net: number
-    currency: string; status: string; date: Date; refunded: boolean
-    refunded_amount: number; source: string; branch_name: string
-    artist_name: string; email: string; raw: Record<string, string>
+    currency: string; date: Date; refunded: boolean; refunded_amount: number
+    source: string; branch_name_raw: string; artist_name: string; email: string
+    raw: Record<string, string>
   }
 
   const txRows: TxRow[] = []
@@ -159,8 +167,6 @@ export async function POST(request: NextRequest) {
     const status = (row[colMap.status] ?? '').toLowerCase()
     if (colMap.status && !VALID_STATUSES.has(status)) { skippedStatus++; continue }
 
-    const date = parseDate(row[colMap.created]) ?? new Date()
-
     txRows.push({
       charge_id:       row[colMap.charge_id] ?? '',
       amount:          parseNum(row[colMap.amount]) / amountDivisor,
@@ -168,12 +174,11 @@ export async function POST(request: NextRequest) {
       fee_vat:         parseNum(row[colMap.fee_vat]) / amountDivisor,
       net:             parseNum(row[colMap.net]) / amountDivisor,
       currency,
-      status:          row[colMap.status] ?? '',
-      date,
+      date:            parseDate(row[colMap.created]) ?? new Date(),
       refunded:        parseBool(row[colMap.refunded]),
       refunded_amount: parseNum(row[colMap.refunded_amount]) / amountDivisor,
       source:          row[colMap.source] ?? '',
-      branch_name:     row[colMap.branch_name] ?? '',
+      branch_name_raw: row[colMap.branch_name] ?? '',
       artist_name:     row[colMap.artist_name] ?? '',
       email:           row[colMap.email] ?? '',
       raw:             row,
@@ -184,6 +189,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       error: 'No valid THB rows found after filtering',
       skippedCurrency, skippedStatus,
+    }, { status: 400 })
+
+  // Validate that every branch_name_raw in the data has an explicit mapping
+  const uniqueBranchNames = [...new Set(txRows.map(r => r.branch_name_raw))]
+  const unmapped = uniqueBranchNames.filter(n => !(n in branchMapping))
+  if (unmapped.length > 0)
+    return NextResponse.json({
+      error: 'Some branch names are not resolved in branchMapping',
+      unmappedBranches: unmapped,
     }, { status: 400 })
 
   // Determine primary reporting month (most common)
@@ -197,82 +211,12 @@ export async function POST(request: NextRequest) {
   const reportingYear  = parseInt(yearStr)
   const reportingMonth = parseInt(monthStr)
 
-  // Admin DB client
   const admin = createAdminClient()
 
-  // Get or create branches
-  const uniqueBranchNames = [...new Set(txRows.map(r => r.branch_name).filter(Boolean))]
-  const branchIdMap: Record<string, string> = {}  // branch_name → branch UUID
-
-  for (const bName of uniqueBranchNames) {
-    // Look up branch by name (case-insensitive)
-    const { data: existing } = await admin
-      .from('branches')
-      .select('id')
-      .ilike('name', bName)
-      .eq('is_active', true)
-      .limit(1)
-      .single()
-
-    if (existing) {
-      branchIdMap[bName] = existing.id
-      continue
-    }
-
-    // Create partner + branch
-    const { data: partner, error: partnerErr } = await admin
-      .from('partners')
-      .insert({ name: bName, is_vat_registered: false, is_active: true })
-      .select('id')
-      .single()
-
-    if (partnerErr || !partner)
-      return NextResponse.json({ error: `Failed to create partner for branch "${bName}": ${partnerErr?.message}` }, { status: 500 })
-
-    const code = branchCode(bName)
-    const { data: branch, error: branchErr } = await admin
-      .from('branches')
-      .insert({
-        partner_id: partner.id,
-        name: bName,
-        code,
-        revenue_share_pct: 50,
-        is_active: true,
-      })
-      .select('id')
-      .single()
-
-    if (branchErr || !branch)
-      return NextResponse.json({ error: `Failed to create branch "${bName}": ${branchErr?.message}` }, { status: 500 })
-
-    branchIdMap[bName] = branch.id
-  }
-
-  // Handle rows with no branch_name — put under a generic branch
-  const noBranchRows = txRows.filter(r => !r.branch_name)
-  if (noBranchRows.length > 0) {
-    const fallbackName = 'Unknown Branch'
-    if (!branchIdMap[fallbackName]) {
-      const { data: existing } = await admin
-        .from('branches').select('id').ilike('name', fallbackName).limit(1).single()
-
-      if (existing) {
-        branchIdMap[fallbackName] = existing.id
-      } else {
-        const { data: partner } = await admin
-          .from('partners').insert({ name: fallbackName, is_vat_registered: false, is_active: true })
-          .select('id').single()
-        if (partner) {
-          const { data: branch } = await admin
-            .from('branches')
-            .insert({ partner_id: partner.id, name: fallbackName, code: 'UNK', revenue_share_pct: 50, is_active: true })
-            .select('id').single()
-          if (branch) branchIdMap[fallbackName] = branch.id
-        }
-      }
-    }
-    noBranchRows.forEach(r => { r.branch_name = fallbackName })
-  }
+  // Fetch VAT rate
+  const { data: vatSetting } = await admin
+    .from('settings').select('value').eq('key', 'vat_rate').single()
+  const vatRate = parseFloat(vatSetting?.value ?? '0.07')
 
   // Create csv_uploads record
   const storagePath = `imports/${reportingYear}-${String(reportingMonth).padStart(2, '0')}/${Date.now()}-${filename}`
@@ -296,47 +240,45 @@ export async function POST(request: NextRequest) {
 
   const csvUploadId = csvUpload.id
 
-  // Group txRows by branch_name
+  // Group rows by resolved branch_id (skip 'skip' rows)
   const byBranch: Record<string, TxRow[]> = {}
-  txRows.forEach(r => {
-    const key = r.branch_name || 'Unknown Branch'
-    ;(byBranch[key] ??= []).push(r)
-  })
+  let skippedBranch = 0
 
-  // Fetch VAT rate from settings
-  const { data: vatSetting } = await admin
-    .from('settings').select('value').eq('key', 'vat_rate').single()
-  const vatRate = parseFloat(vatSetting?.value ?? '0.07')
+  for (const row of txRows) {
+    const resolution = branchMapping[row.branch_name_raw]
+    if (resolution === 'skip') { skippedBranch++; continue }
+    ;(byBranch[resolution] ??= []).push(row)
+  }
 
   let totalImported = 0
-  let totalSkipped = 0
+  let totalSkipped = skippedBranch
   let branchesProcessed = 0
 
-  for (const [bName, rows] of Object.entries(byBranch)) {
-    const branchId = branchIdMap[bName]
-    if (!branchId) { totalSkipped += rows.length; continue }
-
-    // Fetch branch + partner details for revenue share / VAT
+  for (const [branchId, rows] of Object.entries(byBranch)) {
+    // Fetch branch + partner for revenue share / VAT snapshot
     const { data: branchData } = await admin
       .from('branches')
       .select('id, revenue_share_pct, partner_id, partners(is_vat_registered)')
       .eq('id', branchId)
       .single()
 
-    const revenueSharePct = branchData?.revenue_share_pct ?? 50
-    const isVatRegistered = (branchData?.partners as { is_vat_registered?: boolean } | null)?.is_vat_registered ?? false
+    if (!branchData) { totalSkipped += rows.length; continue }
+
+    const revenueSharePct = Number(branchData.revenue_share_pct ?? 50)
+    const isVatRegistered =
+      (branchData.partners as { is_vat_registered?: boolean } | null)?.is_vat_registered ?? false
 
     // Financial calculations
-    const gross_sales     = rows.reduce((s, r) => s + (r.refunded ? 0 : r.amount), 0)
-    const total_opn_fee   = rows.reduce((s, r) => s + r.fee, 0)
-    const total_net       = rows.reduce((s, r) => s + r.net, 0)
-    const total_refunds   = rows.reduce((s, r) => s + r.refunded_amount, 0)
-    const adjusted_net    = total_net - total_refunds
-    const partner_share   = adjusted_net * (Number(revenueSharePct) / 100)
-    const vat_amount      = isVatRegistered ? partner_share * vatRate : 0
-    const final_payout    = partner_share + vat_amount
+    const gross_sales   = rows.reduce((s, r) => s + (r.refunded ? 0 : r.amount), 0)
+    const total_opn_fee = rows.reduce((s, r) => s + r.fee, 0)
+    const total_net     = rows.reduce((s, r) => s + r.net, 0)
+    const total_refunds = rows.reduce((s, r) => s + r.refunded_amount, 0)
+    const adjusted_net  = total_net - total_refunds
+    const partner_share = adjusted_net * (revenueSharePct / 100)
+    const vat_amount    = isVatRegistered ? partner_share * vatRate : 0
+    const final_payout  = partner_share + vat_amount
 
-    // Upsert monthly_report
+    // Check for existing report
     const { data: existingReport } = await admin
       .from('monthly_reports')
       .select('id')
@@ -347,59 +289,41 @@ export async function POST(request: NextRequest) {
 
     let monthlyReportId: string
 
-    if (existingReport && isOverwrite) {
-      // Delete old rows first
-      await admin.from('report_rows').delete().eq('monthly_report_id', existingReport.id)
-      await admin.from('monthly_reports').update({
-        csv_upload_id:             csvUploadId,
-        total_transaction_count:   rows.length,
-        total_skipped_currency:    skippedCurrency,
-        total_skipped_date:        0,
-        total_skipped_status:      skippedStatus,
-        gross_sales,
-        total_opn_fee,
-        total_net,
-        total_refunds,
-        adjusted_net,
-        has_negative_adjusted_net: adjusted_net < 0,
-        revenue_share_pct_snapshot: revenueSharePct,
-        partner_share_base:        partner_share,
-        is_vat_registered_snapshot: isVatRegistered,
-        vat_rate_snapshot:         vatRate,
-        vat_amount,
-        final_payout,
-        status: 'draft',
-      }).eq('id', existingReport.id)
-      monthlyReportId = existingReport.id
-    } else if (existingReport && !isOverwrite) {
+    if (existingReport && !isOverwrite) {
+      // Not overwriting — skip this branch entirely
       totalSkipped += rows.length
       continue
+    }
+
+    const reportPayload = {
+      csv_upload_id:              csvUploadId,
+      total_transaction_count:    rows.length,
+      total_skipped_currency:     skippedCurrency,
+      total_skipped_date:         0,
+      total_skipped_status:       skippedStatus,
+      gross_sales,
+      total_opn_fee,
+      total_net,
+      total_refunds,
+      adjusted_net,
+      has_negative_adjusted_net:  adjusted_net < 0,
+      revenue_share_pct_snapshot: revenueSharePct,
+      partner_share_base:         partner_share,
+      is_vat_registered_snapshot: isVatRegistered,
+      vat_rate_snapshot:          vatRate,
+      vat_amount,
+      final_payout,
+      status:                     'draft',
+    }
+
+    if (existingReport && isOverwrite) {
+      await admin.from('report_rows').delete().eq('monthly_report_id', existingReport.id)
+      await admin.from('monthly_reports').update(reportPayload).eq('id', existingReport.id)
+      monthlyReportId = existingReport.id
     } else {
       const { data: newReport, error: reportErr } = await admin
         .from('monthly_reports')
-        .insert({
-          branch_id:                 branchId,
-          csv_upload_id:             csvUploadId,
-          reporting_month:           reportingMonth,
-          reporting_year:            reportingYear,
-          total_transaction_count:   rows.length,
-          total_skipped_currency:    skippedCurrency,
-          total_skipped_date:        0,
-          total_skipped_status:      skippedStatus,
-          gross_sales,
-          total_opn_fee,
-          total_net,
-          total_refunds,
-          adjusted_net,
-          has_negative_adjusted_net: adjusted_net < 0,
-          revenue_share_pct_snapshot: revenueSharePct,
-          partner_share_base:        partner_share,
-          is_vat_registered_snapshot: isVatRegistered,
-          vat_rate_snapshot:         vatRate,
-          vat_amount,
-          final_payout,
-          status: 'draft',
-        })
+        .insert({ branch_id: branchId, reporting_month: reportingMonth, reporting_year: reportingYear, ...reportPayload })
         .select('id')
         .single()
 
@@ -424,7 +348,7 @@ export async function POST(request: NextRequest) {
         opn_refunded_amount: r.refunded_amount,
         opn_refunded:        r.refunded,
         payment_source:      r.source || null,
-        branch_name_raw:     r.branch_name || null,
+        branch_name_raw:     r.branch_name_raw || null,
         artist_name_raw:     r.artist_name || null,
         customer_email:      r.email || null,
         raw_data:            r.raw,
@@ -436,7 +360,7 @@ export async function POST(request: NextRequest) {
     branchesProcessed++
   }
 
-  // Update csv_uploads status
+  // Finalise upload record
   await admin.from('csv_uploads').update({
     status:             'completed',
     row_count_imported: totalImported,
@@ -453,8 +377,7 @@ export async function POST(request: NextRequest) {
     importedRows:      totalImported,
     skippedCurrency,
     skippedStatus,
-    skippedOther:      totalSkipped,
+    skippedBranch,
     branchesProcessed,
-    newBranchesCreated: uniqueBranchNames.filter(n => !branchIdMap[n]).length,
   })
 }
