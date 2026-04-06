@@ -748,3 +748,10 @@ export const Constants = {
     },
   },
 } as const
+
+// ── App-level status types ────────────────────────────────────────────────────
+// These are application-level string enumerations stored as plain `text` in the
+// DB but narrowed here for type safety across the front-end.
+
+export type ReportStatus = 'draft' | 'pending_review' | 'approved' | 'paid'
+export type UploadStatus = 'processing' | 'completed' | 'failed'
