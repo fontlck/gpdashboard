@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -340,9 +341,29 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
   const [editTarget, setEditTarget] = useState<RefundRow | null>(null)
   const [toast,      setToast]      = useState<Toast | null>(null)
 
-  // Use prop directly — router.refresh() will re-render this component
-  // with updated server data, so no need to mirror it in state.
-  const refunds = initialRefunds
+  // ── Filter state ────────────────────────────────────────────────────────────
+  const [filterBranch, setFilterBranch] = useState<string>('')
+  const [filterYear,   setFilterYear]   = useState<string>('')
+  const [filterStatus, setFilterStatus] = useState<string>('')
+
+  // Derive available years from the data
+  const availableYears = useMemo(() => {
+    const ys = [...new Set(initialRefunds.map(r => r.reporting_year))].sort((a, b) => b - a)
+    return ys
+  }, [initialRefunds])
+
+  // Filtered list
+  const refunds = useMemo(() => {
+    return initialRefunds.filter(r => {
+      if (filterBranch && r.branch_id !== filterBranch)                  return false
+      if (filterYear   && String(r.reporting_year) !== filterYear)        return false
+      if (filterStatus) {
+        if (filterStatus === 'none' && r.report_status !== null)          return false
+        if (filterStatus !== 'none' && r.report_status !== filterStatus)  return false
+      }
+      return true
+    })
+  }, [initialRefunds, filterBranch, filterYear, filterStatus])
 
   const showToast = useCallback((message: string, ok = true) => {
     setToast({ message, ok })
@@ -409,6 +430,83 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
         </div>
       )}
 
+      {/* ── Filter bar ───────────────────────────────────────────────────────── */}
+      {mode === 'list' && (
+        <div style={{
+          display: 'flex', gap: '10px', marginBottom: '16px',
+          flexWrap: 'wrap', alignItems: 'center',
+        }}>
+          {/* Branch filter */}
+          <select
+            value={filterBranch}
+            onChange={e => setFilterBranch(e.target.value)}
+            style={{
+              ...selectStyle,
+              width: 'auto', minWidth: '160px',
+              fontSize: '12px', padding: '7px 10px',
+            }}
+          >
+            <option value="">All branches</option>
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+
+          {/* Year filter */}
+          <select
+            value={filterYear}
+            onChange={e => setFilterYear(e.target.value)}
+            style={{
+              ...selectStyle,
+              width: 'auto', minWidth: '100px',
+              fontSize: '12px', padding: '7px 10px',
+            }}
+          >
+            <option value="">All years</option>
+            {availableYears.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+
+          {/* Status filter */}
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            style={{
+              ...selectStyle,
+              width: 'auto', minWidth: '150px',
+              fontSize: '12px', padding: '7px 10px',
+            }}
+          >
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="approved">Approved</option>
+            <option value="paid">Paid</option>
+            <option value="none">No report</option>
+          </select>
+
+          {/* Clear filters */}
+          {(filterBranch || filterYear || filterStatus) && (
+            <button
+              onClick={() => { setFilterBranch(''); setFilterYear(''); setFilterStatus('') }}
+              style={{
+                padding: '7px 12px', borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'transparent', color: 'rgba(240,236,228,0.45)',
+                fontSize: '12px', cursor: 'pointer',
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+
+          {/* Result count */}
+          <span style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginLeft: 'auto' }}>
+            {refunds.length} of {initialRefunds.length} refund{initialRefunds.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
+
       {/* ── Form panel (create or edit) ───────────────────────────────────────── */}
       {(mode === 'create' || mode === 'edit') && (
         <div style={{
@@ -468,8 +566,23 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
                     key={r.id}
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                   >
-                    <td style={{ ...tdStyle, color: '#F0ECE4', whiteSpace: 'nowrap' }}>
-                      {fmtPeriod(r.reporting_month, r.reporting_year)}
+                    <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+                      {r.report_id ? (
+                        <Link
+                          href={`/admin/reports/${r.report_id}`}
+                          style={{
+                            color: '#F0ECE4', textDecoration: 'none',
+                            borderBottom: '1px solid rgba(240,236,228,0.2)',
+                            paddingBottom: '1px',
+                          }}
+                        >
+                          {fmtPeriod(r.reporting_month, r.reporting_year)}
+                        </Link>
+                      ) : (
+                        <span style={{ color: '#F0ECE4' }}>
+                          {fmtPeriod(r.reporting_month, r.reporting_year)}
+                        </span>
+                      )}
                     </td>
                     <td style={{ ...tdStyle, color: 'rgba(240,236,228,0.7)' }}>
                       {r.branch_name}
@@ -491,7 +604,11 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
                       {r.reference_number ?? '—'}
                     </td>
                     <td style={tdStyle}>
-                      {r.report_status ? (
+                      {r.report_status && r.report_id ? (
+                        <Link href={`/admin/reports/${r.report_id}`} style={{ textDecoration: 'none' }}>
+                          <StatusBadge status={r.report_status as 'draft'} />
+                        </Link>
+                      ) : r.report_status ? (
                         <StatusBadge status={r.report_status as 'draft'} />
                       ) : (
                         <span style={{ fontSize: '12px', color: 'rgba(240,236,228,0.25)' }}>No report</span>
