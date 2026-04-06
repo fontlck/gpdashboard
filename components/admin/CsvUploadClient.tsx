@@ -46,16 +46,22 @@ type Resolution =
   | { kind: 'skip' }
   | { kind: 'creating' }   // mini-form open
 
+type PayoutType    = 'revenue_share' | 'fixed_rent'
+type VatMode       = 'exclusive' | 'inclusive'
+
 type DbBranch = {
   id: string
   name: string
   code: string
+  payout_type: PayoutType
   revenue_share_pct: number
+  fixed_rent_amount: number | null
+  fixed_rent_vat_mode: VatMode | null
   partner_id: string
-  partners: { id: string; name: string } | null
+  partners: { id: string; name: string; is_vat_registered: boolean } | null
 }
 
-type DbPartner = { id: string; name: string }
+type DbPartner = { id: string; name: string; is_vat_registered: boolean }
 
 type PreviewData = {
   filename: string
@@ -117,20 +123,41 @@ type CreateBranchFormProps = {
 
 function CreateBranchForm({ csvBranchName, partners, onCreated, onCancel }: CreateBranchFormProps) {
   const [branchName,   setBranchName]   = useState(csvBranchName)
+  const [payoutType,   setPayoutType]   = useState<PayoutType>('revenue_share')
   const [revenueShare, setRevenueShare] = useState('50')
+  const [fixedRent,    setFixedRent]    = useState('')
+  const [vatMode,      setVatMode]      = useState<VatMode>('exclusive')
   const [partnerMode,  setPartnerMode]  = useState<'existing' | 'new'>('existing')
   const [partnerId,    setPartnerId]    = useState(partners[0]?.id ?? '')
   const [newPartner,   setNewPartner]   = useState('')
+  const [newPartnerVat, setNewPartnerVat] = useState(false)
   const [saving,       setSaving]       = useState(false)
   const [err,          setErr]          = useState('')
+
+  // Determine if the currently-selected existing partner is VAT-registered
+  const selectedPartner   = partners.find(p => p.id === partnerId)
+  const effectiveVatReg   = partnerMode === 'existing'
+    ? (selectedPartner as (DbPartner & { is_vat_registered?: boolean }) | undefined)?.is_vat_registered ?? false
+    : newPartnerVat
 
   const handleCreate = async () => {
     setErr('')
     if (!branchName.trim()) return setErr('Branch name is required')
-    const pct = parseFloat(revenueShare)
-    if (isNaN(pct) || pct < 0 || pct > 100) return setErr('Revenue share must be 0–100')
     if (partnerMode === 'existing' && !partnerId) return setErr('Select a partner')
     if (partnerMode === 'new' && !newPartner.trim()) return setErr('Enter a partner name')
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payloadExtra: Record<string, any> = {}
+    if (payoutType === 'revenue_share') {
+      const pct = parseFloat(revenueShare)
+      if (isNaN(pct) || pct < 0 || pct > 100) return setErr('Revenue share must be 0–100')
+      payloadExtra.revenue_share_pct = pct
+    } else {
+      const rent = parseFloat(fixedRent)
+      if (isNaN(rent) || rent < 0) return setErr('Fixed rent must be a number ≥ 0')
+      payloadExtra.fixed_rent_amount   = rent
+      payloadExtra.fixed_rent_vat_mode = vatMode
+    }
 
     setSaving(true)
     try {
@@ -138,8 +165,9 @@ function CreateBranchForm({ csvBranchName, partners, onCreated, onCancel }: Crea
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          branch_name:       branchName.trim(),
-          revenue_share_pct: pct,
+          branch_name: branchName.trim(),
+          payout_type: payoutType,
+          ...payloadExtra,
           ...(partnerMode === 'existing'
             ? { partner_id:   partnerId }
             : { partner_name: newPartner.trim() }),
@@ -160,6 +188,14 @@ function CreateBranchForm({ csvBranchName, partners, onCreated, onCancel }: Crea
     color: TEXT, outline: 'none', boxSizing: 'border-box',
   }
 
+  const segBtn = (active: boolean): CSSProperties => ({
+    padding: '5px 14px', borderRadius: '6px', fontSize: '12px',
+    cursor: 'pointer', border: 'none',
+    background: active ? GOLD_BG : 'transparent',
+    color: active ? GOLD : TEXT_MUTED,
+    outline: active ? `1px solid ${GOLD_BORDER}` : '1px solid transparent',
+  })
+
   return (
     <div style={{
       marginTop: '12px', padding: '16px', borderRadius: '12px',
@@ -168,35 +204,70 @@ function CreateBranchForm({ csvBranchName, partners, onCreated, onCancel }: Crea
     }}>
       <p style={{ margin: 0, ...label11 }}>Create New Branch</p>
 
+      {/* Branch name */}
       <div>
         <p style={{ margin: '0 0 4px', fontSize: '11px', color: TEXT_MUTED }}>Branch name</p>
         <input style={inputStyle} value={branchName} onChange={e => setBranchName(e.target.value)} />
       </div>
 
+      {/* Payout model */}
       <div>
-        <p style={{ margin: '0 0 4px', fontSize: '11px', color: TEXT_MUTED }}>Revenue share %</p>
-        <input
-          style={{ ...inputStyle, width: '120px' }}
-          type="number" min={0} max={100} value={revenueShare}
-          onChange={e => setRevenueShare(e.target.value)}
-        />
+        <p style={{ margin: '0 0 6px', fontSize: '11px', color: TEXT_MUTED }}>Payout model</p>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          {(['revenue_share', 'fixed_rent'] as const).map(pt => (
+            <button key={pt} onClick={() => setPayoutType(pt)} style={segBtn(payoutType === pt)}>
+              {pt === 'revenue_share' ? 'Revenue share %' : 'Fixed rent (THB/mo)'}
+            </button>
+          ))}
+        </div>
+
+        {payoutType === 'revenue_share' ? (
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: '11px', color: TEXT_MUTED }}>Revenue share %</p>
+            <input
+              style={{ ...inputStyle, width: '120px' }}
+              type="number" min={0} max={100} value={revenueShare}
+              onChange={e => setRevenueShare(e.target.value)}
+            />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div>
+              <p style={{ margin: '0 0 4px', fontSize: '11px', color: TEXT_MUTED }}>Fixed monthly rent (THB)</p>
+              <input
+                style={{ ...inputStyle, width: '160px' }}
+                type="number" min={0} placeholder="e.g. 15000"
+                value={fixedRent}
+                onChange={e => setFixedRent(e.target.value)}
+              />
+            </div>
+
+            {/* VAT mode — always visible for fixed_rent so it's set correctly upfront */}
+            <div>
+              <p style={{ margin: '0 0 6px', fontSize: '11px', color: TEXT_MUTED }}>VAT mode</p>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
+                {(['exclusive', 'inclusive'] as const).map(m => (
+                  <button key={m} onClick={() => setVatMode(m)} style={segBtn(vatMode === m)}>
+                    {m === 'exclusive' ? 'VAT exclusive (+ VAT on top)' : 'VAT inclusive (VAT embedded)'}
+                  </button>
+                ))}
+              </div>
+              <p style={{ margin: 0, fontSize: '11px', color: TEXT_MUTED }}>
+                {vatMode === 'exclusive'
+                  ? 'Final payout = Rent + VAT (only if partner is VAT-registered)'
+                  : 'Rent amount already includes VAT — base and VAT shown separately in reports'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Partner */}
       <div>
         <p style={{ margin: '0 0 6px', fontSize: '11px', color: TEXT_MUTED }}>Partner</p>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           {(['existing', 'new'] as const).map(m => (
-            <button
-              key={m}
-              onClick={() => setPartnerMode(m)}
-              style={{
-                padding: '5px 14px', borderRadius: '6px', fontSize: '12px',
-                cursor: 'pointer', border: 'none',
-                background: partnerMode === m ? GOLD_BG : 'transparent',
-                color: partnerMode === m ? GOLD : TEXT_MUTED,
-                outline: partnerMode === m ? `1px solid ${GOLD_BORDER}` : '1px solid transparent',
-              }}
-            >
+            <button key={m} onClick={() => setPartnerMode(m)} style={segBtn(partnerMode === m)}>
               {m === 'existing' ? 'Existing partner' : 'New partner'}
             </button>
           ))}
@@ -208,29 +279,41 @@ function CreateBranchForm({ csvBranchName, partners, onCreated, onCancel }: Crea
               No partners exist yet — switch to "New partner"
             </p>
           ) : (
-            <select
-              style={{ ...inputStyle }}
-              value={partnerId}
-              onChange={e => setPartnerId(e.target.value)}
-            >
-              {partners.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <div>
+              <select style={{ ...inputStyle }} value={partnerId} onChange={e => setPartnerId(e.target.value)}>
+                {partners.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {effectiveVatReg && (
+                <p style={{ margin: '5px 0 0', fontSize: '11px', color: GOLD }}>
+                  ✓ Partner is VAT-registered — VAT mode above applies
+                </p>
+              )}
+            </div>
           )
         ) : (
-          <input
-            style={inputStyle}
-            placeholder="Partner / company name"
-            value={newPartner}
-            onChange={e => setNewPartner(e.target.value)}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <input
+              style={inputStyle}
+              placeholder="Partner / company name"
+              value={newPartner}
+              onChange={e => setNewPartner(e.target.value)}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: TEXT_MUTED, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={newPartnerVat}
+                onChange={e => setNewPartnerVat(e.target.checked)}
+                style={{ accentColor: GOLD }}
+              />
+              Partner is VAT-registered
+            </label>
+          </div>
         )}
       </div>
 
-      {err && (
-        <p style={{ margin: 0, fontSize: '12px', color: '#FF8080' }}>{err}</p>
-      )}
+      {err && <p style={{ margin: 0, fontSize: '12px', color: '#FF8080' }}>{err}</p>}
 
       <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
         <button

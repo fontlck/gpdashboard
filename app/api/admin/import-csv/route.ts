@@ -275,28 +275,68 @@ export async function POST(request: NextRequest) {
   let branchesProcessed = 0
 
   for (const [branchId, rows] of Object.entries(byBranch)) {
-    // Fetch branch + partner for revenue share / VAT snapshot
+    // Fetch branch + partner — include payout_type, fixed_rent_amount, fixed_rent_vat_mode
     const { data: branchData } = await admin
       .from('branches')
-      .select('id, revenue_share_pct, partner_id, partners(is_vat_registered)')
+      .select('id, revenue_share_pct, payout_type, fixed_rent_amount, fixed_rent_vat_mode, partner_id, partners(is_vat_registered)')
       .eq('id', branchId)
       .single()
 
     if (!branchData) { totalSkipped += rows.length; continue }
 
+    const payoutType      = (branchData.payout_type ?? 'revenue_share') as 'revenue_share' | 'fixed_rent'
     const revenueSharePct = Number(branchData.revenue_share_pct ?? 50)
+    const fixedRentAmount = branchData.fixed_rent_amount != null ? Number(branchData.fixed_rent_amount) : null
+    const fixedRentVatMode = (branchData.fixed_rent_vat_mode ?? null) as 'exclusive' | 'inclusive' | null
     const isVatRegistered =
       (branchData.partners as { is_vat_registered?: boolean } | null)?.is_vat_registered ?? false
 
-    // Financial calculations
+    // Financial calculations — always compute full transaction picture
     const gross_sales   = rows.reduce((s, r) => s + (r.refunded ? 0 : r.amount), 0)
     const total_opn_fee = rows.reduce((s, r) => s + r.fee, 0)
     const total_net     = rows.reduce((s, r) => s + r.net, 0)
     const total_refunds = rows.reduce((s, r) => s + r.refunded_amount, 0)
-    const adjusted_net  = total_net - total_refunds
-    const partner_share = adjusted_net * (revenueSharePct / 100)
-    const vat_amount    = isVatRegistered ? partner_share * vatRate : 0
-    const final_payout  = partner_share + vat_amount
+    const adjusted_net  = total_net - total_refunds  // stored for visibility; ignored in fixed_rent payout
+
+    // ── Payout model branching ────────────────────────────────────────────────
+    let partner_share: number
+    let vat_amount: number
+    let final_payout: number
+
+    if (payoutType === 'fixed_rent') {
+      // ── Fixed rent ──────────────────────────────────────────────────────────
+      // Refunds do NOT reduce payout — fixed_rent is a flat obligation.
+      const rent = fixedRentAmount ?? 0
+
+      if (!isVatRegistered || rent === 0) {
+        // No VAT — partner receives the flat amount as-is
+        partner_share = rent
+        vat_amount    = 0
+        final_payout  = rent
+
+      } else if (fixedRentVatMode === 'inclusive') {
+        // Rent already includes VAT (e.g. 10,700 THB = 10,000 base + 700 VAT @7%)
+        // Derive base and VAT from the inclusive amount so reports stay transparent.
+        const base    = rent / (1 + vatRate)
+        partner_share = base            // base before VAT (for audit clarity)
+        vat_amount    = rent - base     // embedded VAT portion
+        final_payout  = rent            // partner receives the inclusive amount
+
+      } else {
+        // exclusive (default) — VAT is added on top of the rent
+        partner_share = rent
+        vat_amount    = rent * vatRate
+        final_payout  = rent + vat_amount
+      }
+
+    } else {
+      // ── Revenue share ───────────────────────────────────────────────────────
+      // Refunds DO reduce net → adjusted_net → partner's share.
+      // Logic unchanged from original implementation.
+      partner_share = adjusted_net * (revenueSharePct / 100)
+      vat_amount    = isVatRegistered ? partner_share * vatRate : 0
+      final_payout  = partner_share + vat_amount
+    }
 
     // Check for existing report
     const { data: existingReport } = await admin
@@ -327,13 +367,18 @@ export async function POST(request: NextRequest) {
       total_refunds,
       adjusted_net,
       has_negative_adjusted_net:  adjusted_net < 0,
+      // Revenue-share snapshot (always stored; ignored for fixed_rent reports)
       revenue_share_pct_snapshot: revenueSharePct,
       partner_share_base:         partner_share,
       is_vat_registered_snapshot: isVatRegistered,
       vat_rate_snapshot:          vatRate,
       vat_amount,
       final_payout,
-      status:                     'draft',
+      // Payout-type snapshots — store all model-specific values for historical accuracy
+      payout_type_snapshot:          payoutType,
+      fixed_rent_snapshot:           payoutType === 'fixed_rent' ? fixedRentAmount : null,
+      fixed_rent_vat_mode_snapshot:  payoutType === 'fixed_rent' ? fixedRentVatMode : null,
+      status:                        'draft',
     }
 
     if (existingReport && isOverwrite) {
