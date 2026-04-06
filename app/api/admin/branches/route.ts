@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
     fixed_rent_vat_mode?: 'exclusive' | 'inclusive'
     partner_id?: string
     partner_name?: string
+    partner_is_vat_registered?: boolean
   }
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
     fixed_rent_amount,
     fixed_rent_vat_mode,
     partner_id, partner_name,
+    partner_is_vat_registered = false,
   } = body
 
   if (!branch_name?.trim())
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
     // Create new partner explicitly requested by admin
     const { data: newPartner, error: partnerErr } = await admin
       .from('partners')
-      .insert({ name: partner_name!.trim(), is_vat_registered: false, is_active: true })
+      .insert({ name: partner_name!.trim(), is_vat_registered: partner_is_vat_registered, is_active: true })
       .select('id')
       .single()
 
@@ -110,14 +112,36 @@ export async function POST(request: NextRequest) {
     resolvedPartnerId = newPartner.id
   }
 
-  // Derive code if not provided
-  const branchCode = (code?.trim() || branch_name.trim()
-    .replace(/[^a-zA-Z0-9\s]/g, '')
-    .split(/\s+/)
-    .map((w: string) => w[0] ?? '')
-    .join('')
-    .toUpperCase()
-    .slice(0, 6)) || 'BR'
+  // Derive a unique code if not provided
+  const baseCode = (code?.trim() || (() => {
+    const words = branch_name.trim().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/)
+    if (words.length === 1) {
+      // Single word: use up to first 3 consonant-anchored chars for a less collision-prone code
+      return words[0].slice(0, 3).toUpperCase()
+    }
+    return words.map((w: string) => w[0] ?? '').join('').toUpperCase().slice(0, 6)
+  })()) || 'BR'
+
+  // Ensure the code is unique — append suffix if taken
+  const { data: existingCodes } = await admin.from('branches').select('code')
+  const takenCodes = new Set((existingCodes ?? []).map((r: { code: string }) => r.code))
+
+  let branchCode = baseCode
+  if (takenCodes.has(branchCode)) {
+    // Try progressively longer slices of the name first, then numeric suffixes
+    const namePart = branch_name.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+    let found = false
+    for (let len = baseCode.length + 1; len <= Math.min(namePart.length, 6); len++) {
+      const candidate = namePart.slice(0, len)
+      if (!takenCodes.has(candidate)) { branchCode = candidate; found = true; break }
+    }
+    if (!found) {
+      for (let i = 2; i <= 99; i++) {
+        const candidate = `${baseCode}${i}`
+        if (!takenCodes.has(candidate)) { branchCode = candidate; break }
+      }
+    }
+  }
 
   // Create branch
   const { data: newBranch, error: branchErr } = await admin

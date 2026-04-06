@@ -170,7 +170,7 @@ function CreateBranchForm({ csvBranchName, partners, onCreated, onCancel }: Crea
           ...payloadExtra,
           ...(partnerMode === 'existing'
             ? { partner_id:   partnerId }
-            : { partner_name: newPartner.trim() }),
+            : { partner_name: newPartner.trim(), partner_is_vat_registered: newPartnerVat }),
         }),
       })
       const data = await res.json()
