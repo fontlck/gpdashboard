@@ -40,6 +40,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
   let branchName: string | null = null
   let startDate:  string | null = null
   let startSource: string | null = null
+  let cachedActiveBranches: BranchHeroJoin[] = []
 
   if (profile?.partner_id) {
     const { data: rawPartner } = await supabase
@@ -59,6 +60,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
       // Resolve branches — find the earliest partnership_start_date across active branches
       const branches = Array.isArray(partner.branches) ? partner.branches : (partner.branches ? [partner.branches] : [])
       const activeBranches = branches.filter((b: BranchHeroJoin) => b.is_active)
+      cachedActiveBranches = activeBranches
 
       if (activeBranches.length === 1) {
         branchName  = activeBranches[0].name
@@ -89,12 +91,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
   }
 
   if (!startDate && profile?.partner_id) {
-    const activeBranches = (() => {
-      const raw = (rawPartner as unknown as PartnerHeroRow | null)
-      if (!raw) return []
-      const b = Array.isArray(raw.branches) ? raw.branches : (raw.branches ? [raw.branches] : [])
-      return b.filter((br: BranchHeroJoin) => br.is_active)
-    })()
+    const activeBranches = cachedActiveBranches
 
     if (activeBranches.length > 0) {
       const branchIds = activeBranches.map((b: BranchHeroJoin) => b.id)
