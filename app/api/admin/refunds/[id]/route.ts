@@ -28,10 +28,15 @@ function recalculate(report: ReportSnapshot, newRefundAmount: number) {
   }
 
   if (report.payout_type_snapshot === 'revenue_share') {
-    const pct              = Number(report.revenue_share_pct_snapshot)
-    const partnerShareBase = hasNegative ? 0 : adjustedNet * (pct / 100)
+    const pct  = Number(report.revenue_share_pct_snapshot)
+    const vatR = Number(report.vat_rate_snapshot)
+    // total_net and total_refunds are VAT-inclusive amounts from OPN.
+    // Strip embedded VAT before applying revenue share to avoid double-counting.
+    // If adjusted_net < 0, clamp ex-VAT value to 0 so payout is never negative.
+    const adjustedNetExVat = hasNegative ? 0 : adjustedNet / (1 + vatR)
+    const partnerShareBase = adjustedNetExVat * (pct / 100)
     const vatAmount        = report.is_vat_registered_snapshot
-      ? partnerShareBase * Number(report.vat_rate_snapshot)
+      ? partnerShareBase * vatR
       : 0
     const finalPayout      = partnerShareBase + vatAmount
 

@@ -179,20 +179,32 @@ export default async function AdminReportDetailPage({
     }
 
     // Revenue share breakdown
+    // NET and refunds from OPN are VAT-inclusive. We strip VAT before applying
+    // the revenue share percentage so VAT is not double-counted.
+    const adjustedNet      = Number(report.adjusted_net)
+    const vatR             = Number(report.vat_rate_snapshot)
+    const hasNeg           = report.has_negative_adjusted_net ?? false
+    const adjustedNetExVat = hasNeg ? 0 : adjustedNet / (1 + vatR)
+
     return (
       <>
-        <ROW label="Gross Sales"      value={formatTHB(Number(report.gross_sales))} />
-        <ROW label="OPN Gateway Fee"  value={`− ${formatTHB(Number(report.total_opn_fee))}`} />
-        <ROW label="NET (from OPN)"   value={formatTHB(Number(report.total_net))} />
+        <ROW label="Gross Sales"                   value={formatTHB(Number(report.gross_sales))} />
+        <ROW label="OPN Gateway Fee"               value={`− ${formatTHB(Number(report.total_opn_fee))}`} />
+        <ROW label="NET from OPN (VAT-incl.)"      value={formatTHB(Number(report.total_net))} />
         <ROW
-          label="Business Refunds"
+          label="Business Refunds (VAT-incl.)"
           value={Number(report.total_refunds) > 0 ? `− ${formatTHB(Number(report.total_refunds))}` : '—'}
           warning={Number(report.total_refunds) > 0}
         />
         <ROW
-          label="Adjusted NET"
-          value={formatTHB(Number(report.adjusted_net))}
-          warning={report.has_negative_adjusted_net ?? false}
+          label="Adjusted NET (VAT-incl.)"
+          value={formatTHB(adjustedNet)}
+          warning={hasNeg}
+        />
+        <ROW
+          label={`÷ (1 + ${vatPct}) → ex-VAT`}
+          value={formatTHB(adjustedNetExVat)}
+          muted
         />
         <div style={{ height: '8px' }} />
         <ROW
@@ -200,13 +212,13 @@ export default async function AdminReportDetailPage({
           value={formatTHB(Number(report.partner_share_base))}
         />
         <ROW
-          label={`VAT ${vatPct} ${report.is_vat_registered_snapshot ? '' : '(not registered)'}`}
+          label={`VAT ${vatPct} on partner share${report.is_vat_registered_snapshot ? '' : ' (not registered)'}`}
           value={report.is_vat_registered_snapshot ? formatTHB(Number(report.vat_amount)) : '—'}
         />
         <div style={{ height: '8px' }} />
         <ROW label="Final Payout" value={formatTHB(Number(report.final_payout))} accent />
 
-        {report.has_negative_adjusted_net && (
+        {hasNeg && (
           <div style={{
             marginTop: '16px', padding: '12px', borderRadius: '10px',
             background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',

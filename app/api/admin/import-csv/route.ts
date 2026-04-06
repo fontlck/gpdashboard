@@ -334,9 +334,19 @@ export async function POST(request: NextRequest) {
 
     } else {
       // ── Revenue share ───────────────────────────────────────────────────────
-      // Refunds DO reduce net → adjusted_net → partner's share.
-      // Logic unchanged from original implementation.
-      partner_share = adjusted_net * (revenueSharePct / 100)
+      // total_net and total_refunds are VAT-inclusive amounts settled by OPN.
+      // Strip embedded VAT before applying the revenue share percentage to avoid
+      // double-counting VAT (once embedded in NET, once added on top of partner share).
+      //
+      //   adjusted_net_ex_vat = (total_net - total_refunds) / (1 + vatRate)
+      //   partner_share       = adjusted_net_ex_vat × revenue_share_pct
+      //   vat_amount          = partner_share × vatRate   (if VAT-registered)
+      //   final_payout        = partner_share + vat_amount
+      //
+      // If adjusted_net < 0 (refunds exceed NET), clamp to 0 so partner
+      // share and payout are never negative.
+      const adjustedNetExVat = adjusted_net < 0 ? 0 : adjusted_net / (1 + vatRate)
+      partner_share = adjustedNetExVat * (revenueSharePct / 100)
       vat_amount    = isVatRegistered ? partner_share * vatRate : 0
       final_payout  = partner_share + vat_amount
     }
