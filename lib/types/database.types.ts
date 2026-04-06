@@ -754,4 +754,4 @@ export const Constants = {
 // DB but narrowed here for type safety across the front-end.
 
 export type ReportStatus = 'draft' | 'pending_review' | 'approved' | 'paid'
-export type UploadStatus = 'processing' | 'completed' | 'failed'
+export type UploadStatus = 'pending' | 'validated' | 'mapped' | 'imported' | 'failed' | 'superseded'
