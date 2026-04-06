@@ -14,8 +14,8 @@ export const dynamic = 'force-dynamic'
 
 // ── Join types ────────────────────────────────────────────────────────────────
 
-type PartnerJoin  = { name: string }
-type BranchJoin   = {
+type PartnerJoin = { name: string }
+type BranchJoin  = {
   id: string; name: string; partner_id: string
   partnership_start_date: string | null
   partners: PartnerJoin | PartnerJoin[] | null
@@ -54,20 +54,125 @@ type ReportRow = {
   branches: BranchJoin | BranchJoin[] | null
 }
 
-// ── Shared row component ──────────────────────────────────────────────────────
+// ── UI primitives ─────────────────────────────────────────────────────────────
 
+/** Plain label / value row used in the details card */
 const ROW = ({ label, value, accent = false, warning = false, muted = false }: {
   label: string; value: ReactNode; accent?: boolean; warning?: boolean; muted?: boolean
 }) => (
   <div style={{
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '13px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
+    padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
   }}>
-    <span style={{ fontSize: '13px', color: 'rgba(240,236,228,0.45)' }}>{label}</span>
+    <span style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)' }}>{label}</span>
     <span style={{
       fontSize: '14px', fontWeight: accent ? '700' : '500',
-      color: warning ? '#F59E0B' : accent ? '#C4A35E' : muted ? 'rgba(240,236,228,0.3)' : '#F0ECE4',
+      color: warning ? '#F59E0B'
+           : accent  ? '#C4A35E'
+           : muted   ? 'rgba(240,236,228,0.28)'
+           :           '#F0ECE4',
+      fontVariantNumeric: 'tabular-nums',
     }}>{value}</span>
+  </div>
+)
+
+/** One of the four top KPI metric cards */
+const KpiCard = ({ label, value, muted = false, sub }: {
+  label: string; value: string; muted?: boolean; sub?: string
+}) => (
+  <div style={{
+    background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '14px', padding: '20px 22px',
+  }}>
+    <div style={{
+      fontSize: '10px', fontWeight: '600', letterSpacing: '0.11em',
+      textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)',
+      marginBottom: '10px',
+    }}>
+      {label}
+    </div>
+    <div style={{
+      fontSize: '20px', fontWeight: '700', letterSpacing: '-0.02em',
+      fontVariantNumeric: 'tabular-nums',
+      color: muted ? 'rgba(240,236,228,0.28)' : '#F0ECE4',
+    }}>
+      {value}
+    </div>
+    {sub && (
+      <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.22)', marginTop: '5px' }}>
+        {sub}
+      </div>
+    )}
+  </div>
+)
+
+/** A single row in the step-by-step payout ledger */
+const LEDGER = ({
+  label, value,
+  role   = 'normal',
+  indent = false,
+}: {
+  label: string; value: string
+  role?:   'normal' | 'muted' | 'warning' | 'subtotal'
+  indent?: boolean
+}) => {
+  const labelColor =
+    role === 'muted'    ? 'rgba(240,236,228,0.28)' :
+    role === 'warning'  ? 'rgba(245,158,11,0.75)'  :
+    role === 'subtotal' ? 'rgba(240,236,228,0.65)'  :
+                          'rgba(240,236,228,0.45)'
+  const valueColor =
+    role === 'muted'    ? 'rgba(240,236,228,0.28)' :
+    role === 'warning'  ? '#F59E0B'                :
+                          '#F0ECE4'
+  const fontWeight = role === 'subtotal' ? '600' : '400'
+
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: indent ? '9px 0 9px 18px' : '9px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+    }}>
+      <span style={{ fontSize: '13px', color: labelColor }}>
+        {indent && (
+          <span style={{ color: 'rgba(255,255,255,0.15)', marginRight: '7px', fontStyle: 'normal' }}>→</span>
+        )}
+        {label}
+      </span>
+      <span style={{
+        fontSize: '14px', fontWeight, color: valueColor,
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+const LedgerDivider = () => (
+  <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '6px 0' }} />
+)
+
+/** Final payout emphasis row at the bottom of the ledger */
+const LedgerPayout = ({ value }: { value: string }) => (
+  <div style={{
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '18px 0 4px',
+    borderTop: '2px solid rgba(196,163,94,0.25)',
+    marginTop: '10px',
+  }}>
+    <span style={{
+      fontSize: '12px', fontWeight: '600', letterSpacing: '0.1em',
+      textTransform: 'uppercase', color: 'rgba(196,163,94,0.6)',
+    }}>
+      Final Payout
+    </span>
+    <span style={{
+      fontSize: '24px', fontWeight: '700', color: '#C4A35E',
+      letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums',
+    }}>
+      {value}
+    </span>
   </div>
 )
 
@@ -127,7 +232,6 @@ export default async function PartnerReportDetailPage({
   let branchStartDate: string | null = branch?.partnership_start_date ?? null
 
   if (!branchStartDate && branch?.id) {
-    // Fallback: derive from earliest transaction_date across this branch's reports
     const { data: branchReports } = await supabase
       .from('monthly_reports')
       .select('id')
@@ -145,7 +249,6 @@ export default async function PartnerReportDetailPage({
         .maybeSingle()
 
       if (earliest?.transaction_date) {
-        // Convert UTC timestamp → Bangkok (UTC+7) "YYYY-MM-DD"
         const bkkMs = new Date(earliest.transaction_date).getTime() + 7 * 60 * 60 * 1000
         const d     = new Date(bkkMs)
         branchStartDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
@@ -200,112 +303,89 @@ export default async function PartnerReportDetailPage({
   const adjustedNet      = Number(report.adjusted_net)
   const adjustedNetExVat = hasNeg ? 0 : adjustedNet / (1 + vatRate)
 
-  // ── Financial breakdown — payout-model-aware ──────────────────────────────
+  // Parse branchStartDate "YYYY-MM-DD" as a local (non-UTC) Date for display
+  const branchStartLocal: Date | null = branchStartDate
+    ? (() => { const [y, m, d] = branchStartDate.split('-').map(Number); return new Date(y, m - 1, d) })()
+    : null
 
-  const RevenueShareBreakdown = () => (
+  // ── Payout breakdown flows ────────────────────────────────────────────────
+
+  const RevenueShareFlow = () => (
     <>
-      <ROW label="Gross Sales"
-           value={formatTHB(Number(report.gross_sales))} />
-
-      <ROW label="Platform Fee"
-           value={`− ${formatTHB(Number(report.total_opn_fee))}`}
-           muted />
-
-      <ROW label="Your NET (VAT-incl.)"
-           value={formatTHB(Number(report.total_net))} />
+      <LEDGER label="Gross Sales"          value={formatTHB(Number(report.gross_sales))} />
+      <LEDGER label="Platform Fee"         value={`− ${formatTHB(Number(report.total_opn_fee))}`} role="muted" indent />
+      <LedgerDivider />
+      <LEDGER label="Your NET (VAT-incl.)" value={formatTHB(Number(report.total_net))} role="subtotal" />
 
       {Number(report.total_refunds) > 0 && (
-        <ROW label="Business Refunds"
-             value={`− ${formatTHB(Number(report.total_refunds))}`}
-             warning />
+        <>
+          <LEDGER label="Business Refunds" value={`− ${formatTHB(Number(report.total_refunds))}`} role="warning" indent />
+          <LedgerDivider />
+          <LEDGER label="Adjusted NET"     value={formatTHB(adjustedNet)} role={hasNeg ? 'warning' : 'subtotal'} />
+        </>
       )}
 
-      <ROW label="Adjusted NET (VAT-incl.)"
-           value={formatTHB(adjustedNet)}
-           warning={hasNeg} />
-
-      {/* Ex-VAT derivation — shown for transparency */}
-      <ROW label={`÷ (1 + ${vatPct}) → ex-VAT`}
-           value={formatTHB(adjustedNetExVat)}
-           muted />
-
-      <div style={{ height: '8px' }} />
-
-      <ROW label={`Your Share (${report.revenue_share_pct_snapshot}%)`}
-           value={formatTHB(Number(report.partner_share_base))} />
+      <LEDGER label={`÷ (1 + ${vatPct}) → ex-VAT`} value={formatTHB(adjustedNetExVat)} role="muted" indent />
+      <LedgerDivider />
+      <LEDGER label={`Your Share (${report.revenue_share_pct_snapshot}%)`} value={formatTHB(Number(report.partner_share_base))} role="subtotal" />
 
       {report.is_vat_registered_snapshot ? (
-        <ROW label={`VAT ${vatPct} on your share`}
-             value={formatTHB(Number(report.vat_amount))} />
+        <LEDGER label={`+ VAT ${vatPct} on your share`} value={formatTHB(Number(report.vat_amount))} indent />
       ) : (
-        <ROW label={`VAT ${vatPct}`}
-             value="Not applicable"
-             muted />
+        <LEDGER label={`VAT ${vatPct}`} value="Not applicable" role="muted" />
       )}
-
-      <div style={{ height: '8px' }} />
-
-      <ROW label="Your Payout" value={formatTHB(Number(report.final_payout))} accent />
 
       {hasNeg && (
         <div style={{
-          marginTop: '16px', padding: '12px 14px', borderRadius: '10px',
-          background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
-          fontSize: '12px', color: '#F59E0B',
+          margin: '14px 0 0', padding: '11px 14px', borderRadius: '8px',
+          background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
+          fontSize: '12px', color: '#F59E0B', lineHeight: '1.55',
         }}>
-          Refunds exceeded revenue this month. Your payout for this period is ฿0.00.
+          Refunds exceeded revenue this month — payout is ฿0.00
         </div>
       )}
 
+      <LedgerPayout value={formatTHB(Number(report.final_payout))} />
+
       <div style={{
         marginTop: '16px', padding: '10px 14px', borderRadius: '8px',
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-        fontSize: '12px', color: 'rgba(240,236,228,0.35)',
+        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+        fontSize: '11px', color: 'rgba(240,236,228,0.28)', lineHeight: '1.65',
       }}>
         Your payout is calculated as a percentage of monthly sales after fees and refunds.
       </div>
     </>
   )
 
-  const FixedRentBreakdown = () => {
+  const FixedRentFlow = () => {
     const rent      = Number(report.fixed_rent_snapshot ?? 0)
     const vatAmount = Number(report.vat_amount ?? 0)
     const vatMode   = report.fixed_rent_vat_mode_snapshot
 
     const vatLabel = report.is_vat_registered_snapshot
       ? vatMode === 'exclusive'
-        ? `VAT ${vatPct} (added on top)`
+        ? `+ VAT ${vatPct} (added on top)`
         : `VAT ${vatPct} (included in rent)`
       : `VAT ${vatPct}`
 
     return (
       <>
-        <ROW label="Gross Sales (informational)"
-             value={formatTHB(Number(report.gross_sales))}
-             muted />
-
-        <div style={{ height: '8px' }} />
-
-        <ROW label="Fixed Monthly Rent"
-             value={formatTHB(rent)} />
+        <LEDGER label="Gross Sales (informational)" value={formatTHB(Number(report.gross_sales))} role="muted" />
+        <LedgerDivider />
+        <LEDGER label="Fixed Monthly Rent" value={formatTHB(rent)} role="subtotal" />
 
         {report.is_vat_registered_snapshot ? (
-          <ROW label={vatLabel}
-               value={formatTHB(vatAmount)} />
+          <LEDGER label={vatLabel} value={formatTHB(vatAmount)} indent />
         ) : (
-          <ROW label={vatLabel}
-               value="Not applicable"
-               muted />
+          <LEDGER label={vatLabel} value="Not applicable" role="muted" />
         )}
 
-        <div style={{ height: '8px' }} />
-
-        <ROW label="Your Payout" value={formatTHB(Number(report.final_payout))} accent />
+        <LedgerPayout value={formatTHB(Number(report.final_payout))} />
 
         <div style={{
           marginTop: '16px', padding: '10px 14px', borderRadius: '8px',
-          background: 'rgba(196,163,94,0.05)', border: '1px solid rgba(196,163,94,0.12)',
-          fontSize: '12px', color: 'rgba(196,163,94,0.7)',
+          background: 'rgba(196,163,94,0.04)', border: '1px solid rgba(196,163,94,0.1)',
+          fontSize: '11px', color: 'rgba(196,163,94,0.5)', lineHeight: '1.65',
         }}>
           Your payout is a fixed monthly amount — it does not vary with sales.
         </div>
@@ -313,193 +393,385 @@ export default async function PartnerReportDetailPage({
     )
   }
 
-  // Parse branchStartDate "YYYY-MM-DD" as a local (non-UTC) Date for display
-  const branchStartLocal: Date | null = branchStartDate
-    ? (() => { const [y, m, d] = branchStartDate.split('-').map(Number); return new Date(y, m - 1, d) })()
-    : null
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div>
-      {/* Back link */}
-      <div style={{ marginBottom: '20px' }}>
+
+      {/* ── Back link ──────────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: '28px' }}>
         <Link href="/dashboard" style={{
-          fontSize: '13px', color: 'rgba(196,163,94,0.7)',
+          fontSize: '13px', color: 'rgba(196,163,94,0.6)',
           textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px',
+          letterSpacing: '0.01em',
         }}>
           ← Back to Overview
         </Link>
       </div>
 
-      {/* Page heading */}
+      {/* ── Hero card ──────────────────────────────────────────────────────── */}
       <div style={{
-        marginBottom: '24px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        flexWrap: 'wrap', gap: '12px',
+        background: 'linear-gradient(140deg, #10132A 0%, #0D0F1A 55%, #12152B 100%)',
+        border: '1px solid rgba(196,163,94,0.18)',
+        borderRadius: '20px',
+        padding: '32px 36px 30px',
+        marginBottom: '14px',
+        position: 'relative', overflow: 'hidden',
       }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#F0ECE4', letterSpacing: '-0.02em' }}>
-            {branch?.name ?? 'Branch'} — {period}
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(240,236,228,0.4)' }}>
-            {isFixedRent ? 'Fixed rent' : 'Revenue share'} · Monthly payout breakdown
-          </p>
-        </div>
-        <StatusBadge status={report.status as 'approved'} />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-
-        {/* Financial Breakdown */}
+        {/* Ambient radial glow */}
         <div style={{
-          background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '16px', padding: '24px',
-        }}>
-          <h2 style={{
-            fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
-          }}>
-            Payout Breakdown
-          </h2>
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at 80% 0%, rgba(196,163,94,0.06) 0%, transparent 58%)',
+        }} />
+        {/* Gold bottom accent line */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(196,163,94,0.55) 40%, rgba(196,163,94,0.55) 60%, transparent 100%)',
+        }} />
 
-          {isFixedRent ? <FixedRentBreakdown /> : <RevenueShareBreakdown />}
-        </div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-          {/* Period Summary */}
+          {/* Top: branch name + status badge */}
           <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '16px', padding: '24px',
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'flex-start', marginBottom: '22px',
           }}>
-            <h2 style={{
-              fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
-            }}>
-              Period Summary
-            </h2>
+            <div>
+              <div style={{
+                fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em',
+                textTransform: 'uppercase', color: 'rgba(196,163,94,0.55)',
+                marginBottom: '5px',
+              }}>
+                {branch?.name ?? 'Branch'}
+              </div>
+              <div style={{
+                fontSize: '19px', fontWeight: '600', color: '#F0ECE4',
+                letterSpacing: '-0.015em',
+              }}>
+                {period}
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.36)', marginTop: '4px' }}>
+                {isFixedRent ? 'Fixed rent' : 'Revenue share'}
+                {report.is_vat_registered_snapshot ? ` · VAT ${vatPct} registered` : ''}
+              </div>
+            </div>
+            <StatusBadge status={report.status as 'approved'} />
+          </div>
 
-            <ROW label="Reporting Period"     value={period} />
-            <ROW label="Payout Model"         value={isFixedRent ? 'Fixed rent' : 'Revenue share'} />
-            <ROW label="Total Transactions"   value={report.total_transaction_count.toLocaleString()} />
-            {report.approved_at && (
-              <ROW label="Approved on" value={formatFullDate(report.approved_at)} />
-            )}
-            {report.paid_at && (
-              <ROW label="Paid on" value={formatFullDate(report.paid_at)} />
-            )}
-            {branchStartLocal && (
-              <>
-                <ROW label="Partner Since"        value={formatFullDate(branchStartLocal)} />
-                <ROW label="Partnership Duration" value={formatDuration(branchStartLocal)} muted />
-              </>
+          {/* Thin divider */}
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', marginBottom: '26px' }} />
+
+          {/* Payout hero number */}
+          <div>
+            <div style={{
+              fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em',
+              textTransform: 'uppercase', color: 'rgba(240,236,228,0.3)',
+              marginBottom: '10px',
+            }}>
+              Final Payout
+            </div>
+            <div style={{
+              fontSize: '54px', fontWeight: '700', color: '#C4A35E',
+              letterSpacing: '-0.035em', lineHeight: '1',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {formatTHB(Number(report.final_payout))}
+            </div>
+            {hasNeg && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                marginTop: '12px', padding: '5px 12px',
+                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                borderRadius: '6px', fontSize: '12px', color: '#F59E0B',
+              }}>
+                Refunds exceeded revenue — payout reduced to ฿0.00
+              </div>
             )}
           </div>
 
-          {/* Refund panel — only shown when a refund exists */}
+          {/* Approval / payment timestamps */}
+          {(report.approved_at || report.paid_at) && (
+            <div style={{ display: 'flex', gap: '24px', marginTop: '22px', flexWrap: 'wrap' }}>
+              {report.approved_at && (
+                <span style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)' }}>
+                  Approved{' '}
+                  <span style={{ color: 'rgba(240,236,228,0.52)' }}>{formatFullDate(report.approved_at)}</span>
+                </span>
+              )}
+              {report.paid_at && (
+                <span style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)' }}>
+                  Paid{' '}
+                  <span style={{ color: 'rgba(240,236,228,0.52)' }}>{formatFullDate(report.paid_at)}</span>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Partnership banner ─────────────────────────────────────────────── */}
+      {branchStartLocal && (
+        <div style={{
+          background: 'rgba(196,163,94,0.04)',
+          border: '1px solid rgba(196,163,94,0.14)',
+          borderRadius: '14px', padding: '14px 20px',
+          marginBottom: '14px',
+          display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: 'rgba(196,163,94,0.55)', flexShrink: 0,
+          }} />
+          <span style={{ fontSize: '13px', color: 'rgba(196,163,94,0.6)', fontWeight: '500' }}>
+            Partner since
+          </span>
+          <span style={{ fontSize: '13px', color: '#C4A35E', fontWeight: '600' }}>
+            {formatFullDate(branchStartLocal)}
+          </span>
+          <span style={{ fontSize: '12px', color: 'rgba(196,163,94,0.38)', marginLeft: '2px' }}>
+            · {formatDuration(branchStartLocal)}
+          </span>
+        </div>
+      )}
+
+      {/* ── KPI strip ─────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '12px', marginBottom: '14px',
+      }}>
+        <KpiCard
+          label="Gross Sales"
+          value={formatTHB(Number(report.gross_sales))}
+        />
+        <KpiCard
+          label="Platform Fee"
+          value={`− ${formatTHB(Number(report.total_opn_fee))}`}
+          muted
+        />
+        {isFixedRent ? (
+          <KpiCard
+            label="Fixed Rent"
+            value={formatTHB(Number(report.fixed_rent_snapshot ?? 0))}
+          />
+        ) : (
+          <KpiCard
+            label="Your NET"
+            value={formatTHB(Number(report.total_net))}
+          />
+        )}
+        <KpiCard
+          label="Transactions"
+          value={report.total_transaction_count.toLocaleString()}
+          sub="orders this month"
+        />
+      </div>
+
+      {/* ── Two-column: breakdown + details ───────────────────────────────── */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: '14px', marginBottom: '14px',
+      }}>
+
+        {/* Payout calculation ledger */}
+        <div style={{
+          background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '16px', padding: '28px',
+        }}>
+          <h2 style={{
+            margin: '0 0 20px', fontSize: '11px', fontWeight: '600',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'rgba(240,236,228,0.3)',
+          }}>
+            Payout Calculation
+          </h2>
+          {isFixedRent ? <FixedRentFlow /> : <RevenueShareFlow />}
+        </div>
+
+        {/* Right column: report details + optional refund */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+          {/* Report details */}
+          <div style={{
+            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '16px', padding: '28px', flex: 1,
+          }}>
+            <h2 style={{
+              margin: '0 0 20px', fontSize: '11px', fontWeight: '600',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: 'rgba(240,236,228,0.3)',
+            }}>
+              Report Details
+            </h2>
+            <ROW label="Reporting Period" value={period} />
+            <ROW label="Payout Model"     value={isFixedRent ? 'Fixed rent' : 'Revenue share'} />
+            <ROW label="VAT"              value={
+              report.is_vat_registered_snapshot
+                ? `Registered (${vatPct})`
+                : 'Not registered'
+            } />
+            <ROW label="Transactions"     value={report.total_transaction_count.toLocaleString()} />
+            {report.approved_at && (
+              <ROW label="Approved" value={formatFullDate(report.approved_at)} />
+            )}
+            {report.paid_at && (
+              <ROW label="Paid" value={formatFullDate(report.paid_at)} />
+            )}
+          </div>
+
+          {/* Refund card — only when a refund exists */}
           {refund && (
             <div style={{
               background: '#0D0F1A',
               border: '1px solid rgba(239,68,68,0.15)',
-              borderRadius: '16px', padding: '24px',
+              borderRadius: '16px', padding: '28px',
             }}>
               <h2 style={{
-                fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-                letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
+                margin: '0 0 20px', fontSize: '11px', fontWeight: '600',
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: 'rgba(239,68,68,0.5)',
               }}>
-                Refund Applied
+                Business Refund Applied
               </h2>
-              <ROW label="Refund Amount"
-                   value={`− ${formatTHB(Number(refund.amount))}`}
-                   warning />
-              <ROW label="Reason" value={refund.reason} />
+              <ROW label="Amount"    value={`− ${formatTHB(Number(refund.amount))}`} warning />
+              <ROW label="Reason"    value={refund.reason} />
               {refund.reference_number && (
                 <ROW label="Reference" value={refund.reference_number} />
               )}
               <p style={{
-                marginTop: '12px', marginBottom: 0,
-                fontSize: '12px', color: 'rgba(240,236,228,0.3)', lineHeight: '1.5',
+                marginTop: '14px', marginBottom: 0,
+                fontSize: '11px', color: 'rgba(240,236,228,0.28)', lineHeight: '1.65',
               }}>
-                This refund has been deducted from your revenue before calculating your payout.
+                Deducted from your revenue before calculating your payout.
               </p>
             </div>
           )}
 
         </div>
+      </div>
 
-        {/* Artist Breakdown — full width, only for revenue share */}
-        {!isFixedRent && artists.length > 0 && (
-          <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
+      {/* ── Artist Breakdown ───────────────────────────────────────────────── */}
+      {!isFixedRent && artists.length > 0 && (
+        <div style={{
+          background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '16px', padding: '28px', marginBottom: '14px',
+        }}>
+          <h2 style={{
+            margin: '0 0 20px', fontSize: '11px', fontWeight: '600',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'rgba(240,236,228,0.3)',
           }}>
-            <h2 style={{
-              fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
-            }}>
-              Artist Breakdown
-            </h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['', 'Artist', 'Orders', 'Gross Sales', 'NET'].map(h => (
-                    <th key={h} style={{
-                      padding: '8px 0', textAlign: 'left',
-                      fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
-                      width: h === '' ? 44 : undefined,
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {artists.map(a => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '8px 0' }}>
+            Artist Performance
+          </h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                {[
+                  { h: '#',          align: 'left'  as const, w: '36px'    },
+                  { h: 'Artist',     align: 'left'  as const, w: undefined  },
+                  { h: 'Orders',     align: 'right' as const, w: '80px'    },
+                  { h: 'Gross',      align: 'right' as const, w: '130px'   },
+                  { h: 'NET',        align: 'right' as const, w: '130px'   },
+                ].map(col => (
+                  <th key={col.h} style={{
+                    padding: '0 0 12px', textAlign: col.align,
+                    fontSize: '10px', fontWeight: '600', letterSpacing: '0.08em',
+                    textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)',
+                    width: col.w,
+                  }}>
+                    {col.h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {artists.map((a, idx) => (
+                <tr key={a.id} style={{
+                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  background: idx === 0 ? 'rgba(196,163,94,0.025)' : 'transparent',
+                }}>
+                  {/* Rank */}
+                  <td style={{ padding: '15px 0', verticalAlign: 'middle' }}>
+                    <span style={{
+                      fontSize: '12px', fontWeight: '700',
+                      color: idx === 0 ? '#C4A35E' : 'rgba(240,236,228,0.18)',
+                    }}>
+                      {idx + 1}
+                    </span>
+                  </td>
+                  {/* Artist name + avatar */}
+                  <td style={{ padding: '15px 16px 15px 0', verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
                       {a.artist_image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={a.artist_image_url}
                           alt=""
                           style={{
-                            width: 36, height: 36, borderRadius: '50%',
-                            objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)',
-                            display: 'block',
+                            width: 42, height: 42, borderRadius: '50%',
+                            objectFit: 'cover', display: 'block', flexShrink: 0,
+                            border: idx === 0
+                              ? '1.5px solid rgba(196,163,94,0.45)'
+                              : '1px solid rgba(255,255,255,0.09)',
                           }}
                         />
                       ) : (
                         <div style={{
-                          width: 36, height: 36, borderRadius: '50%',
-                          background: 'rgba(255,255,255,0.06)',
+                          width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+                          background: 'rgba(255,255,255,0.05)',
                           border: '1px solid rgba(255,255,255,0.08)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '12px', color: 'rgba(240,236,228,0.2)',
+                          fontSize: '13px', color: 'rgba(240,236,228,0.18)',
                         }}>?</div>
                       )}
-                    </td>
-                    <td style={{ padding: '10px 0', color: '#F0ECE4' }}>{a.artist_name}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.6)' }}>{a.order_count}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.6)' }}>{formatTHB(Number(a.gross_sales))}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.6)' }}>{formatTHB(Number(a.total_net))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: idx === 0 ? '600' : '400',
+                        color: idx === 0 ? '#F0ECE4' : 'rgba(240,236,228,0.75)',
+                      }}>
+                        {a.artist_name}
+                      </span>
+                    </div>
+                  </td>
+                  {/* Orders */}
+                  <td style={{
+                    padding: '15px 0', textAlign: 'right', verticalAlign: 'middle',
+                    fontSize: '14px', color: 'rgba(240,236,228,0.55)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {a.order_count}
+                  </td>
+                  {/* Gross */}
+                  <td style={{
+                    padding: '15px 0', textAlign: 'right', verticalAlign: 'middle',
+                    fontSize: '14px', color: 'rgba(240,236,228,0.55)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {formatTHB(Number(a.gross_sales))}
+                  </td>
+                  {/* NET */}
+                  <td style={{
+                    padding: '15px 0', textAlign: 'right', verticalAlign: 'middle',
+                    fontSize: '14px', color: 'rgba(240,236,228,0.55)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {formatTHB(Number(a.total_net))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-        {/* Daily Trend Chart — full width, shown for all reports with row data */}
-        {dailyData.some(d => d.orders > 0) && (
-          <DailyTrendChart
-            data={dailyData}
-            month={report.reporting_month}
-            year={report.reporting_year}
-          />
-        )}
+      {/* ── Daily Trend Chart ─────────────────────────────────────────────── */}
+      {dailyData.some(d => d.orders > 0) && (
+        <DailyTrendChart
+          data={dailyData}
+          month={report.reporting_month}
+          year={report.reporting_year}
+        />
+      )}
 
-      </div>
     </div>
   )
 }

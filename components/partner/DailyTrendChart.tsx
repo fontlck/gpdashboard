@@ -83,21 +83,25 @@ export function DailyTrendChart({
       label: 'Best Day',
       value: bestIdx >= 0 ? fmtValue(values[bestIdx], mode) : '—',
       sub:   bestIdx >= 0 ? `${monthName} ${data[bestIdx].day}` : 'no activity',
+      gold:  true,
     },
     {
       label: 'Lowest Active Day',
       value: lowestActiveIdx >= 0 ? fmtValue(values[lowestActiveIdx], mode) : '—',
       sub:   lowestActiveIdx >= 0 ? `${monthName} ${data[lowestActiveIdx].day}` : 'no activity',
+      gold:  false,
     },
     {
       label: 'Avg / Active Day',
       value: activeDays > 0 ? fmtValue(avgVal, mode) : '—',
       sub:   'active days only',
+      gold:  false,
     },
     {
       label: 'Active Days',
       value: `${activeDays}`,
       sub:   `of ${data.length} days`,
+      gold:  false,
     },
   ]
 
@@ -108,7 +112,7 @@ export function DailyTrendChart({
       background: '#0D0F1A',
       border: '1px solid rgba(255,255,255,0.06)',
       borderRadius: '16px',
-      padding: '24px',
+      padding: '28px',
       gridColumn: '1 / -1',
     }}>
 
@@ -119,16 +123,16 @@ export function DailyTrendChart({
         flexWrap: 'wrap', gap: '12px',
       }}>
         <h2 style={{
-          margin: 0, fontSize: '14px', fontWeight: '600',
-          color: 'rgba(240,236,228,0.6)',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
+          margin: 0, fontSize: '11px', fontWeight: '600',
+          color: 'rgba(240,236,228,0.3)',
+          letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           Daily Trend — {monthName} {year}
         </h2>
 
         {/* Tab switcher */}
         <div style={{
-          display: 'flex', gap: '3px',
+          display: 'flex', gap: '2px',
           background: 'rgba(255,255,255,0.04)',
           borderRadius: '10px', padding: '3px',
         }}>
@@ -140,8 +144,8 @@ export function DailyTrendChart({
                 padding: '6px 16px', borderRadius: '7px',
                 border: 'none', cursor: 'pointer',
                 fontSize: '12px', fontWeight: '500',
-                background: mode === t.key ? 'rgba(196,163,94,0.15)' : 'transparent',
-                color: mode === t.key ? '#C4A35E' : 'rgba(240,236,228,0.4)',
+                background: mode === t.key ? 'rgba(196,163,94,0.14)' : 'transparent',
+                color: mode === t.key ? '#C4A35E' : 'rgba(240,236,228,0.38)',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -159,44 +163,46 @@ export function DailyTrendChart({
           position: 'absolute', inset: '0 0 28px 0',
           pointerEvents: 'none', zIndex: 0,
         }}>
-          {[0.25, 0.5, 0.75].map(pct => (
+          {[0.25, 0.5, 0.75, 1.0].map(pct => (
             <div key={pct} style={{
               position: 'absolute',
               top: `${(1 - pct) * 100}%`,
               left: 0, right: 0,
               height: '1px',
-              background: 'rgba(255,255,255,0.05)',
+              background: pct === 1.0
+                ? 'rgba(255,255,255,0.0)'
+                : 'rgba(255,255,255,0.04)',
             }} />
           ))}
           {/* Baseline */}
           <div style={{
             position: 'absolute', bottom: 0,
             left: 0, right: 0, height: '1px',
-            background: 'rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.1)',
           }} />
         </div>
 
-        {/* Bars */}
+        {/* Bars + best-day dot */}
         <div style={{
           display: 'flex', alignItems: 'flex-end',
-          height: '150px', gap: '2px',
+          height: '180px', gap: '2px',
           position: 'relative', zIndex: 1,
           paddingBottom: '1px',
         }}>
           {data.map((d, i) => {
-            const val      = values[i]
-            const isZero   = val === 0
+            const val       = values[i]
+            const isZero    = val === 0
             const heightPct = isZero
               ? 0.5
               : Math.max((val / maxVal) * 100, 2)
-            const isHov   = hovered === i
-            const isBest  = i === bestIdx
+            const isHov    = hovered === i
+            const isBest   = i === bestIdx
 
             let barBg: string
-            if (isZero)      barBg = 'rgba(255,255,255,0.05)'
-            else if (isHov)  barBg = 'rgba(196,163,94,0.85)'
-            else if (isBest) barBg = 'rgba(196,163,94,0.65)'
-            else             barBg = 'rgba(196,163,94,0.4)'
+            if (isZero)       barBg = 'rgba(255,255,255,0.04)'
+            else if (isHov)   barBg = 'rgba(196,163,94,0.9)'
+            else if (isBest)  barBg = 'rgba(196,163,94,0.75)'
+            else              barBg = 'rgba(196,163,94,0.35)'
 
             return (
               <div
@@ -204,31 +210,46 @@ export function DailyTrendChart({
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
                 style={{
-                  flex: 1,
+                  flex: 1, minWidth: 0,
                   height: `${heightPct}%`,
+                  position: 'relative',
+                  cursor: 'default',
+                }}
+              >
+                {/* The bar itself */}
+                <div style={{
+                  position: 'absolute', inset: 0,
                   background: barBg,
                   borderRadius: '2px 2px 0 0',
-                  transition: 'background 0.1s ease',
-                  cursor: 'default',
-                  minWidth: 0,
-                }}
-              />
+                  transition: 'background 0.12s ease',
+                }} />
+                {/* Best-day crown dot */}
+                {isBest && !isZero && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-7px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '5px', height: '5px',
+                    borderRadius: '50%',
+                    background: '#C4A35E',
+                    boxShadow: '0 0 6px rgba(196,163,94,0.7)',
+                  }} />
+                )}
+              </div>
             )
           })}
         </div>
 
         {/* X-axis labels */}
-        <div style={{
-          display: 'flex', marginTop: '6px',
-          paddingBottom: '4px',
-        }}>
+        <div style={{ display: 'flex', marginTop: '7px' }}>
           {data.map((d, i) => {
             const show = d.day === 1 || d.day % 5 === 0 || d.day === data.length
             return (
               <div key={i} style={{
                 flex: 1, textAlign: 'center',
                 fontSize: '10px',
-                color: show ? 'rgba(240,236,228,0.25)' : 'transparent',
+                color: show ? 'rgba(240,236,228,0.22)' : 'transparent',
                 minWidth: 0,
               }}>
                 {d.day}
@@ -241,31 +262,40 @@ export function DailyTrendChart({
         {hovered !== null && (
           <div style={{
             position: 'absolute',
-            // anchor above the chart, horizontally centered over the bar
-            top: '-4px',
+            top: '-6px',
             left: `${((hovered + 0.5) / data.length) * 100}%`,
             transform: hovered < 3
               ? 'translateX(0%)'
               : hovered > data.length - 4
               ? 'translateX(-100%)'
               : 'translateX(-50%)',
-            background: 'rgba(8,10,20,0.96)',
-            border: '1px solid rgba(196,163,94,0.25)',
-            borderRadius: '8px',
-            padding: '7px 12px',
-            fontSize: '12px',
-            color: '#F0ECE4',
+            background: 'rgba(7,9,18,0.97)',
+            border: '1px solid rgba(196,163,94,0.28)',
+            borderRadius: '9px',
+            padding: '9px 14px',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
             zIndex: 20,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
           }}>
-            <span style={{ color: 'rgba(240,236,228,0.4)', marginRight: '8px' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.38)', marginBottom: '4px' }}>
               {monthName} {data[hovered].day}
-            </span>
-            <span style={{ fontWeight: '600', color: '#C4A35E' }}>
+              {hovered === bestIdx && (
+                <span style={{
+                  marginLeft: '6px', fontSize: '10px', fontWeight: '600',
+                  color: 'rgba(196,163,94,0.7)', letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                }}>
+                  Best
+                </span>
+              )}
+            </div>
+            <div style={{
+              fontSize: '15px', fontWeight: '700', color: '#C4A35E',
+              letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums',
+            }}>
               {fmtValue(values[hovered], mode)}
-            </span>
+            </div>
           </div>
         )}
       </div>
@@ -276,34 +306,35 @@ export function DailyTrendChart({
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '1px',
         background: 'rgba(255,255,255,0.05)',
-        borderRadius: '10px',
+        borderRadius: '12px',
         overflow: 'hidden',
-        marginTop: '20px',
+        marginTop: '22px',
       }}>
         {stats.map(s => (
           <div key={s.label} style={{
             background: '#0D0F1A',
-            padding: '14px 18px',
+            padding: '16px 20px',
           }}>
             <div style={{
               fontSize: '10px', fontWeight: '600',
-              letterSpacing: '0.07em', textTransform: 'uppercase',
-              color: 'rgba(240,236,228,0.28)',
-              marginBottom: '7px',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: s.gold ? 'rgba(196,163,94,0.5)' : 'rgba(240,236,228,0.25)',
+              marginBottom: '8px',
             }}>
               {s.label}
             </div>
             <div style={{
-              fontSize: '15px', fontWeight: '700',
-              color: '#F0ECE4',
-              marginBottom: '3px',
-              letterSpacing: '-0.01em',
+              fontSize: '16px', fontWeight: '700',
+              color: s.gold ? '#C4A35E' : '#F0ECE4',
+              marginBottom: '4px',
+              letterSpacing: '-0.015em',
+              fontVariantNumeric: 'tabular-nums',
             }}>
               {s.value}
             </div>
             <div style={{
               fontSize: '11px',
-              color: 'rgba(240,236,228,0.28)',
+              color: 'rgba(240,236,228,0.25)',
             }}>
               {s.sub}
             </div>
