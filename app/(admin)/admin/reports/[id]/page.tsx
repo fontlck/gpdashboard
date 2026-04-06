@@ -89,7 +89,7 @@ export default async function AdminReportDetailPage({
     admin.from('refunds').select('*').eq('monthly_report_id', id).maybeSingle(),
     admin.from('artist_summaries').select('*').eq('monthly_report_id', id).order('order_count', { ascending: false }),
     admin.from('report_rows')
-      .select('id, row_number, charge_id, transaction_date, amount, net, opn_refunded, artist_name_raw')
+      .select('id, row_number, charge_id, transaction_date, amount, net, opn_refunded, artist_name_raw, artist_image_url')
       .eq('monthly_report_id', id)
       .order('transaction_date', { ascending: true })
       .order('row_number',       { ascending: true }),
@@ -105,7 +105,8 @@ export default async function AdminReportDetailPage({
     amount:           Number(r.amount),
     net:              Number(r.net),
     opn_refunded:     r.opn_refunded,
-    artist_name_raw:  r.artist_name_raw ?? null,
+    artist_name_raw:  r.artist_name_raw  ?? null,
+    artist_image_url: r.artist_image_url ?? null,
   }))
 
   const branch  = Array.isArray(report.branches) ? report.branches[0] : report.branches
@@ -304,11 +305,12 @@ export default async function AdminReportDetailPage({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Artist', 'Orders', 'Gross Sales', 'NET'].map(h => (
+                  {['', 'Artist', 'Orders', 'Gross Sales', 'NET'].map(h => (
                     <th key={h} style={{
                       padding: '8px 0', textAlign: 'left',
                       fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
                       textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
+                      width: h === '' ? 44 : undefined,
                     }}>{h}</th>
                   ))}
                 </tr>
@@ -316,6 +318,28 @@ export default async function AdminReportDetailPage({
               <tbody>
                 {artists.map(a => (
                   <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '8px 0' }}>
+                      {a.artist_image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={a.artist_image_url}
+                          alt=""
+                          style={{
+                            width: 36, height: 36, borderRadius: '50%',
+                            objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px', color: 'rgba(240,236,228,0.2)',
+                        }}>?</div>
+                      )}
+                    </td>
                     <td style={{ padding: '10px 0', color: '#F0ECE4' }}>{a.artist_name}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{a.order_count}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{formatTHB(Number(a.gross_sales))}</td>

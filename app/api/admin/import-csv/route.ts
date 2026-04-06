@@ -75,6 +75,7 @@ function detectColumns(headers: string[]): Record<string, string> {
     branch_name_primary:  find('branchName (metadata)', 'metadata[branchName]', 'branchname', 'branch_name'),
     branch_name_fallback: find('branch (metadata)', 'metadata[branch]', 'branch'),
     artist_name:          find('artistName (metadata)', 'metadata[artistName]', 'artistname', 'artist_name', 'artist'),
+    artist_image:         find('link (metadata)', 'metadata[link]', 'link', 'artist_image', 'image_url'),
     email:                find('customer_email', 'email', 'customeremail', 'customer[email]'),
   }
 }
@@ -162,7 +163,8 @@ export async function POST(request: NextRequest) {
   type TxRow = {
     charge_id: string; amount: number; fee: number; fee_vat: number; net: number
     currency: string; date: Date; refunded: boolean; refunded_amount: number
-    source: string; branch_name_raw: string; artist_name: string; email: string
+    source: string; branch_name_raw: string; artist_name: string
+    artist_image_url: string | null; email: string
     raw: Record<string, string>
   }
 
@@ -192,9 +194,10 @@ export async function POST(request: NextRequest) {
         (colMap.branch_name_fallback ? row[colMap.branch_name_fallback]?.trim() : '') ||
         ''
       ),
-      artist_name:     row[colMap.artist_name] ?? '',
-      email:           row[colMap.email] ?? '',
-      raw:             row,
+      artist_name:      row[colMap.artist_name] ?? '',
+      artist_image_url: (colMap.artist_image ? row[colMap.artist_image]?.trim() || null : null),
+      email:            row[colMap.email] ?? '',
+      raw:              row,
     })
   }
 
@@ -426,6 +429,7 @@ export async function POST(request: NextRequest) {
         payment_source:      r.source || null,
         branch_name_raw:     r.branch_name_raw || null,
         artist_name_raw:     r.artist_name || null,
+        artist_image_url:    r.artist_image_url,
         customer_email:      r.email || null,
         raw_data:            r.raw,
       }))
@@ -435,16 +439,21 @@ export async function POST(request: NextRequest) {
     // ── Populate artist_summaries ─────────────────────────────────────────────
     // Aggregate by artist name from this branch's transaction rows.
     // Blank artist names are grouped under '(Unknown)'.
-    type ArtistStats = { order_count: number; gross_sales: number; total_net: number }
+    type ArtistStats = {
+      order_count: number; gross_sales: number; total_net: number
+      artist_image_url: string | null
+    }
     const artistMap: Record<string, ArtistStats> = {}
     for (const r of rows) {
-      const name = r.artist_name.trim() || '(Unknown)'
-      const entry = artistMap[name] ?? { order_count: 0, gross_sales: 0, total_net: 0 }
+      const name  = r.artist_name.trim() || '(Unknown)'
+      const entry = artistMap[name] ?? { order_count: 0, gross_sales: 0, total_net: 0, artist_image_url: null }
       if (!r.refunded) {
         entry.order_count++
         entry.gross_sales += r.amount
       }
       entry.total_net += r.net
+      // First non-null image URL wins per artist
+      if (!entry.artist_image_url && r.artist_image_url) entry.artist_image_url = r.artist_image_url
       artistMap[name] = entry
     }
 
@@ -457,6 +466,7 @@ export async function POST(request: NextRequest) {
       order_count:       stats.order_count,
       gross_sales:       stats.gross_sales,
       total_net:         stats.total_net,
+      artist_image_url:  stats.artist_image_url,
     }))
 
     if (artistRows.length > 0) {
