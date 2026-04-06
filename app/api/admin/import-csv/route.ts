@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
       uploaded_by:       user.id,
       original_filename: filename,
       storage_path:      storagePath,
-      status:            'processing',
+      status:            'pending',
       is_overwrite:      isOverwrite,
       row_count_total:   allRows.length,
     })
@@ -427,7 +427,7 @@ export async function POST(request: NextRequest) {
 
   // Finalise upload record
   await admin.from('csv_uploads').update({
-    status:             'completed',
+    status:             'imported',
     row_count_imported: totalImported,
     row_count_skipped:  totalSkipped + skippedCurrency + skippedStatus,
     branches_found:     branchesProcessed,
