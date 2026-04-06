@@ -1,141 +1,86 @@
-import { createClient } from '@/lib/supabase/server'
-import { AdminHeader } from '@/components/admin/AdminHeader'
-import { EmptyState } from '@/components/shared/EmptyState'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { formatTHB } from '@/lib/utils/currency'
-import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { RefundPageClient } from '@/components/admin/RefundPageClient'
+import type { BranchOption, RefundRow } from '@/components/admin/RefundPageClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Refunds' }
+export const dynamic = 'force-dynamic'
 
-type BranchRefundJoin = { name: string }
-type ReportRefundJoin = {
+// ── Join shapes from Supabase ─────────────────────────────────────────────────
+
+type BranchJoin = { name: string } | null
+type ReportJoin = {
   id: string
-  reporting_month: number
-  reporting_year: number
   status: string
-  branches: BranchRefundJoin | BranchRefundJoin[] | null
-}
-type RefundRow = {
+} | null
+
+type RawRefundRow = {
   id: string
   amount: number | string
-  reason: string | null
+  reason: string
   reference_number: string | null
   created_at: string
-  monthly_reports: ReportRefundJoin | ReportRefundJoin[] | null
+  branch_id: string
+  reporting_month: number
+  reporting_year: number
+  monthly_report_id: string | null
+  branches: BranchJoin | BranchJoin[]
+  monthly_reports: ReportJoin | ReportJoin[]
 }
 
 export default async function AdminRefundsPage() {
-  const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { data: rawRefunds } = await supabase
-    .from('refunds')
-    .select(`
-      id, amount, reason, reference_number, created_at,
-      monthly_reports (
-        id, reporting_month, reporting_year, status,
-        branches ( name )
-      )
-    `)
-    .order('created_at', { ascending: false })
+  const [branchesRes, refundsRes] = await Promise.all([
+    admin
+      .from('branches')
+      .select('id, name')
+      .order('name'),
 
-  const refunds = (rawRefunds as unknown as RefundRow[] | null) ?? []
+    admin
+      .from('refunds')
+      .select(`
+        id, amount, reason, reference_number, created_at,
+        branch_id, reporting_month, reporting_year, monthly_report_id,
+        branches ( name ),
+        monthly_reports ( id, status )
+      `)
+      .order('created_at', { ascending: false }),
+  ])
+
+  // ── Branches for form selector ────────────────────────────────────────────
+  const branches: BranchOption[] = (branchesRes.data ?? []).map(b => ({
+    id:   b.id,
+    name: b.name,
+  }))
+
+  // ── Flatten refund rows for client component ──────────────────────────────
+  const raw = (refundsRes.data as unknown as RawRefundRow[] | null) ?? []
+
+  const refunds: RefundRow[] = raw.map(r => {
+    const branch = Array.isArray(r.branches) ? r.branches[0] : r.branches
+    const report = Array.isArray(r.monthly_reports) ? r.monthly_reports[0] : r.monthly_reports
+
+    return {
+      id:                r.id,
+      amount:            Number(r.amount),
+      reason:            r.reason,
+      reference_number:  r.reference_number,
+      created_at:        r.created_at,
+      branch_id:         r.branch_id,
+      reporting_month:   r.reporting_month,
+      reporting_year:    r.reporting_year,
+      monthly_report_id: r.monthly_report_id,
+      // joined
+      branch_name:   branch?.name ?? '—',
+      report_status: report?.status ?? null,
+      report_id:     report?.id ?? null,
+    }
+  })
 
   return (
     <div>
-      <AdminHeader
-        title="Refunds"
-        subtitle="Business refunds deducted from monthly partner payouts"
-        actions={
-          <button style={{
-            padding: '10px 18px', borderRadius: '10px',
-            background: 'rgba(239,68,68,0.12)',
-            color: '#EF4444', fontSize: '13px', fontWeight: '700',
-            border: '1px solid rgba(239,68,68,0.25)', cursor: 'pointer',
-            letterSpacing: '0.04em',
-          }}>
-            + Record Refund
-          </button>
-        }
-      />
-
-      <div style={{
-        background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: '16px', overflow: 'hidden',
-      }}>
-        {refunds.length === 0 ? (
-          <EmptyState
-            icon="↩"
-            title="No refunds recorded"
-            description="Refunds reduce the adjusted NET before calculating partner payout."
-          />
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Period', 'Branch', 'Amount', 'Reason', 'Reference', 'Report Status', 'Recorded'].map(h => (
-                    <th key={h} style={{
-                      padding: '12px 20px', textAlign: 'left',
-                      fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
-                      whiteSpace: 'nowrap',
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {refunds.map(r => {
-                  const report = Array.isArray(r.monthly_reports) ? r.monthly_reports[0] : r.monthly_reports
-                  const branch = report && (Array.isArray(report.branches) ? report.branches[0] : report.branches)
-
-                  return (
-                    <tr key={r.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding: '14px 20px', color: '#F0ECE4', whiteSpace: 'nowrap' }}>
-                        {report ? formatReportingPeriod(report.reporting_month, report.reporting_year) : '—'}
-                      </td>
-                      <td style={{ padding: '14px 20px', color: 'rgba(240,236,228,0.7)' }}>
-                        {branch?.name ?? '—'}
-                      </td>
-                      <td style={{ padding: '14px 20px', color: '#EF4444', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                        − {formatTHB(Number(r.amount))}
-                      </td>
-                      <td style={{ padding: '14px 20px', color: 'rgba(240,236,228,0.6)', maxWidth: '220px' }}>
-                        <span style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        }}>
-                          {r.reason}
-                        </span>
-                      </td>
-                      <td style={{ padding: '14px 20px', color: 'rgba(240,236,228,0.4)', fontFamily: 'monospace', fontSize: '12px' }}>
-                        {r.reference_number ?? '—'}
-                      </td>
-                      <td style={{ padding: '14px 20px' }}>
-                        {report ? <StatusBadge status={report.status as 'draft'} /> : '—'}
-                      </td>
-                      <td style={{ padding: '14px 20px', color: 'rgba(240,236,228,0.4)', whiteSpace: 'nowrap' }}>
-                        {formatFullDate(r.created_at)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Info note */}
-      <div style={{
-        marginTop: '16px', padding: '14px 20px', borderRadius: '10px',
-        background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.1)',
-        fontSize: '12px', color: 'rgba(239,100,100,0.7)',
-      }}>
-        MVP: one refund per branch per reporting month. The refund amount is subtracted from NET before applying the revenue share percentage.
-        If the refund exceeds NET, the partner payout is set to ฿0.00.
-      </div>
+      <RefundPageClient branches={branches} refunds={refunds} />
     </div>
   )
 }
