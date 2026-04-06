@@ -6,6 +6,8 @@ import { formatTHB } from '@/lib/utils/currency'
 import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
+import type { DayData } from '@/components/partner/DailyTrendChart'
 
 export const metadata: Metadata = { title: 'Report Detail' }
 export const dynamic = 'force-dynamic'
@@ -120,15 +122,40 @@ export default async function PartnerReportDetailPage({
   // ── Status gate — draft reports are invisible to partners ─────────────────
   if (report.status !== 'approved' && report.status !== 'paid') notFound()
 
-  // ── Fetch refund + artist summaries ──────────────────────────────────────
-  const [refundRes, artistRes] = await Promise.all([
+  // ── Fetch refund + artist summaries + daily rows ─────────────────────────
+  const [refundRes, artistRes, rowsRes] = await Promise.all([
     supabase.from('refunds').select('amount, reason, reference_number').eq('monthly_report_id', id).maybeSingle(),
     supabase.from('artist_summaries').select('id, artist_name, artist_image_url, order_count, gross_sales, total_net')
       .eq('monthly_report_id', id).order('order_count', { ascending: false }),
+    supabase.from('report_rows').select('transaction_date, amount, net')
+      .eq('monthly_report_id', id),
   ])
 
   const refund  = refundRes.data
   const artists = artistRes.data ?? []
+
+  // ── Aggregate daily data (Bangkok UTC+7) ──────────────────────────────────
+  const BKK_OFFSET_MS = 7 * 60 * 60 * 1000
+  const dailyMap = new Map<number, { gross: number; net: number; orders: number }>()
+
+  for (const row of rowsRes.data ?? []) {
+    const bkkMs  = new Date(row.transaction_date).getTime() + BKK_OFFSET_MS
+    const bkkDate = new Date(bkkMs)
+    const day    = bkkDate.getUTCDate()
+    const existing = dailyMap.get(day) ?? { gross: 0, net: 0, orders: 0 }
+    existing.gross  += Number(row.amount)
+    existing.net    += Number(row.net)
+    existing.orders += 1
+    dailyMap.set(day, existing)
+  }
+
+  // Generate all calendar days in the reporting month (including zero-days)
+  const daysInMonth = new Date(report.reporting_year, report.reporting_month, 0).getDate()
+  const dailyData: DayData[] = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1
+    const agg = dailyMap.get(day) ?? { gross: 0, net: 0, orders: 0 }
+    return { day, ...agg }
+  })
 
   // ── Derived values ────────────────────────────────────────────────────────
   const period      = formatReportingPeriod(report.reporting_month, report.reporting_year)
@@ -419,6 +446,15 @@ export default async function PartnerReportDetailPage({
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* Daily Trend Chart — full width, shown for all reports with row data */}
+        {dailyData.some(d => d.orders > 0) && (
+          <DailyTrendChart
+            data={dailyData}
+            month={report.reporting_month}
+            year={report.reporting_year}
+          />
         )}
 
       </div>
