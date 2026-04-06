@@ -4,6 +4,8 @@ import { AdminHeader } from '@/components/admin/AdminHeader'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatTHB } from '@/lib/utils/currency'
 import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
+import { OrdersTable } from '@/components/admin/OrdersTable'
+import type { OrderRow } from '@/components/admin/OrdersTable'
 import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 
@@ -83,13 +85,28 @@ export default async function AdminReportDetailPage({
   const report = rawReport as unknown as ReportDetailRow | null
   if (!report) notFound()
 
-  const [refundRes, artistRes] = await Promise.all([
+  const [refundRes, artistRes, rowsRes] = await Promise.all([
     admin.from('refunds').select('*').eq('monthly_report_id', id).maybeSingle(),
     admin.from('artist_summaries').select('*').eq('monthly_report_id', id).order('order_count', { ascending: false }),
+    admin.from('report_rows')
+      .select('id, row_number, charge_id, transaction_date, amount, net, opn_refunded, artist_name_raw')
+      .eq('monthly_report_id', id)
+      .order('transaction_date', { ascending: true })
+      .order('row_number',       { ascending: true }),
   ])
 
   const refund  = refundRes.data
   const artists = artistRes.data ?? []
+  const orderRows: OrderRow[] = (rowsRes.data ?? []).map(r => ({
+    id:               r.id,
+    row_number:       r.row_number,
+    charge_id:        r.charge_id,
+    transaction_date: r.transaction_date,
+    amount:           Number(r.amount),
+    net:              Number(r.net),
+    opn_refunded:     r.opn_refunded,
+    artist_name_raw:  r.artist_name_raw ?? null,
+  }))
 
   const branch  = Array.isArray(report.branches) ? report.branches[0] : report.branches
   const partner = branch && (Array.isArray(branch.partners) ? branch.partners[0] : branch.partners)
@@ -307,6 +324,16 @@ export default async function AdminReportDetailPage({
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Order Rows — inline artist correction */}
+        {orderRows.length > 0 && (
+          <div style={{
+            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
+          }}>
+            <OrdersTable rows={orderRows} />
           </div>
         )}
       </div>
