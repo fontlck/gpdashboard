@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatTHB } from '@/lib/utils/currency'
-import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
+import { formatReportingPeriod, formatFullDate, formatDuration } from '@/lib/utils/date'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic'
 
 type PartnerJoin  = { name: string }
 type BranchJoin   = {
-  name: string; partner_id: string
+  id: string; name: string; partner_id: string
+  partnership_start_date: string | null
   partners: PartnerJoin | PartnerJoin[] | null
 }
 
@@ -105,7 +106,7 @@ export default async function PartnerReportDetailPage({
       total_transaction_count,
       approved_at, paid_at,
       branches (
-        name, partner_id,
+        id, name, partner_id, partnership_start_date,
         partners ( name )
       )
     `)
@@ -121,6 +122,36 @@ export default async function PartnerReportDetailPage({
 
   // ── Status gate — draft reports are invisible to partners ─────────────────
   if (report.status !== 'approved' && report.status !== 'paid') notFound()
+
+  // ── Partnership start date for this branch (with fallback) ───────────────
+  let branchStartDate: string | null = branch?.partnership_start_date ?? null
+
+  if (!branchStartDate && branch?.id) {
+    // Fallback: derive from earliest transaction_date across this branch's reports
+    const { data: branchReports } = await supabase
+      .from('monthly_reports')
+      .select('id')
+      .eq('branch_id', branch.id)
+
+    const reportIds = (branchReports ?? []).map((r: { id: string }) => r.id)
+
+    if (reportIds.length > 0) {
+      const { data: earliest } = await supabase
+        .from('report_rows')
+        .select('transaction_date')
+        .in('monthly_report_id', reportIds)
+        .order('transaction_date', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+      if (earliest?.transaction_date) {
+        // Convert UTC timestamp → Bangkok (UTC+7) "YYYY-MM-DD"
+        const bkkMs = new Date(earliest.transaction_date).getTime() + 7 * 60 * 60 * 1000
+        const d     = new Date(bkkMs)
+        branchStartDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+      }
+    }
+  }
 
   // ── Fetch refund + artist summaries + daily rows ─────────────────────────
   const [refundRes, artistRes, rowsRes] = await Promise.all([
@@ -282,6 +313,11 @@ export default async function PartnerReportDetailPage({
     )
   }
 
+  // Parse branchStartDate "YYYY-MM-DD" as a local (non-UTC) Date for display
+  const branchStartLocal: Date | null = branchStartDate
+    ? (() => { const [y, m, d] = branchStartDate.split('-').map(Number); return new Date(y, m - 1, d) })()
+    : null
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -353,6 +389,12 @@ export default async function PartnerReportDetailPage({
             )}
             {report.paid_at && (
               <ROW label="Paid on" value={formatFullDate(report.paid_at)} />
+            )}
+            {branchStartLocal && (
+              <>
+                <ROW label="Partner Since"        value={formatFullDate(branchStartLocal)} />
+                <ROW label="Partnership Duration" value={formatDuration(branchStartLocal)} muted />
+              </>
             )}
           </div>
 

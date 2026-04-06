@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 }
 
 type BranchHeroJoin = {
+  id: string
   name: string
   partnership_start_date: string | null
   partnership_start_date_source: string | null
@@ -45,7 +46,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
       .from('partners')
       .select(`
         name,
-        branches ( name, partnership_start_date, partnership_start_date_source, is_active )
+        branches ( id, name, partnership_start_date, partnership_start_date_source, is_active )
       `)
       .eq('id', profile.partner_id)
       .single()
@@ -72,6 +73,52 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
         })
         startDate   = sorted[0].partnership_start_date ?? null
         startSource = sorted[0].partnership_start_date_source ?? null
+      }
+    }
+  }
+
+  // ── Fallback: if no manual start date, derive from earliest transaction ──────
+  // Converts a UTC timestamp to a Bangkok (UTC+7) "YYYY-MM-DD" date string.
+  function utcToBkkDateStr(utcTs: string): string {
+    const ms  = new Date(utcTs).getTime() + 7 * 60 * 60 * 1000
+    const d   = new Date(ms)
+    const y   = d.getUTCFullYear()
+    const mo  = String(d.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(d.getUTCDate()).padStart(2, '0')
+    return `${y}-${mo}-${day}`
+  }
+
+  if (!startDate && profile?.partner_id) {
+    const activeBranches = (() => {
+      const raw = (rawPartner as unknown as PartnerHeroRow | null)
+      if (!raw) return []
+      const b = Array.isArray(raw.branches) ? raw.branches : (raw.branches ? [raw.branches] : [])
+      return b.filter((br: BranchHeroJoin) => br.is_active)
+    })()
+
+    if (activeBranches.length > 0) {
+      const branchIds = activeBranches.map((b: BranchHeroJoin) => b.id)
+
+      // Get all report IDs for these branches
+      const { data: branchReports } = await supabase
+        .from('monthly_reports')
+        .select('id')
+        .in('branch_id', branchIds)
+
+      const reportIds = (branchReports ?? []).map((r: { id: string }) => r.id)
+
+      if (reportIds.length > 0) {
+        const { data: earliest } = await supabase
+          .from('report_rows')
+          .select('transaction_date')
+          .in('monthly_report_id', reportIds)
+          .order('transaction_date', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+
+        if (earliest?.transaction_date) {
+          startDate = utcToBkkDateStr(earliest.transaction_date)
+        }
       }
     }
   }
