@@ -66,15 +66,23 @@ export async function PATCH(
   const previousArtist  = existingRow.artist_name_raw
   const previousImage   = existingRow.artist_image_url
 
-  // ── Fetch the parent monthly_report for artist_summaries metadata ───────────
+  // ── Fetch the parent monthly_report for status check + artist_summaries metadata
   const { data: report, error: reportErr } = await admin
     .from('monthly_reports')
-    .select('id, branch_id, reporting_month, reporting_year')
+    .select('id, status, branch_id, reporting_month, reporting_year')
     .eq('id', monthlyReportId)
     .single()
 
   if (reportErr || !report) {
     return NextResponse.json({ error: 'Monthly report not found' }, { status: 404 })
+  }
+
+  // Block edits on approved or paid reports — UI hides the button but enforce at API level too
+  if (report.status === 'approved' || report.status === 'paid') {
+    return NextResponse.json(
+      { error: `Report is locked (status: ${report.status}). Artist corrections are not allowed after approval.` },
+      { status: 409 }
+    )
   }
 
   // ── Build update payload (only patch fields that were supplied) ─────────────

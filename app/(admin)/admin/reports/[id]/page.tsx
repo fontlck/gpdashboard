@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatTHB } from '@/lib/utils/currency'
 import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
 import { OrdersTable } from '@/components/admin/OrdersTable'
+import { ReportStatusActions } from '@/components/admin/ReportStatusActions'
 import type { OrderRow } from '@/components/admin/OrdersTable'
 import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
@@ -51,6 +52,9 @@ type ReportDetailRow = {
   // Timestamps
   recalculated_at: string | null
   approved_at:     string | null
+  approved_by:     string | null
+  paid_at:         string | null
+  paid_by:         string | null
   // Join
   branches: BranchDetailJoin | BranchDetailJoin[] | null
 }
@@ -73,7 +77,7 @@ export default async function AdminReportDetailPage({
       fixed_rent_snapshot, fixed_rent_vat_mode_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
       total_transaction_count, total_skipped_currency, total_skipped_date,
-      recalculated_at, approved_at,
+      recalculated_at, approved_at, approved_by, paid_at, paid_by,
       branches (
         name, code, location,
         partners ( name, vat_number )
@@ -115,6 +119,8 @@ export default async function AdminReportDetailPage({
   const period       = formatReportingPeriod(report.reporting_month, report.reporting_year)
   const isFixedRent  = report.payout_type_snapshot === 'fixed_rent'
   const vatPct       = `${(report.vat_rate_snapshot * 100).toFixed(0)}%`
+  // Reports are locked for editing once approved or paid
+  const locked       = report.status === 'approved' || report.status === 'paid'
 
   // ── Shared row component ────────────────────────────────────────────────────
 
@@ -276,8 +282,15 @@ export default async function AdminReportDetailPage({
             <ROW label="Skipped (date)"      value={report.total_skipped_date || '—'} />
             {branch?.location && <ROW label="Location" value={branch.location} />}
             <ROW label="Recalculated"        value={report.recalculated_at ? formatFullDate(report.recalculated_at) : '—'} />
-            {report.approved_at && <ROW label="Approved" value={formatFullDate(report.approved_at)} />}
           </div>
+
+          {/* Status & Approval actions */}
+          <ReportStatusActions
+            reportId={id}
+            status={report.status as 'draft' | 'approved' | 'paid'}
+            approvedAt={report.approved_at}
+            paidAt={report.paid_at}
+          />
 
           {/* Refund panel */}
           <div style={{
@@ -369,7 +382,7 @@ export default async function AdminReportDetailPage({
             background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
           }}>
-            <OrdersTable rows={orderRows} />
+            <OrdersTable rows={orderRows} locked={locked} />
           </div>
         )}
       </div>

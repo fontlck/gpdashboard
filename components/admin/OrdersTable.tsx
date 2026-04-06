@@ -63,7 +63,7 @@ function ArtistThumb({ url }: { url: string | null }) {
   )
 }
 
-export function OrdersTable({ rows }: { rows: OrderRow[] }) {
+export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked?: boolean }) {
   const router = useRouter()
   const [showAll,    setShowAll]    = useState(false)
   const [edit,       setEdit]       = useState<EditState | null>(null)
@@ -291,7 +291,11 @@ export function OrdersTable({ rows }: { rows: OrderRow[] }) {
 
                     {/* Action */}
                     <td style={{ ...cell, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {isEditing ? (
+                      {locked ? (
+                        <span style={{ fontSize: 11, color: 'rgba(240,236,228,0.2)' }}>
+                          🔒
+                        </span>
+                      ) : isEditing ? (
                         <span style={{ display: 'inline-flex', gap: 6 }}>
                           <button
                             onClick={saveEdit}

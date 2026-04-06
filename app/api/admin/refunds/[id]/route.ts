@@ -109,6 +109,22 @@ export async function PATCH(
     return NextResponse.json({ error: 'Refund not found' }, { status: 404 })
   }
 
+  // ── Lock check: block edits if the linked report is approved or paid ────────
+  if (existingRefund.monthly_report_id) {
+    const { data: linkedReport } = await admin
+      .from('monthly_reports')
+      .select('status')
+      .eq('id', existingRefund.monthly_report_id)
+      .single()
+
+    if (linkedReport?.status === 'approved' || linkedReport?.status === 'paid') {
+      return NextResponse.json(
+        { error: `Report is locked (status: ${linkedReport.status}). Refunds cannot be edited after approval.` },
+        { status: 409 }
+      )
+    }
+  }
+
   // ── Build update payload ────────────────────────────────────────────────────
   const updatePayload: Record<string, unknown> = {
     updated_at: new Date().toISOString(),

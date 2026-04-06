@@ -501,19 +501,28 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
                       {fmtDate(r.created_at)}
                     </td>
                     <td style={{ ...tdStyle, textAlign: 'right' }}>
-                      <button
-                        onClick={() => openEdit(r)}
-                        style={{
-                          padding: '5px 12px', borderRadius: '6px',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          background: 'transparent',
-                          color: 'rgba(240,236,228,0.5)',
-                          fontSize: '12px', cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Edit
-                      </button>
+                      {(r.report_status === 'approved' || r.report_status === 'paid') ? (
+                        <span
+                          title={`Locked — report is ${r.report_status}`}
+                          style={{ fontSize: '14px', color: 'rgba(240,236,228,0.2)' }}
+                        >
+                          🔒
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => openEdit(r)}
+                          style={{
+                            padding: '5px 12px', borderRadius: '6px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'transparent',
+                            color: 'rgba(240,236,228,0.5)',
+                            fontSize: '12px', cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

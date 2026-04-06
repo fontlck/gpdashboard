@@ -375,6 +375,12 @@ export async function POST(request: NextRequest) {
       continue
     }
 
+    // Block overwrite of approved or paid reports — status is forward-only
+    if (existingReport && (existingReport.status === 'approved' || existingReport.status === 'paid')) {
+      totalSkipped += rows.length
+      continue
+    }
+
     const reportPayload = {
       csv_upload_id:              csvUploadId,
       total_transaction_count:    rows.length,
