@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
-import { PartnershipHero } from '@/components/partner/PartnershipHero'
+import { formatFullDate, formatDuration } from '@/lib/utils/date'
 import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 
@@ -120,30 +120,42 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
     }
   }
 
+  // Parse "YYYY-MM-DD" as local midnight to avoid UTC drift
+  function parseLocalDate(ymd: string): Date {
+    const [y, m, d] = ymd.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100dvh', background: '#080A10' }}>
       <PartnerSidebar />
 
       <main style={{
-        flex:      1,
-        overflowY: 'auto',
-        minWidth:  0,
-        display:   'flex',
+        flex:          1,
+        overflowY:     'auto',
+        minWidth:      0,
+        display:       'flex',
         flexDirection: 'column',
-        gap:       '0',
+        gap:           '0',
       }}>
-        {/* Hero — full width at the top of every partner page */}
-        <div style={{ padding: '32px 36px 0' }}>
-          <PartnershipHero
-            partnerName={partnerName}
-            branchName={branchName}
-            partnershipStartDate={startDate}
-            partnershipStartDateSource={startSource}
-          />
+        {/* Compact partnership line */}
+        <div style={{ padding: '24px 36px 0' }}>
+          <span style={{ fontSize: '13px', color: 'rgba(240,236,228,0.38)', letterSpacing: '0.01em' }}>
+            <span style={{ color: 'rgba(196,163,94,0.65)', marginRight: '8px' }}>✦</span>
+            {partnerName}
+            {startDate && (
+              <>
+                <span style={{ margin: '0 8px', opacity: 0.35 }}>·</span>
+                Partner since {formatFullDate(parseLocalDate(startDate))}
+                <span style={{ margin: '0 8px', opacity: 0.35 }}>·</span>
+                {formatDuration(startDate)}
+              </>
+            )}
+          </span>
         </div>
 
         {/* Page content */}
-        <div style={{ padding: '28px 36px 36px' }}>
+        <div style={{ padding: '16px 36px 36px' }}>
           {children}
         </div>
       </main>

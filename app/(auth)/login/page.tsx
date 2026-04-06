@@ -161,13 +161,26 @@ export default function LoginPage() {
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
+
+          {/* Forgot password */}
+          <div style={{ textAlign: 'center', marginTop: '4px' }}>
+            <a
+              href="/forgot-password"
+              style={{
+                fontSize: '12px',
+                color: 'rgba(196,163,94,0.6)',
+                textDecoration: 'none',
+                letterSpacing: '0.02em',
+                transition: 'color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(196,163,94,1)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(196,163,94,0.6)')}
+            >
+              Forgot password?
+            </a>
+          </div>
         </form>
       </div>
-
-      <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px',
-        color: 'rgba(240,236,228,0.2)' }}>
-        Contact your administrator to reset your password.
-      </p>
     </div>
   )
 }
