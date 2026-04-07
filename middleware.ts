@@ -36,14 +36,17 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
-  const isLoginPage   = pathname === '/login'
-  const isAdminRoute  = pathname.startsWith('/admin')
+  const isLoginPage    = pathname === '/login'
+  const isAdminRoute   = pathname.startsWith('/admin')
   const isPartnerRoute = pathname.startsWith('/dashboard')
   const isAuthCallback = pathname.startsWith('/auth')
-  const isRoot        = pathname === '/'
+  const isRoot         = pathname === '/'
 
-  // Always allow auth callback
-  if (isAuthCallback) return supabaseResponse
+  // Public pages & API routes — always allow without auth
+  const isPublicAuthPage = pathname === '/forgot-password' || pathname === '/reset-password'
+  const isPublicApi      = pathname.startsWith('/api/auth/')
+
+  if (isAuthCallback || isPublicAuthPage || isPublicApi) return supabaseResponse
 
   // ── Not authenticated ────────────────────────────────────────
   if (!user) {
