@@ -388,6 +388,7 @@ export async function POST(request: NextRequest) {
       .eq('branch_id', branchId)
       .eq('is_referral_eligible', true)
       .eq('referral_partner_id', branchData.partner_id)
+      .neq('artist_name', '(Unknown)')
 
     if (eligibleArtists && eligibleArtists.length > 0) {
       for (const ea of eligibleArtists) {

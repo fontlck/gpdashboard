@@ -56,6 +56,7 @@ export async function GET() {
   const seenKeys = new Set<string>()
   const unconfigured: { artist_name: string; branch_id: string; branch_name: string }[] = []
   for (const row of summariesRes.data ?? []) {
+    if (row.artist_name === '(Unknown)') continue   // unassigned orders — not configurable
     const key = `${row.branch_id}::${row.artist_name}`
     if (!configuredKeys.has(key) && !seenKeys.has(key)) {
       seenKeys.add(key)
@@ -92,6 +93,9 @@ export async function POST(request: NextRequest) {
 
   if (!body.artist_name?.trim() || !body.branch_id) {
     return NextResponse.json({ error: 'artist_name and branch_id are required' }, { status: 400 })
+  }
+  if (body.artist_name.trim() === '(Unknown)') {
+    return NextResponse.json({ error: 'Unassigned orders cannot be configured for uplift' }, { status: 400 })
   }
   if (
     body.referral_uplift_pct !== undefined &&

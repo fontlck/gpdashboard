@@ -43,6 +43,7 @@ export default async function AdminArtistsPage() {
   const unconfigured: { artist_name: string; branch_id: string; branch_name: string }[] = []
   for (const row of summariesRes.data ?? []) {
     const r = row as unknown as { artist_name: string; branch_id: string; branches: { name: string } | null }
+    if (r.artist_name === '(Unknown)') continue   // unassigned orders — not configurable
     const key = `${r.branch_id}::${r.artist_name}`
     if (!configuredKeys.has(key) && !seenKeys.has(key)) {
       seenKeys.add(key)

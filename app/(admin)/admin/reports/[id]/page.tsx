@@ -407,7 +407,9 @@ export default async function AdminReportDetailPage({
                         }}>?</div>
                       )}
                     </td>
-                    <td style={{ padding: '10px 0', color: '#F0ECE4' }}>{a.artist_name}</td>
+                    <td style={{ padding: '10px 0', color: a.artist_name === '(Unknown)' ? 'rgba(240,236,228,0.3)' : '#F0ECE4' }}>
+                      {a.artist_name === '(Unknown)' ? '—' : a.artist_name}
+                    </td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{a.order_count}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.gross_sales))}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.total_net))}</td>

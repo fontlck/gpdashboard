@@ -780,7 +780,7 @@ export default async function PartnerReportDetailPage({
                         fontWeight: idx === 0 ? '600' : '400',
                         color: idx === 0 ? '#F0ECE4' : 'rgba(240,236,228,0.75)',
                       }}>
-                        {a.artist_name}
+                        {a.artist_name === '(Unknown)' ? '—' : a.artist_name}
                       </span>
                     </div>
                   </td>
