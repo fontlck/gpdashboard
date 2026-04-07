@@ -160,7 +160,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                     transform:    'translateX(-50%)',
                     width:        '5px', height: '5px',
                     borderRadius: '50%',
-                    background:   GOLD,
+                    background:   BLUE,
                     boxShadow:    `0 0 6px rgba(59,130,246,0.7)`,
                     zIndex:       2,
                     pointerEvents: 'none',
@@ -203,7 +203,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                       {d.label}{isBest && (
                         <span style={{
                           marginLeft: '6px', fontSize: '9px', fontWeight: '700',
-                          color: GOLD, letterSpacing: '0.08em', textTransform: 'uppercase',
+                          color: BLUE, letterSpacing: '0.08em', textTransform: 'uppercase',
                         }}>Best</span>
                       )}
                     </div>
