@@ -26,8 +26,8 @@ const BLUE       = '#60A5FA'
 const BLUE_DIM   = 'rgba(59,130,246,0.35)'
 const BLUE_HOV   = 'rgba(59,130,246,0.6)'
 const BLUE_BEST  = 'rgba(59,130,246,0.82)'
-const PEND       = 'rgba(255,255,255,0.06)'   // approved/pending bars — very muted
-const PEND_BDR   = 'rgba(255,255,255,0.1)'
+const PEND       = 'rgba(255,255,255,0.10)'   // approved/pending bars — visible but muted
+const PEND_BDR   = 'rgba(255,255,255,0.18)'
 
 export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
   const [hovered, setHovered] = useState<number | null>(null)
@@ -51,8 +51,34 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
       position:     'relative',
       overflow:     'hidden',
     }}>
+      {/* Grid background */}
+      <div style={{
+        position:        'absolute', inset: 0,
+        backgroundImage: 'linear-gradient(rgba(59,130,246,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.055) 1px, transparent 1px)',
+        backgroundSize:  '28px 28px',
+        WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+        maskImage:       'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+        pointerEvents:   'none', borderRadius: 'inherit',
+      }} />
+      {/* Bottom glow */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '72px',
+        background: 'radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.13) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-1px', left: '12%', right: '12%', height: '1px',
+        background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.7), transparent)',
+        pointerEvents: 'none',
+      }} />
+      {/* Top shimmer */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)',
+        pointerEvents: 'none',
+      }} />
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'relative', zIndex: 1 }}>
         <span style={{
           fontSize: '10px', fontWeight: '600', letterSpacing: '0.12em',
           textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)',
@@ -78,6 +104,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
       <div style={{
         position: 'relative',
         height:   `${CHART_H + LABEL_H}px`,
+        zIndex:   1,
       }}>
         {/* Horizontal grid lines */}
         {[0.25, 0.5, 0.75, 1].map(pct => (
@@ -231,12 +258,14 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
       {/* Summary stats */}
       {data.length > 0 && (
         <div style={{
-          display:    'flex',
-          gap:        '28px',
-          marginTop:  '14px',
-          paddingTop: '12px',
-          borderTop:  '1px solid rgba(255,255,255,0.05)',
-          flexWrap:   'wrap',
+          display:   'flex',
+          gap:       '28px',
+          marginTop: '14px',
+          paddingTop:'12px',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          flexWrap:  'wrap',
+          position:  'relative',
+          zIndex:    1,
         }}>
           <div>
             <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)', marginBottom: '3px' }}>

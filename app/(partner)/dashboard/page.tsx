@@ -29,6 +29,48 @@ const CARD: React.CSSProperties = {
   position:     'relative',
 }
 
+// Shared glow layer elements (rendered inside each card)
+const GRID_BG: React.CSSProperties = {
+  position:        'absolute',
+  inset:           0,
+  backgroundImage: [
+    'linear-gradient(rgba(59,130,246,0.055) 1px, transparent 1px)',
+    'linear-gradient(90deg, rgba(59,130,246,0.055) 1px, transparent 1px)',
+  ].join(','),
+  backgroundSize:        '28px 28px',
+  WebkitMaskImage:       'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+  maskImage:             'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+  pointerEvents:         'none',
+  borderRadius:          'inherit',
+}
+const GLOW_SPREAD: React.CSSProperties = {
+  position:      'absolute',
+  bottom:        0,
+  left:          0,
+  right:         0,
+  height:        '72px',
+  background:    'radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.13) 0%, transparent 70%)',
+  pointerEvents: 'none',
+}
+const GLOW_LINE: React.CSSProperties = {
+  position:      'absolute',
+  bottom:        '-1px',
+  left:          '12%',
+  right:         '12%',
+  height:        '1px',
+  background:    'linear-gradient(90deg, transparent, rgba(59,130,246,0.7), transparent)',
+  pointerEvents: 'none',
+}
+const TOP_SHIMMER: React.CSSProperties = {
+  position:      'absolute',
+  top:           0,
+  left:          0,
+  right:         0,
+  height:        '1px',
+  background:    'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)',
+  pointerEvents: 'none',
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function PartnerOverviewPage() {
@@ -167,17 +209,13 @@ export default async function PartnerOverviewPage() {
 
       {/* ── Layer 2: Unified Hero + KPI Card ────────────────────────────────── */}
       <div style={CARD}>
-
-        {/* Ambient radial glow — top right corner */}
-        <div style={{
-          position:      'absolute', top: '-60px', right: '-20px',
-          width:         '340px',   height: '260px',
-          background:    'radial-gradient(ellipse at top right, rgba(59,130,246,0.05) 0%, transparent 65%)',
-          pointerEvents: 'none',
-        }} />
+        <div style={GRID_BG} />
+        <div style={GLOW_SPREAD} />
+        <div style={GLOW_LINE} />
+        <div style={TOP_SHIMMER} />
 
         {/* Hero section */}
-        <div style={{ padding: '24px 28px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap' }}>
+        <div style={{ padding: '24px 28px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
 
           {/* Left — primary earnings figure */}
           <div>
@@ -240,9 +278,9 @@ export default async function PartnerOverviewPage() {
         </div>
 
         {/* ── KPI metric row — inside the card, separated by hairline ── */}
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '0' }} />
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '0', position: 'relative', zIndex: 1 }} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', position: 'relative', zIndex: 1 }}>
           {kpis.map(({ label, value, sub, color }, idx) => (
             <div key={label} style={{
               padding:     '16px 24px',
@@ -286,11 +324,14 @@ export default async function PartnerOverviewPage() {
       {/* ── Layer 2: Reports Table ───────────────────────────────────────────── */}
       {reports.length === 0 ? (
         <div style={{ ...CARD, padding: '64px 32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '24px', marginBottom: '12px', opacity: 0.2 }}>◫</div>
-          <p style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.28)', margin: 0 }}>
+          <div style={GRID_BG} />
+          <div style={GLOW_SPREAD} />
+          <div style={GLOW_LINE} />
+          <div style={{ fontSize: '24px', marginBottom: '12px', opacity: 0.2, position: 'relative', zIndex: 1 }}>◫</div>
+          <p style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(241,245,249,0.28)', margin: 0, position: 'relative', zIndex: 1 }}>
             No reports yet
           </p>
-          <p style={{ fontSize: '12px', color: 'rgba(240,236,228,0.18)', margin: '6px 0 0' }}>
+          <p style={{ fontSize: '12px', color: 'rgba(241,245,249,0.18)', margin: '6px 0 0', position: 'relative', zIndex: 1 }}>
             Monthly payout reports appear here once approved.
           </p>
         </div>
