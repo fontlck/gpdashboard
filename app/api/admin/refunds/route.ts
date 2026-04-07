@@ -17,12 +17,20 @@ type ReportSnapshot = {
   partner_share_base: number | string
   vat_amount: number | string
   final_payout: number | string
+  // Referred artist uplift — preserved across refund recalculations
+  referred_artist_uplift:     number | string
+  referred_artist_uplift_vat: number | string
 }
 
 function recalculate(report: ReportSnapshot, newRefundAmount: number) {
   const totalNet      = Number(report.total_net)
   const adjustedNet   = totalNet - newRefundAmount
   const hasNegative   = adjustedNet < 0
+
+  // Uplift is calculated from individual artist transactions at import time.
+  // Manual refunds do not change artist transaction data, so uplift is preserved.
+  const uplift    = Number(report.referred_artist_uplift    ?? 0)
+  const upliftVat = Number(report.referred_artist_uplift_vat ?? 0)
 
   const base: Record<string, unknown> = {
     total_refunds:            newRefundAmount,
@@ -42,13 +50,15 @@ function recalculate(report: ReportSnapshot, newRefundAmount: number) {
     const vatAmount        = report.is_vat_registered_snapshot
       ? partnerShareBase * vatR
       : 0
-    const finalPayout      = partnerShareBase + vatAmount
+    // Add uplift back — it is independent of refunds
+    const finalPayout      = partnerShareBase + vatAmount + uplift + upliftVat
 
     base.partner_share_base = partnerShareBase
     base.vat_amount         = vatAmount
     base.final_payout       = finalPayout
   }
   // fixed_rent: payout fields (partner_share_base, vat_amount, final_payout) unchanged
+  // final_payout already includes uplift as set at import time — no adjustment needed
 
   return base
 }
@@ -125,7 +135,8 @@ export async function POST(request: NextRequest) {
       id,
       payout_type_snapshot, revenue_share_pct_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
-      total_net, partner_share_base, vat_amount, final_payout
+      total_net, partner_share_base, vat_amount, final_payout,
+      referred_artist_uplift, referred_artist_uplift_vat
     `)
     .eq('branch_id', branch_id)
     .eq('reporting_month', reporting_month)

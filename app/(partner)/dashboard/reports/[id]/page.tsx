@@ -45,6 +45,10 @@ type ReportRow = {
   fixed_rent_vat_mode_snapshot:  'exclusive' | 'inclusive' | null
   is_vat_registered_snapshot:    boolean
   vat_rate_snapshot:             number
+  // Referred artist uplift
+  referred_artist_uplift:          number | null
+  referred_artist_uplift_vat:      number | null
+  referred_artist_uplift_snapshot: unknown[] | null
   // Counts
   total_transaction_count: number
   // Timestamps
@@ -208,6 +212,7 @@ export default async function PartnerReportDetailPage({
       payout_type_snapshot, revenue_share_pct_snapshot,
       fixed_rent_snapshot, fixed_rent_vat_mode_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
+      referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
       total_transaction_count,
       approved_at, paid_at,
       branches (
@@ -259,7 +264,7 @@ export default async function PartnerReportDetailPage({
   // ── Fetch refund + artist summaries + daily rows ─────────────────────────
   const [refundRes, artistRes, rowsRes] = await Promise.all([
     supabase.from('refunds').select('amount, reason, reference_number').eq('monthly_report_id', id).maybeSingle(),
-    supabase.from('artist_summaries').select('id, artist_name, artist_image_url, order_count, gross_sales, total_net')
+    supabase.from('artist_summaries').select('id, artist_name, artist_image_url, order_count, gross_sales, total_net, referral_uplift_amount, referral_uplift_pct_snapshot')
       .eq('monthly_report_id', id).order('order_count', { ascending: false }),
     supabase.from('report_rows').select('transaction_date, amount, net')
       .eq('monthly_report_id', id),
@@ -303,6 +308,14 @@ export default async function PartnerReportDetailPage({
   const adjustedNet      = Number(report.adjusted_net)
   const adjustedNetExVat = hasNeg ? 0 : adjustedNet / (1 + vatRate)
 
+  // Referred artist uplift — additive layer, zero when no eligible artists
+  const upliftBase = Number(report.referred_artist_uplift    ?? 0)
+  const upliftVat  = Number(report.referred_artist_uplift_vat ?? 0)
+  const upliftTotal = upliftBase + upliftVat
+  type UpliftEntry = { artist_name: string; uplift_pct: number; uplift_base: number; uplift_vat: number; uplift_total: number; total_net: number }
+  const upliftEntries = (report.referred_artist_uplift_snapshot ?? []) as UpliftEntry[]
+  const hasUplift = upliftTotal > 0
+
   // Parse branchStartDate "YYYY-MM-DD" as a local (non-UTC) Date for display
   const branchStartLocal: Date | null = branchStartDate
     ? (() => { const [y, m, d] = branchStartDate.split('-').map(Number); return new Date(y, m - 1, d) })()
@@ -345,6 +358,24 @@ export default async function PartnerReportDetailPage({
         </div>
       )}
 
+      {hasUplift && (
+        <>
+          <LedgerDivider />
+          <LEDGER label="Referred Artist Uplift" value={`+ ${formatTHB(upliftBase)}`} role="subtotal" />
+          {upliftEntries.map(e => (
+            <LEDGER
+              key={e.artist_name}
+              label={`${e.artist_name} (${e.uplift_pct}%)`}
+              value={formatTHB(e.uplift_base)}
+              indent
+            />
+          ))}
+          {report.is_vat_registered_snapshot && upliftVat > 0 && (
+            <LEDGER label={`+ VAT ${vatPct} on uplift`} value={formatTHB(upliftVat)} indent />
+          )}
+        </>
+      )}
+
       <LedgerPayout value={formatTHB(Number(report.final_payout))} />
 
       <div style={{
@@ -378,6 +409,24 @@ export default async function PartnerReportDetailPage({
           <LEDGER label={vatLabel} value={formatTHB(vatAmount)} indent />
         ) : (
           <LEDGER label={vatLabel} value="Not applicable" role="muted" />
+        )}
+
+        {hasUplift && (
+          <>
+            <LedgerDivider />
+            <LEDGER label="Referred Artist Uplift" value={`+ ${formatTHB(upliftBase)}`} role="subtotal" />
+            {upliftEntries.map(e => (
+              <LEDGER
+                key={e.artist_name}
+                label={`${e.artist_name} (${e.uplift_pct}%)`}
+                value={formatTHB(e.uplift_base)}
+                indent
+              />
+            ))}
+            {report.is_vat_registered_snapshot && upliftVat > 0 && (
+              <LEDGER label={`+ VAT ${vatPct} on uplift`} value={formatTHB(upliftVat)} indent />
+            )}
+          </>
         )}
 
         <LedgerPayout value={formatTHB(Number(report.final_payout))} />
@@ -650,7 +699,7 @@ export default async function PartnerReportDetailPage({
       </div>
 
       {/* ── Artist Breakdown ───────────────────────────────────────────────── */}
-      {!isFixedRent && artists.length > 0 && (
+      {artists.length > 0 && (
         <div style={{
           background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: '16px', padding: '28px', marginBottom: '14px',
@@ -666,11 +715,12 @@ export default async function PartnerReportDetailPage({
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                 {[
-                  { h: '#',          align: 'left'  as const, w: '36px'    },
-                  { h: 'Artist',     align: 'left'  as const, w: undefined  },
-                  { h: 'Orders',     align: 'right' as const, w: '80px'    },
-                  { h: 'Gross',      align: 'right' as const, w: '130px'   },
-                  { h: 'NET',        align: 'right' as const, w: '130px'   },
+                  { h: '#',          align: 'left'  as const, w: '36px'  },
+                  { h: 'Artist',     align: 'left'  as const, w: undefined },
+                  { h: 'Orders',     align: 'right' as const, w: '80px'  },
+                  { h: 'Gross',      align: 'right' as const, w: '120px' },
+                  { h: 'NET',        align: 'right' as const, w: '120px' },
+                  ...(hasUplift ? [{ h: 'Uplift', align: 'right' as const, w: '120px' }] : []),
                 ].map(col => (
                   <th key={col.h} style={{
                     padding: '0 0 12px', textAlign: col.align,
@@ -684,7 +734,9 @@ export default async function PartnerReportDetailPage({
               </tr>
             </thead>
             <tbody>
-              {artists.map((a, idx) => (
+              {artists.map((a, idx) => {
+                const artistUplift = Number((a as { referral_uplift_amount?: number }).referral_uplift_amount ?? 0)
+                return (
                 <tr key={a.id} style={{
                   borderBottom: '1px solid rgba(255,255,255,0.04)',
                   background: idx === 0 ? 'rgba(59,130,246,0.025)' : 'transparent',
@@ -756,8 +808,19 @@ export default async function PartnerReportDetailPage({
                   }}>
                     {formatTHB(Number(a.total_net))}
                   </td>
+                  {/* Uplift (only shown when hasUplift) */}
+                  {hasUplift && (
+                    <td style={{
+                      padding: '15px 0', textAlign: 'right', verticalAlign: 'middle',
+                      fontSize: '14px', fontVariantNumeric: 'tabular-nums',
+                      color: artistUplift > 0 ? 'rgba(59,130,246,0.85)' : 'rgba(241,245,249,0.2)',
+                    }}>
+                      {artistUplift > 0 ? `+${formatTHB(artistUplift)}` : '—'}
+                    </td>
+                  )}
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

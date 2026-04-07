@@ -351,6 +351,67 @@ export async function POST(request: NextRequest) {
       final_payout  = partner_share + vat_amount
     }
 
+    // ── Artist aggregation (used for uplift + artist_summaries) ─────────────────
+    type ArtistStats = {
+      order_count: number; gross_sales: number; total_net: number
+      artist_image_url: string | null
+    }
+    const artistMap: Record<string, ArtistStats> = {}
+    for (const r of rows) {
+      const name  = r.artist_name.trim() || '(Unknown)'
+      const entry = artistMap[name] ?? { order_count: 0, gross_sales: 0, total_net: 0, artist_image_url: null }
+      if (!r.refunded) {
+        entry.order_count++
+        entry.gross_sales += r.amount
+      }
+      entry.total_net += r.net
+      if (!entry.artist_image_url && r.artist_image_url) entry.artist_image_url = r.artist_image_url
+      artistMap[name] = entry
+    }
+
+    // ── Referred artist uplift ────────────────────────────────────────────────
+    // Look up referral-eligible artists for this branch pointing to this partner.
+    // Uplift is calculated on each artist's net (ex-VAT) × uplift_pct.
+    // If the partner is VAT-registered, VAT is added on top of the uplift base.
+    // This is an additive layer — no existing payout logic is changed.
+    let referred_artist_uplift     = 0
+    let referred_artist_uplift_vat = 0
+    type UpliftSnapshotEntry = {
+      artist_name: string; total_net: number; uplift_pct: number
+      uplift_base: number; uplift_vat: number; uplift_total: number
+    }
+    const upliftSnapshot: UpliftSnapshotEntry[] = []
+
+    const { data: eligibleArtists } = await admin
+      .from('artists')
+      .select('artist_name, referral_uplift_pct')
+      .eq('branch_id', branchId)
+      .eq('is_referral_eligible', true)
+      .eq('referral_partner_id', branchData.partner_id)
+
+    if (eligibleArtists && eligibleArtists.length > 0) {
+      for (const ea of eligibleArtists) {
+        const stats = artistMap[ea.artist_name]
+        if (!stats || !ea.referral_uplift_pct) continue
+        const upliftPct      = Number(ea.referral_uplift_pct)
+        const artistNetExVat = stats.total_net < 0 ? 0 : stats.total_net / (1 + vatRate)
+        const upliftBase     = artistNetExVat * (upliftPct / 100)
+        const upliftVat      = isVatRegistered ? upliftBase * vatRate : 0
+        referred_artist_uplift     += upliftBase
+        referred_artist_uplift_vat += upliftVat
+        upliftSnapshot.push({
+          artist_name:  ea.artist_name,
+          total_net:    stats.total_net,
+          uplift_pct:   upliftPct,
+          uplift_base:  upliftBase,
+          uplift_vat:   upliftVat,
+          uplift_total: upliftBase + upliftVat,
+        })
+      }
+      // Add uplift to final payout — additive, no effect if no eligible artists
+      final_payout += referred_artist_uplift + referred_artist_uplift_vat
+    }
+
     // Check for existing report (fetch full snapshot for audit before_state)
     const { data: existingReport } = await admin
       .from('monthly_reports')
@@ -401,10 +462,14 @@ export async function POST(request: NextRequest) {
       vat_amount,
       final_payout,
       // Payout-type snapshots — store all model-specific values for historical accuracy
-      payout_type_snapshot:          payoutType,
-      fixed_rent_snapshot:           payoutType === 'fixed_rent' ? fixedRentAmount : null,
-      fixed_rent_vat_mode_snapshot:  payoutType === 'fixed_rent' ? fixedRentVatMode : null,
-      status:                        'draft',
+      payout_type_snapshot:               payoutType,
+      fixed_rent_snapshot:                payoutType === 'fixed_rent' ? fixedRentAmount : null,
+      fixed_rent_vat_mode_snapshot:       payoutType === 'fixed_rent' ? fixedRentVatMode : null,
+      // Referred artist uplift — zero if no eligible artists configured
+      referred_artist_uplift:             referred_artist_uplift,
+      referred_artist_uplift_vat:         referred_artist_uplift_vat,
+      referred_artist_uplift_snapshot:    upliftSnapshot.length > 0 ? upliftSnapshot : null,
+      status:                             'draft',
     }
 
     const isOverwriteAction = !!(existingReport && isOverwrite)
@@ -453,36 +518,29 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Populate artist_summaries ─────────────────────────────────────────────
-    // Aggregate by artist name from this branch's transaction rows.
-    // Blank artist names are grouped under '(Unknown)'.
-    type ArtistStats = {
-      order_count: number; gross_sales: number; total_net: number
-      artist_image_url: string | null
-    }
-    const artistMap: Record<string, ArtistStats> = {}
-    for (const r of rows) {
-      const name  = r.artist_name.trim() || '(Unknown)'
-      const entry = artistMap[name] ?? { order_count: 0, gross_sales: 0, total_net: 0, artist_image_url: null }
-      if (!r.refunded) {
-        entry.order_count++
-        entry.gross_sales += r.amount
+    // artistMap was already built in the uplift block above.
+    // Denormalise referral uplift amounts onto each artist row so the UI can
+    // display per-artist uplift without needing to re-join the artists table.
+    const upliftByArtist: Record<string, { amount: number; pct: number | null }> = {}
+    for (const entry of upliftSnapshot) {
+      upliftByArtist[entry.artist_name] = {
+        amount: entry.uplift_base + entry.uplift_vat,
+        pct:    entry.uplift_pct,
       }
-      entry.total_net += r.net
-      // First non-null image URL wins per artist
-      if (!entry.artist_image_url && r.artist_image_url) entry.artist_image_url = r.artist_image_url
-      artistMap[name] = entry
     }
 
     const artistRows = Object.entries(artistMap).map(([artist_name, stats]) => ({
-      monthly_report_id: monthlyReportId,
-      branch_id:         branchId,
-      reporting_month:   reportingMonth,
-      reporting_year:    reportingYear,
+      monthly_report_id:            monthlyReportId,
+      branch_id:                    branchId,
+      reporting_month:              reportingMonth,
+      reporting_year:               reportingYear,
       artist_name,
-      order_count:       stats.order_count,
-      gross_sales:       stats.gross_sales,
-      total_net:         stats.total_net,
-      artist_image_url:  stats.artist_image_url,
+      order_count:                  stats.order_count,
+      gross_sales:                  stats.gross_sales,
+      total_net:                    stats.total_net,
+      artist_image_url:             stats.artist_image_url,
+      referral_uplift_amount:       upliftByArtist[artist_name]?.amount ?? 0,
+      referral_uplift_pct_snapshot: upliftByArtist[artist_name]?.pct ?? null,
     }))
 
     if (artistRows.length > 0) {

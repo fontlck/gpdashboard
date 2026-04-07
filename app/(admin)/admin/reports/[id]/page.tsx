@@ -45,6 +45,10 @@ type ReportDetailRow = {
   fixed_rent_vat_mode_snapshot: 'exclusive' | 'inclusive' | null
   is_vat_registered_snapshot:   boolean
   vat_rate_snapshot:            number
+  // Referred artist uplift
+  referred_artist_uplift:          number | null
+  referred_artist_uplift_vat:      number | null
+  referred_artist_uplift_snapshot: unknown[] | null
   // Counts
   total_transaction_count: number
   total_skipped_currency:  number
@@ -76,6 +80,7 @@ export default async function AdminReportDetailPage({
       payout_type_snapshot, revenue_share_pct_snapshot,
       fixed_rent_snapshot, fixed_rent_vat_mode_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
+      referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
       total_transaction_count, total_skipped_currency, total_skipped_date,
       recalculated_at, approved_at, approved_by, paid_at, paid_by,
       branches (
@@ -119,8 +124,15 @@ export default async function AdminReportDetailPage({
   const period       = formatReportingPeriod(report.reporting_month, report.reporting_year)
   const isFixedRent  = report.payout_type_snapshot === 'fixed_rent'
   const vatPct       = `${(report.vat_rate_snapshot * 100).toFixed(0)}%`
-  // Reports are locked for editing once approved or paid
   const locked       = report.status === 'approved' || report.status === 'paid'
+
+  // Referred artist uplift
+  const upliftBase  = Number(report.referred_artist_uplift    ?? 0)
+  const upliftVat   = Number(report.referred_artist_uplift_vat ?? 0)
+  const upliftTotal = upliftBase + upliftVat
+  type UpliftEntry  = { artist_name: string; uplift_pct: number; uplift_base: number; uplift_vat: number; uplift_total: number }
+  const upliftEntries = (report.referred_artist_uplift_snapshot ?? []) as UpliftEntry[]
+  const hasUplift   = upliftTotal > 0
 
   // ── Shared row component ────────────────────────────────────────────────────
 
@@ -160,6 +172,20 @@ export default async function AdminReportDetailPage({
           <div style={{ height: '8px' }} />
           <ROW label="Fixed Rent"  value={formatTHB(rent)} />
           <ROW label={vatLabel}    value={report.is_vat_registered_snapshot ? formatTHB(vatAmount) : '—'} />
+
+          {hasUplift && (
+            <>
+              <div style={{ height: '8px' }} />
+              <ROW label="Referred Artist Uplift" value={`+ ${formatTHB(upliftBase)}`} />
+              {upliftEntries.map(e => (
+                <ROW key={e.artist_name} label={`  → ${e.artist_name} (${e.uplift_pct}%)`} value={formatTHB(e.uplift_base)} muted />
+              ))}
+              {report.is_vat_registered_snapshot && upliftVat > 0 && (
+                <ROW label={`  → VAT ${vatPct} on uplift`} value={formatTHB(upliftVat)} muted />
+              )}
+            </>
+          )}
+
           <div style={{ height: '8px' }} />
           <ROW label="Final Payout" value={formatTHB(Number(report.final_payout))} accent />
 
@@ -221,6 +247,20 @@ export default async function AdminReportDetailPage({
           label={`VAT ${vatPct} on partner share${report.is_vat_registered_snapshot ? '' : ' (not registered)'}`}
           value={report.is_vat_registered_snapshot ? formatTHB(Number(report.vat_amount)) : '—'}
         />
+
+        {hasUplift && (
+          <>
+            <div style={{ height: '8px' }} />
+            <ROW label="Referred Artist Uplift" value={`+ ${formatTHB(upliftBase)}`} />
+            {upliftEntries.map(e => (
+              <ROW key={e.artist_name} label={`  → ${e.artist_name} (${e.uplift_pct}%)`} value={formatTHB(e.uplift_base)} muted />
+            ))}
+            {report.is_vat_registered_snapshot && upliftVat > 0 && (
+              <ROW label={`  → VAT ${vatPct} on uplift`} value={formatTHB(upliftVat)} muted />
+            )}
+          </>
+        )}
+
         <div style={{ height: '8px' }} />
         <ROW label="Final Payout" value={formatTHB(Number(report.final_payout))} accent />
 
@@ -330,9 +370,9 @@ export default async function AdminReportDetailPage({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['', 'Artist', 'Orders', 'Gross Sales', 'NET'].map(h => (
+                  {['', 'Artist', 'Orders', 'Gross Sales', 'NET', ...(hasUplift ? ['Uplift'] : [])].map(h => (
                     <th key={h} style={{
-                      padding: '8px 0', textAlign: 'left',
+                      padding: '8px 0', textAlign: h === '' ? 'left' : 'left',
                       fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
                       textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
                       width: h === '' ? 44 : undefined,
@@ -341,7 +381,9 @@ export default async function AdminReportDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {artists.map(a => (
+                {artists.map(a => {
+                  const artistUplift = Number((a as { referral_uplift_amount?: number }).referral_uplift_amount ?? 0)
+                  return (
                   <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     <td style={{ padding: '8px 0' }}>
                       {a.artist_image_url ? (
@@ -367,10 +409,19 @@ export default async function AdminReportDetailPage({
                     </td>
                     <td style={{ padding: '10px 0', color: '#F0ECE4' }}>{a.artist_name}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{a.order_count}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{formatTHB(Number(a.gross_sales))}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{formatTHB(Number(a.total_net))}</td>
+                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.gross_sales))}</td>
+                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.total_net))}</td>
+                    {hasUplift && (
+                      <td style={{
+                        padding: '10px 0', fontVariantNumeric: 'tabular-nums',
+                        color: artistUplift > 0 ? 'rgba(59,130,246,0.85)' : 'rgba(241,245,249,0.2)',
+                      }}>
+                        {artistUplift > 0 ? `+${formatTHB(artistUplift)}` : '—'}
+                      </td>
+                    )}
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

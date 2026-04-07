@@ -23,6 +23,8 @@ export type Database = {
           id: string
           monthly_report_id: string
           order_count: number
+          referral_uplift_amount: number
+          referral_uplift_pct_snapshot: number | null
           reporting_month: number
           reporting_year: number
           total_net: number
@@ -36,6 +38,8 @@ export type Database = {
           id?: string
           monthly_report_id: string
           order_count?: number
+          referral_uplift_amount?: number
+          referral_uplift_pct_snapshot?: number | null
           reporting_month: number
           reporting_year: number
           total_net?: number
@@ -49,6 +53,8 @@ export type Database = {
           id?: string
           monthly_report_id?: string
           order_count?: number
+          referral_uplift_amount?: number
+          referral_uplift_pct_snapshot?: number | null
           reporting_month?: number
           reporting_year?: number
           total_net?: number
@@ -67,6 +73,54 @@ export type Database = {
             columns: ["monthly_report_id"]
             isOneToOne: false
             referencedRelation: "monthly_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artists: {
+        Row: {
+          artist_name: string
+          branch_id: string
+          created_at: string
+          id: string
+          is_referral_eligible: boolean
+          referral_partner_id: string | null
+          referral_uplift_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          artist_name: string
+          branch_id: string
+          created_at?: string
+          id?: string
+          is_referral_eligible?: boolean
+          referral_partner_id?: string | null
+          referral_uplift_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          artist_name?: string
+          branch_id?: string
+          created_at?: string
+          id?: string
+          is_referral_eligible?: boolean
+          referral_partner_id?: string | null
+          referral_uplift_pct?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artists_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "artists_referral_partner_id_fkey"
+            columns: ["referral_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]
@@ -255,9 +309,13 @@ export type Database = {
           id: string
           is_vat_registered_snapshot: boolean
           notes: string | null
+          paid_at: string | null
           partner_share_base: number
           payout_type_snapshot: Database["public"]["Enums"]["payout_type_enum"]
           recalculated_at: string | null
+          referred_artist_uplift: number
+          referred_artist_uplift_snapshot: Json | null
+          referred_artist_uplift_vat: number
           reporting_month: number
           reporting_year: number
           revenue_share_pct_snapshot: number
@@ -290,9 +348,13 @@ export type Database = {
           id?: string
           is_vat_registered_snapshot: boolean
           notes?: string | null
+          paid_at?: string | null
           partner_share_base?: number
           payout_type_snapshot?: Database["public"]["Enums"]["payout_type_enum"]
           recalculated_at?: string | null
+          referred_artist_uplift?: number
+          referred_artist_uplift_snapshot?: Json | null
+          referred_artist_uplift_vat?: number
           reporting_month: number
           reporting_year: number
           revenue_share_pct_snapshot: number
@@ -325,9 +387,13 @@ export type Database = {
           id?: string
           is_vat_registered_snapshot?: boolean
           notes?: string | null
+          paid_at?: string | null
           partner_share_base?: number
           payout_type_snapshot?: Database["public"]["Enums"]["payout_type_enum"]
           recalculated_at?: string | null
+          referred_artist_uplift?: number
+          referred_artist_uplift_snapshot?: Json | null
+          referred_artist_uplift_vat?: number
           reporting_month?: number
           reporting_year?: number
           revenue_share_pct_snapshot?: number
