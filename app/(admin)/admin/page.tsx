@@ -34,50 +34,63 @@ export default async function AdminOverviewPage() {
       />
 
       {/* KPI Row */}
-      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' }}>
-        <KpiCard label="Active Branches"    value={branches}          accent="default" />
-        <KpiCard label="Pending Approval"   value={pending}           accent={pending > 0 ? 'amber' : 'default'} />
-        <KpiCard label="Payouts Due"        value={formatTHB(totalPayout)} accent="default" />
-        <KpiCard label="Total Reports"      value={reports.length}    accent="default" />
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+        <KpiCard label="Active Branches"  value={branches}               sub="All active locations"  accent="default" />
+        <KpiCard label="Pending Approval" value={pending}                sub={pending > 0 ? 'Needs review' : 'All clear'} accent={pending > 0 ? 'amber' : 'default'} />
+        <KpiCard label="Payouts Due"      value={formatTHB(totalPayout)} sub="Approved, unpaid"      accent={totalPayout > 0 ? 'amber' : 'default'} />
+        <KpiCard label="Total Reports"    value={reports.length}         sub="All time"              accent="default" />
       </div>
 
       {/* Recent reports table */}
       <div style={{
-        background:'#0D0F1A', border:'1px solid rgba(255,255,255,0.06)',
-        borderRadius:'16px', overflow:'hidden',
+        background:   '#0C1018',
+        border:       '1px solid rgba(255,255,255,0.07)',
+        borderRadius: '12px',
+        overflow:     'hidden',
       }}>
-        <div style={{ padding:'20px 24px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-          <h2 style={{ fontSize:'15px', fontWeight:'600', color:'#F0ECE4' }}>Recent Reports</h2>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.35)' }}>
+            Recent Reports
+          </span>
+          <span style={{ fontSize: '11px', color: 'rgba(241,245,249,0.22)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '999px', padding: '2px 8px' }}>
+            {reports.length}
+          </span>
         </div>
 
         {reports.length === 0 ? (
-          <div style={{ padding:'40px', textAlign:'center', color:'rgba(240,236,228,0.3)', fontSize:'13px' }}>
+          <div style={{ padding: '48px', textAlign: 'center', color: 'rgba(241,245,249,0.25)', fontSize: '13px' }}>
             No reports yet. Upload a CSV to get started.
           </div>
         ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-                  {['Period','Final Payout','Status'].map(h => (
+                <tr>
+                  {['Period', 'Final Payout', 'Status'].map(h => (
                     <th key={h} style={{
-                      padding:'12px 24px', textAlign:'left',
-                      fontSize:'11px', fontWeight:'600', letterSpacing:'0.08em',
-                      textTransform:'uppercase', color:'rgba(240,236,228,0.35)',
+                      padding:       '14px 20px 10px',
+                      textAlign:     'left',
+                      fontSize:      '10px',
+                      fontWeight:    '600',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color:         'rgba(241,245,249,0.28)',
+                      borderBottom:  '1px solid rgba(255,255,255,0.05)',
+                      whiteSpace:    'nowrap',
                     }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {reports.slice(0, 10).map((r, i) => (
-                  <tr key={i} style={{ borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding:'14px 24px', color:'#F0ECE4' }}>
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '11px 20px', color: '#F1F5F9', fontSize: '13px', fontWeight: '500' }}>
                       {formatReportingPeriod(r.reporting_month, r.reporting_year)}
                     </td>
-                    <td style={{ padding:'14px 24px', color:'#F1F5F9', fontWeight:'600' }}>
+                    <td style={{ padding: '11px 20px', color: '#F1F5F9', fontSize: '13px', fontWeight: '700', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em' }}>
                       {formatTHB(Number(r.final_payout))}
                     </td>
-                    <td style={{ padding:'14px 24px' }}>
+                    <td style={{ padding: '11px 20px' }}>
                       <StatusBadge status={r.status as 'draft'} />
                     </td>
                   </tr>
