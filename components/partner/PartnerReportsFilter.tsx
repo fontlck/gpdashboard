@@ -88,30 +88,29 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
   }
 
   const TH_BASE: React.CSSProperties = {
-    padding:       '0 28px 14px',
+    padding:       '0 20px 10px',
     textAlign:     'left',
     fontSize:      '10px',
     fontWeight:    '600',
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color:         'rgba(240,236,228,0.28)',
+    color:         'rgba(241,245,249,0.28)',
     whiteSpace:    'nowrap',
     borderBottom:  '1px solid rgba(255,255,255,0.06)',
   }
 
   return (
     <div style={{
-      background:   '#0D0F1A',
-      border:       '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '20px',
-      boxShadow:    '0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 40px rgba(0,0,0,0.4)',
+      background:   '#0C1018',
+      border:       '1px solid rgba(255,255,255,0.07)',
+      borderRadius: '12px',
       overflow:     'hidden',
     }}>
 
       {/* ── Header row ──────────────────────────────────────────────────────── */}
       <div style={{
-        padding:        '20px 28px',
-        borderBottom:   '1px solid rgba(255,255,255,0.055)',
+        padding:        '14px 20px',
+        borderBottom:   '1px solid rgba(255,255,255,0.05)',
         display:        'flex',
         justifyContent: 'space-between',
         alignItems:     'center',
@@ -191,11 +190,11 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ ...TH_BASE, paddingTop: '18px' }}>Period</th>
-                <th style={{ ...TH_BASE, paddingTop: '18px' }}>Model</th>
-                <th style={{ ...TH_BASE, paddingTop: '18px', textAlign: 'right' }}>Payout</th>
-                <th style={{ ...TH_BASE, paddingTop: '18px' }}>Status</th>
-                <th style={{ ...TH_BASE, paddingTop: '18px', textAlign: 'right' }}>Date</th>
+                <th style={{ ...TH_BASE, paddingTop: '14px' }}>Period</th>
+                <th style={{ ...TH_BASE, paddingTop: '14px' }}>Model</th>
+                <th style={{ ...TH_BASE, paddingTop: '14px', textAlign: 'right' }}>Payout</th>
+                <th style={{ ...TH_BASE, paddingTop: '14px' }}>Status</th>
+                <th style={{ ...TH_BASE, paddingTop: '14px', textAlign: 'right' }}>Date</th>
               </tr>
             </thead>
             <tbody>
@@ -216,35 +215,35 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
                     }}
                   >
                     {/* Period + branch */}
-                    <td style={{ padding: '18px 28px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '11px 20px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                       <div style={{
-                        fontSize:   '14px',
-                        fontWeight: '600',
-                        color:      '#F0ECE4',
-                        whiteSpace: 'nowrap',
+                        fontSize:      '13px',
+                        fontWeight:    '600',
+                        color:         '#F1F5F9',
+                        whiteSpace:    'nowrap',
                         letterSpacing: '-0.01em',
                       }}>
                         {fmtPeriod(r.reporting_month, r.reporting_year)}
                       </div>
                       <div style={{
-                        fontSize:   '11px',
-                        color:      'rgba(240,236,228,0.3)',
-                        marginTop:  '3px',
-                        whiteSpace: 'nowrap',
+                        fontSize:  '11px',
+                        color:     'rgba(241,245,249,0.3)',
+                        marginTop: '2px',
+                        whiteSpace:'nowrap',
                       }}>
                         {r.branch_name}
                       </div>
                     </td>
 
                     {/* Payout model */}
-                    <td style={{ padding: '18px 28px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '11px 20px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                       <span style={{
-                        fontSize:     '12px',
-                        color:        'rgba(240,236,228,0.35)',
+                        fontSize:     '11px',
+                        color:        'rgba(241,245,249,0.32)',
                         background:   'rgba(255,255,255,0.04)',
                         border:       '1px solid rgba(255,255,255,0.07)',
-                        borderRadius: '6px',
-                        padding:      '3px 8px',
+                        borderRadius: '5px',
+                        padding:      '2px 7px',
                         whiteSpace:   'nowrap',
                       }}>
                         {payoutModelLabel(r.payout_type_snapshot)}
@@ -252,9 +251,9 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
                     </td>
 
                     {/* Payout amount */}
-                    <td style={{ padding: '18px 28px', verticalAlign: 'middle', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '11px 20px', verticalAlign: 'middle', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                       <div style={{
-                        fontSize:           '16px',
+                        fontSize:           '14px',
                         fontWeight:         '700',
                         color:              '#F1F5F9',
                         whiteSpace:         'nowrap',
@@ -266,17 +265,17 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
                     </td>
 
                     {/* Status badge */}
-                    <td style={{ padding: '18px 28px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td style={{ padding: '11px 20px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                       <StatusBadge status={r.status as 'approved'} />
                     </td>
 
                     {/* Date */}
-                    <td style={{ padding: '18px 28px', verticalAlign: 'middle', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '11px 20px', verticalAlign: 'middle', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '12px', color: 'rgba(241,245,249,0.28)', whiteSpace: 'nowrap' }}>
                         {fmtDate(updatedDate)}
                       </div>
                       {isHov && (
-                        <div style={{ fontSize: '11px', color: 'rgba(59,130,246,0.8)', marginTop: '3px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(59,130,246,0.8)', marginTop: '2px' }}>
                           View report →
                         </div>
                       )}

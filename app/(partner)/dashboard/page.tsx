@@ -22,10 +22,9 @@ function parseLocalDate(ymd: string): Date {
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
 const CARD: React.CSSProperties = {
-  background:   '#0D0F1A',
-  border:       '1px solid rgba(255,255,255,0.06)',
-  borderRadius: '20px',
-  boxShadow:    '0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 40px rgba(0,0,0,0.4)',
+  background:   '#0C1018',
+  border:       '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '12px',
   overflow:     'hidden',
   position:     'relative',
 }
@@ -164,7 +163,7 @@ export default async function PartnerOverviewPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
       {/* ── Layer 2: Unified Hero + KPI Card ────────────────────────────────── */}
       <div style={CARD}>
@@ -178,22 +177,22 @@ export default async function PartnerOverviewPage() {
         }} />
 
         {/* Hero section */}
-        <div style={{ padding: '32px 32px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap' }}>
+        <div style={{ padding: '24px 28px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap' }}>
 
           {/* Left — primary earnings figure */}
           <div>
             <div style={{
               fontSize:      '10px',
-              letterSpacing: '0.15em',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase',
               color:         'rgba(241,245,249,0.35)',
-              marginBottom:  '10px',
+              marginBottom:  '8px',
               fontWeight:    '600',
             }}>
               Total Lifetime Earnings
             </div>
             <div style={{
-              fontSize:           '52px',
+              fontSize:           '44px',
               fontWeight:         '800',
               color:              '#F1F5F9',
               letterSpacing:      '-0.03em',
@@ -202,23 +201,23 @@ export default async function PartnerOverviewPage() {
             }}>
               {formatTHB(totalPayout)}
             </div>
-            <div style={{ marginTop: '9px', fontSize: '12px', color: 'rgba(240,236,228,0.28)', letterSpacing: '0.01em' }}>
+            <div style={{ marginTop: '6px', fontSize: '11px', color: 'rgba(241,245,249,0.25)', letterSpacing: '0.01em' }}>
               {paidCount} paid {paidCount === 1 ? 'report' : 'reports'} · cumulative paid out
             </div>
           </div>
 
           {/* Right — secondary stats */}
-          <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap', paddingTop: '2px' }}>
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', paddingTop: '4px' }}>
 
             {awaitingPayment > 0 && (
               <div>
-                <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)', marginBottom: '7px' }}>
+                <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)', marginBottom: '6px' }}>
                   Awaiting Payment
                 </div>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#F1F5F9', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#F1F5F9', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                   {formatTHB(awaitingPayment)}
                 </div>
-                <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.24)', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(241,245,249,0.22)', marginTop: '3px' }}>
                   {approvedReports.length} {approvedReports.length === 1 ? 'report' : 'reports'} approved
                 </div>
               </div>
@@ -226,13 +225,13 @@ export default async function PartnerOverviewPage() {
 
             {partnerStartDate && (
               <div>
-                <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)', marginBottom: '7px' }}>
+                <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)', marginBottom: '6px' }}>
                   Partner Since
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: 'rgba(240,236,228,0.65)', letterSpacing: '-0.01em' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(241,245,249,0.6)', letterSpacing: '-0.01em' }}>
                   {formatFullDate(parseLocalDate(partnerStartDate))}
                 </div>
-                <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.28)', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(241,245,249,0.25)', marginTop: '3px' }}>
                   {formatDuration(partnerStartDate)}
                 </div>
               </div>
@@ -240,37 +239,37 @@ export default async function PartnerOverviewPage() {
           </div>
         </div>
 
-        {/* ── Layer 3: KPI metric row — inside the card, separated by divider ── */}
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.055)', margin: '0' }} />
+        {/* ── KPI metric row — inside the card, separated by hairline ── */}
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '0' }} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {kpis.map(({ label, value, sub, color }, idx) => (
             <div key={label} style={{
-              padding:     '22px 28px',
+              padding:     '16px 24px',
               borderRight: idx < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none',
             }}>
               <div style={{
                 fontSize:      '10px',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color:         'rgba(240,236,228,0.3)',
-                marginBottom:  '8px',
+                color:         'rgba(241,245,249,0.3)',
+                marginBottom:  '6px',
                 fontWeight:    '500',
               }}>
                 {label}
               </div>
               <div style={{
-                fontSize:           '24px',
+                fontSize:           '22px',
                 fontWeight:         '700',
                 color,
                 letterSpacing:      '-0.02em',
                 lineHeight:         1.1,
                 fontVariantNumeric: 'tabular-nums',
-                marginBottom:       '5px',
+                marginBottom:       '4px',
               }}>
                 {value}
               </div>
-              <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.24)' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(241,245,249,0.22)' }}>
                 {sub}
               </div>
             </div>

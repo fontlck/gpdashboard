@@ -20,14 +20,14 @@ function fmtTHB(n: number) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-const CHART_H   = 140  // px — bar area height
-const LABEL_H   = 28   // px — label row below bars
-const GOLD      = '#60A5FA'
-const GOLD_DIM  = 'rgba(59,130,246,0.38)'
-const GOLD_HOV  = 'rgba(59,130,246,0.65)'
-const GOLD_BEST = 'rgba(59,130,246,0.85)'
-const AMBER     = 'rgba(245,158,11,0.22)'
-const AMBER_BDR = 'rgba(245,158,11,0.35)'
+const CHART_H    = 140  // px — bar area height
+const LABEL_H    = 28   // px — label row below bars
+const BLUE       = '#60A5FA'
+const BLUE_DIM   = 'rgba(59,130,246,0.35)'
+const BLUE_HOV   = 'rgba(59,130,246,0.6)'
+const BLUE_BEST  = 'rgba(59,130,246,0.82)'
+const PEND       = 'rgba(255,255,255,0.06)'   // approved/pending bars — very muted
+const PEND_BDR   = 'rgba(255,255,255,0.1)'
 
 export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
   const [hovered, setHovered] = useState<number | null>(null)
@@ -44,31 +44,30 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
 
   return (
     <div style={{
-      background:   '#0D0F1A',
-      border:       '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '20px',
-      boxShadow:    '0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 40px rgba(0,0,0,0.4)',
-      padding:      '24px 28px',
+      background:   '#0C1018',
+      border:       '1px solid rgba(255,255,255,0.07)',
+      borderRadius: '12px',
+      padding:      '20px 24px',
       position:     'relative',
       overflow:     'hidden',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <span style={{
-          fontSize: '11px', fontWeight: '600', letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: 'rgba(240,236,228,0.3)',
+          fontSize: '10px', fontWeight: '600', letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)',
         }}>
           Revenue Trend
         </span>
         <div style={{ display: 'flex', gap: '14px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'rgba(240,236,228,0.35)' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: GOLD, display: 'inline-block' }} />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'rgba(241,245,249,0.3)' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: BLUE, display: 'inline-block' }} />
             Paid
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'rgba(240,236,228,0.35)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'rgba(241,245,249,0.3)' }}>
             <span style={{
               width: '8px', height: '8px', borderRadius: '2px',
-              background: AMBER, border: `1px solid ${AMBER_BDR}`, display: 'inline-block',
+              background: PEND, border: `1px solid ${PEND_BDR}`, display: 'inline-block',
             }} />
             Approved
           </span>
@@ -127,8 +126,8 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                       <div style={{
                         height:       `${approvedH}px`,
                         flexShrink:   0,
-                        background:   isHov ? 'rgba(245,158,11,0.3)' : AMBER,
-                        border:       `1px solid ${AMBER_BDR}`,
+                        background:   isHov ? 'rgba(255,255,255,0.09)' : PEND,
+                        border:       `1px solid ${PEND_BDR}`,
                         borderBottom: 'none',
                         borderRadius: '3px 3px 0 0',
                         transition:   'background 0.15s',
@@ -141,8 +140,8 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                         height:       `${paidH}px`,
                         flexShrink:   0,
                         background:   isBest
-                          ? GOLD_BEST
-                          : isHov ? GOLD_HOV : GOLD_DIM,
+                          ? BLUE_BEST
+                          : isHov ? BLUE_HOV : BLUE_DIM,
                         borderRadius: approvedH > 0
                           ? '0'
                           : '3px 3px 0 0',
@@ -175,7 +174,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                   left:       '50%',
                   transform:  'translateX(-50%)',
                   fontSize:   '10px',
-                  color:      isBest ? 'rgba(96,165,250,0.9)' : 'rgba(241,245,249,0.22)',
+                  color:      isBest ? BLUE : 'rgba(241,245,249,0.22)',
                   whiteSpace: 'nowrap',
                   fontWeight: isBest ? '600' : '400',
                   userSelect: 'none',
@@ -214,7 +213,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                       </div>
                     )}
                     {d.approvedPayout > 0 && (
-                      <div style={{ fontSize: '11px', color: '#F59E0B', marginTop: '3px', fontVariantNumeric: 'tabular-nums' }}>
+                      <div style={{ fontSize: '11px', color: 'rgba(241,245,249,0.4)', marginTop: '3px', fontVariantNumeric: 'tabular-nums' }}>
                         + {fmtTHB(d.approvedPayout)} pending
                       </div>
                     )}
@@ -232,15 +231,15 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
       {/* Summary stats */}
       {data.length > 0 && (
         <div style={{
-          display:      'flex',
-          gap:          '28px',
-          marginTop:    '16px',
-          paddingTop:   '14px',
-          borderTop:    '1px solid rgba(255,255,255,0.04)',
-          flexWrap:     'wrap',
+          display:    'flex',
+          gap:        '28px',
+          marginTop:  '14px',
+          paddingTop: '12px',
+          borderTop:  '1px solid rgba(255,255,255,0.05)',
+          flexWrap:   'wrap',
         }}>
           <div>
-            <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.3)', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)', marginBottom: '3px' }}>
               Best Month
             </div>
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#F1F5F9' }}>
@@ -248,18 +247,18 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.3)', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)', marginBottom: '3px' }}>
               Peak Payout
             </div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: GOLD, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#F1F5F9', fontVariantNumeric: 'tabular-nums' }}>
               {fmtTHB(data[bestIdx].paidPayout)}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.3)', marginBottom: '4px' }}>
+            <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.3)', marginBottom: '3px' }}>
               Months Tracked
             </div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(240,236,228,0.6)' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(241,245,249,0.55)' }}>
               {data.length}
             </div>
           </div>
