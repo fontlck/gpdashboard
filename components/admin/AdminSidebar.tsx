@@ -50,17 +50,16 @@ export function AdminSidebar() {
 
       {/* Logo */}
       <div style={{ padding: '20px 16px 16px', borderBottom: `1px solid ${T.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '7px',
-            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '12px', fontWeight: '800', color: '#fff', flexShrink: 0,
-            boxShadow: '0 0 12px rgba(59,130,246,0.35)',
-          }}>G</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-fym.svg"
+            alt="FlashYourMeme"
+            style={{ height: '22px', width: 'auto', filter: 'brightness(0) invert(1)', objectFit: 'contain', alignSelf: 'flex-start' }}
+          />
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: T.text, letterSpacing: '-0.01em' }}>
-              GP Dashboard
+            <div style={{ fontSize: '11px', fontWeight: '700', color: T.text, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              FLASHYOURMEME
             </div>
             <div style={{ fontSize: '10px', color: T.accent, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.7, marginTop: '1px' }}>
               Admin

@@ -77,19 +77,16 @@ export default function ResetPasswordPage() {
     <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px' }}>
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <span style={{
-            width: '36px', height: '36px', borderRadius: '10px',
-            background: 'linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '16px', fontWeight: '700', color: '#F1F5F9',
-            boxShadow: '0 0 16px rgba(59,130,246,0.35)',
-          }}>G</span>
-          <span style={{ fontSize: '20px', fontWeight: '700', color: '#F0ECE4', letterSpacing: '-0.02em' }}>
-            GP Dashboard
-          </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-fym.svg"
+          alt="FlashYourMeme"
+          style={{ height: '36px', width: 'auto', filter: 'brightness(0) invert(1)', marginBottom: '10px' }}
+        />
+        <div style={{ fontSize: '15px', fontWeight: '700', color: '#F1F5F9', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>
+          FLASHYOURMEME
         </div>
-        <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.4)', letterSpacing: '0.04em' }}>
           Partner Revenue Portal
         </p>
       </div>
