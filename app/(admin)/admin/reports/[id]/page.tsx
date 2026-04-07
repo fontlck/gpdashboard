@@ -135,7 +135,7 @@ export default async function AdminReportDetailPage({
       <span style={{
         fontSize: '14px',
         fontWeight: accent ? '700' : '500',
-        color: warning ? '#F59E0B' : accent ? '#F1F5F9' : muted ? 'rgba(241,245,249,0.35)' : '#F1F5F9',
+        color: warning ? '#EF4444' : accent ? '#F1F5F9' : muted ? 'rgba(241,245,249,0.35)' : '#F1F5F9',
       }}>{value}</span>
     </div>
   )

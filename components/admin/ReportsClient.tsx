@@ -293,7 +293,7 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
                         </div>
                       )}
                       {r.has_negative_adjusted_net && (
-                        <div style={{ fontSize: '10px', color: '#F59E0B', marginTop: '2px' }}>
+                        <div style={{ fontSize: '10px', color: '#EF4444', marginTop: '2px' }}>
                           ⚠ neg. net
                         </div>
                       )}

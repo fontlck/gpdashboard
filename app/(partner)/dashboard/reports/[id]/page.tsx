@@ -67,7 +67,7 @@ const ROW = ({ label, value, accent = false, warning = false, muted = false }: {
     <span style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)' }}>{label}</span>
     <span style={{
       fontSize: '14px', fontWeight: accent ? '700' : '500',
-      color: warning ? '#F59E0B'
+      color: warning ? '#EF4444'
            : accent  ? '#F1F5F9'
            : muted   ? 'rgba(241,245,249,0.28)'
            :           '#F1F5F9',
@@ -118,12 +118,12 @@ const LEDGER = ({
 }) => {
   const labelColor =
     role === 'muted'    ? 'rgba(240,236,228,0.28)' :
-    role === 'warning'  ? 'rgba(245,158,11,0.75)'  :
-    role === 'subtotal' ? 'rgba(240,236,228,0.65)'  :
-                          'rgba(240,236,228,0.45)'
+    role === 'warning'  ? 'rgba(239,68,68,0.65)'   :
+    role === 'subtotal' ? 'rgba(241,245,249,0.65)'  :
+                          'rgba(241,245,249,0.45)'
   const valueColor =
-    role === 'muted'    ? 'rgba(240,236,228,0.28)' :
-    role === 'warning'  ? '#F59E0B'                :
+    role === 'muted'    ? 'rgba(241,245,249,0.28)' :
+    role === 'warning'  ? '#EF4444'                :
                           '#F0ECE4'
   const fontWeight = role === 'subtotal' ? '600' : '400'
 
@@ -338,8 +338,8 @@ export default async function PartnerReportDetailPage({
       {hasNeg && (
         <div style={{
           margin: '14px 0 0', padding: '11px 14px', borderRadius: '8px',
-          background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
-          fontSize: '12px', color: '#F59E0B', lineHeight: '1.55',
+          background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)',
+          fontSize: '12px', color: '#EF4444', lineHeight: '1.55',
         }}>
           Refunds exceeded revenue this month — payout is ฿0.00
         </div>
