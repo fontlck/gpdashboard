@@ -36,8 +36,8 @@ export default async function AdminOverviewPage() {
       {/* KPI Row */}
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' }}>
         <KpiCard label="Active Branches"    value={branches}          accent="default" />
-        <KpiCard label="Pending Approval"   value={pending}           accent="amber"   />
-        <KpiCard label="Payouts Due"        value={formatTHB(totalPayout)} accent="gold" />
+        <KpiCard label="Pending Approval"   value={pending}           accent={pending > 0 ? 'amber' : 'default'} />
+        <KpiCard label="Payouts Due"        value={formatTHB(totalPayout)} accent="default" />
         <KpiCard label="Total Reports"      value={reports.length}    accent="default" />
       </div>
 
