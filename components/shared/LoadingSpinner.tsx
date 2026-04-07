@@ -3,7 +3,7 @@ interface LoadingSpinnerProps {
   color?: string
 }
 
-export function LoadingSpinner({ size = 20, color = '#C4A35E' }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 20, color = '#3B82F6' }: LoadingSpinnerProps) {
   return (
     <svg
       width={size} height={size}

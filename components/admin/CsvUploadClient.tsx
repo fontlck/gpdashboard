@@ -3,10 +3,10 @@
 import { useRef, useState, useCallback, DragEvent, ChangeEvent, CSSProperties } from 'react'
 
 // ── Design tokens ────────────────────────────────────────────────────────────
-const GOLD        = '#C4A35E'
-const GOLD_DIM    = '#9A7A3A'
-const GOLD_BG     = 'rgba(196,163,94,0.08)'
-const GOLD_BORDER = 'rgba(196,163,94,0.25)'
+const GOLD        = '#3B82F6'
+const GOLD_DIM    = '#1D4ED8'
+const GOLD_BG     = 'rgba(59,130,246,0.08)'
+const GOLD_BORDER = 'rgba(59,130,246,0.25)'
 const TEXT        = '#F0ECE4'
 const TEXT_MUTED  = 'rgba(240,236,228,0.45)'
 const SURFACE     = '#0D0F1A'
@@ -565,7 +565,7 @@ export function CsvUploadClient() {
               <div key={s.id} style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{
                   fontSize: '12px', fontWeight: isActive ? 700 : 500,
-                  color: isActive ? GOLD : isPast ? 'rgba(196,163,94,0.5)' : TEXT_MUTED,
+                  color: isActive ? GOLD : isPast ? 'rgba(59,130,246,0.6)' : TEXT_MUTED,
                   padding: '4px 0',
                 }}>{s.label}</span>
                 {i < 2 && (
@@ -584,7 +584,7 @@ export function CsvUploadClient() {
           onDragOver={e => { e.preventDefault(); setIsDrag(true) }}
           onDragLeave={() => setIsDrag(false)}
           style={{
-            background: isDrag ? 'rgba(196,163,94,0.04)' : SURFACE,
+            background: isDrag ? 'rgba(59,130,246,0.04)' : SURFACE,
             border: `2px dashed ${isDrag ? GOLD : GOLD_BORDER}`,
             borderRadius: '16px', padding: '72px 40px',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -964,7 +964,7 @@ export function CsvUploadClient() {
                 display: 'flex', gap: '14px', padding: '10px 0',
                 borderBottom: `1px solid rgba(255,255,255,0.04)`,
               }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(196,163,94,0.5)', letterSpacing: '0.1em', paddingTop: '2px', flexShrink: 0 }}>{s.n}</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(59,130,246,0.6)', letterSpacing: '0.1em', paddingTop: '2px', flexShrink: 0 }}>{s.n}</span>
                 <div>
                   <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: TEXT }}>{s.l}</p>
                   <p style={{ margin: '2px 0 0', fontSize: '12px', color: TEXT_MUTED }}>{s.d}</p>

@@ -127,7 +127,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: '#080A10' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', background: '#06080F' }}>
       <PartnerSidebar />
 
       <main style={{
@@ -136,12 +136,11 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
         minWidth:      0,
         display:       'flex',
         flexDirection: 'column',
-        gap:           '0',
       }}>
         {/* Compact partnership line */}
-        <div style={{ padding: '24px 36px 0' }}>
-          <span style={{ fontSize: '13px', color: 'rgba(240,236,228,0.38)', letterSpacing: '0.01em' }}>
-            <span style={{ color: 'rgba(196,163,94,0.65)', marginRight: '8px' }}>✦</span>
+        <div style={{ padding: '20px 32px 0' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(241,245,249,0.3)', letterSpacing: '0.01em' }}>
+            <span style={{ color: 'rgba(59,130,246,0.6)', marginRight: '8px' }}>◆</span>
             {partnerName}
             {startDate && (
               <>
@@ -155,7 +154,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
         </div>
 
         {/* Page content */}
-        <div style={{ padding: '16px 36px 36px' }}>
+        <div style={{ padding: '16px 32px 32px' }}>
           {children}
         </div>
       </main>

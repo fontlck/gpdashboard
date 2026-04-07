@@ -22,10 +22,10 @@ function fmtTHB(n: number) {
 
 const CHART_H   = 140  // px — bar area height
 const LABEL_H   = 28   // px — label row below bars
-const GOLD      = '#C4A35E'
-const GOLD_DIM  = 'rgba(196,163,94,0.38)'
-const GOLD_HOV  = 'rgba(196,163,94,0.58)'
-const GOLD_BEST = 'rgba(196,163,94,0.82)'
+const GOLD      = '#60A5FA'
+const GOLD_DIM  = 'rgba(59,130,246,0.38)'
+const GOLD_HOV  = 'rgba(59,130,246,0.65)'
+const GOLD_BEST = 'rgba(59,130,246,0.85)'
 const AMBER     = 'rgba(245,158,11,0.22)'
 const AMBER_BDR = 'rgba(245,158,11,0.35)'
 
@@ -162,7 +162,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                     width:        '5px', height: '5px',
                     borderRadius: '50%',
                     background:   GOLD,
-                    boxShadow:    `0 0 6px rgba(196,163,94,0.7)`,
+                    boxShadow:    `0 0 6px rgba(59,130,246,0.7)`,
                     zIndex:       2,
                     pointerEvents: 'none',
                   }} />
@@ -175,7 +175,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                   left:       '50%',
                   transform:  'translateX(-50%)',
                   fontSize:   '10px',
-                  color:      isBest ? 'rgba(196,163,94,0.8)' : 'rgba(240,236,228,0.22)',
+                  color:      isBest ? 'rgba(96,165,250,0.9)' : 'rgba(241,245,249,0.22)',
                   whiteSpace: 'nowrap',
                   fontWeight: isBest ? '600' : '400',
                   userSelect: 'none',
@@ -191,7 +191,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                     left:          '50%',
                     transform:     'translateX(-50%)',
                     background:    '#1A1C2E',
-                    border:        '1px solid rgba(196,163,94,0.18)',
+                    border:        '1px solid rgba(255,255,255,0.1)',
                     borderRadius:  '8px',
                     padding:       '8px 12px',
                     zIndex:        20,
@@ -209,7 +209,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
                       )}
                     </div>
                     {d.paidPayout > 0 && (
-                      <div style={{ fontSize: '14px', fontWeight: '700', color: GOLD, fontVariantNumeric: 'tabular-nums' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#F1F5F9', fontVariantNumeric: 'tabular-nums' }}>
                         {fmtTHB(d.paidPayout)}
                       </div>
                     )}
@@ -243,7 +243,7 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
             <div style={{ fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.3)', marginBottom: '4px' }}>
               Best Month
             </div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: GOLD }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#F1F5F9' }}>
               {data[bestIdx].label}
             </div>
           </div>

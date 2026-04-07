@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Users' }
 export const dynamic = 'force-dynamic'
 
 const ROLE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  admin:   { bg: 'rgba(196,163,94,0.1)', color: '#C4A35E', label: 'ADMIN'   },
+  admin:   { bg: 'rgba(59,130,246,0.1)', color: '#60A5FA', label: 'ADMIN'   },
   partner: { bg: 'rgba(99,120,255,0.1)', color: '#6378FF', label: 'PARTNER' },
 }
 
@@ -91,8 +91,8 @@ export default async function AdminUsersPage() {
                         {u.username ? (
                           <span style={{
                             fontFamily: 'monospace', fontSize: '12px',
-                            color: 'rgba(196,163,94,0.8)',
-                            background: 'rgba(196,163,94,0.07)',
+                            color: 'rgba(241,245,249,0.7)',
+                            background: 'rgba(255,255,255,0.06)',
                             padding: '2px 8px', borderRadius: '5px',
                           }}>
                             {u.username}

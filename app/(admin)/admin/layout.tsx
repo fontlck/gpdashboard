@@ -21,13 +21,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (profile?.role !== 'admin') redirect('/dashboard')
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: '#080A10' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', background: '#06080F' }}>
       <AdminSidebar />
       <main style={{
-        flex:     1,
-        padding:  '32px 36px',
-        overflowY:'auto',
-        minWidth: 0,
+        flex:      1,
+        padding:   '32px 32px',
+        overflowY: 'auto',
+        minWidth:  0,
       }}>
         {children}
       </main>

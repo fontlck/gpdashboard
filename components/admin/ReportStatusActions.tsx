@@ -147,8 +147,8 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
             disabled={loading === 'mark_paid'}
             style={{
               padding: '10px 20px', borderRadius: '8px',
-              border: '1px solid rgba(196,163,94,0.4)',
-              background: 'rgba(196,163,94,0.1)', color: '#C4A35E',
+              border: '1px solid rgba(34,197,94,0.4)',
+              background: 'rgba(34,197,94,0.1)', color: '#4ADE80',
               fontSize: '13px', fontWeight: '700', cursor: 'pointer',
               opacity: loading === 'mark_paid' ? 0.6 : 1,
             }}
@@ -169,8 +169,8 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
           )}
           <div style={{
             marginTop: '14px', padding: '10px 14px', borderRadius: '8px',
-            background: 'rgba(196,163,94,0.06)', border: '1px solid rgba(196,163,94,0.15)',
-            fontSize: '12px', color: 'rgba(196,163,94,0.7)',
+            background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.12)',
+            fontSize: '12px', color: 'rgba(74,222,128,0.7)',
           }}>
             This report is fully paid. No further actions available.
           </div>

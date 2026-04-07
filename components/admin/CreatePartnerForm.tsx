@@ -104,9 +104,9 @@ export function CreatePartnerForm({ partners }: Props) {
           onClick={() => { setOpen(o => !o); setError(null); setSuccess(null) }}
           style={{
             padding: '8px 16px', borderRadius: '8px',
-            border: '1px solid rgba(196,163,94,0.35)',
-            background: open ? 'rgba(255,255,255,0.04)' : 'rgba(196,163,94,0.1)',
-            color: open ? 'rgba(240,236,228,0.5)' : '#C4A35E',
+            border: '1px solid rgba(59,130,246,0.35)',
+            background: open ? 'rgba(255,255,255,0.04)' : 'rgba(59,130,246,0.1)',
+            color: open ? 'rgba(241,245,249,0.5)' : '#60A5FA',
             fontSize: '12px', fontWeight: '700', cursor: 'pointer',
             letterSpacing: '0.04em',
           }}
@@ -145,7 +145,7 @@ export function CreatePartnerForm({ partners }: Props) {
                 required
                 placeholder="e.g. bkk_riverside"
                 style={input}
-                onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+                onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
                 onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
               />
               <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '4px' }}>
@@ -163,7 +163,7 @@ export function CreatePartnerForm({ partners }: Props) {
                 required
                 placeholder="e.g. Riverside Branch"
                 style={input}
-                onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+                onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
                 onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
               />
             </div>
@@ -176,7 +176,7 @@ export function CreatePartnerForm({ partners }: Props) {
                 onChange={e => setPartnerId(e.target.value)}
                 required
                 style={{ ...input, appearance: 'none' }}
-                onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+                onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
                 onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
               >
                 <option value="">Select partner…</option>
@@ -200,7 +200,7 @@ export function CreatePartnerForm({ partners }: Props) {
                 minLength={8}
                 placeholder="Min. 8 characters"
                 style={input}
-                onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+                onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
                 onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
               />
             </div>
@@ -215,7 +215,7 @@ export function CreatePartnerForm({ partners }: Props) {
                 required
                 placeholder="••••••••"
                 style={input}
-                onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+                onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
                 onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
               />
             </div>
@@ -245,10 +245,8 @@ export function CreatePartnerForm({ partners }: Props) {
               disabled={loading}
               style={{
                 padding: '10px 24px', borderRadius: '8px',
-                background: loading
-                  ? 'rgba(196,163,94,0.4)'
-                  : 'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
-                border: 'none', color: '#080A10', fontSize: '13px', fontWeight: '700',
+                background: loading ? 'rgba(59,130,246,0.4)' : '#3B82F6',
+                border: 'none', color: '#F1F5F9', fontSize: '13px', fontWeight: '700',
                 cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.04em',
               }}
             >

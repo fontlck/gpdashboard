@@ -96,8 +96,8 @@ export default async function AdminReportsPage() {
         actions={
           <Link href="/admin/upload" style={{
             padding: '10px 18px', borderRadius: '10px',
-            background: 'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
-            color: '#080A10', fontSize: '13px', fontWeight: '700',
+            background: '#3B82F6',
+            color: '#F1F5F9', fontSize: '13px', fontWeight: '700',
             textDecoration: 'none', letterSpacing: '0.04em',
           }}>
             ↑ Upload CSV

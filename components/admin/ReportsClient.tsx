@@ -266,8 +266,8 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
                         <span style={{
                           marginLeft: '6px', fontSize: '10px', fontWeight: '700',
                           letterSpacing: '0.06em', padding: '1px 5px', borderRadius: '4px',
-                          background: 'rgba(196,163,94,0.1)', color: '#C4A35E',
-                          border: '1px solid rgba(196,163,94,0.2)',
+                          background: 'rgba(59,130,246,0.1)', color: '#60A5FA',
+                          border: '1px solid rgba(59,130,246,0.2)',
                         }}>VAT</span>
                       )}
                     </td>
@@ -284,7 +284,7 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
 
                     {/* Final Payout */}
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                      <span style={{ color: '#C4A35E', fontWeight: '700' }}>
+                      <span style={{ color: '#F1F5F9', fontWeight: '700' }}>
                         {fmtTHB(r.final_payout)}
                       </span>
                       {r.vat_amount > 0 && (
@@ -315,7 +315,7 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
                         href={`/admin/reports/${r.id}`}
                         style={{
                           fontSize: '12px',
-                          color: 'rgba(196,163,94,0.7)',
+                          color: 'rgba(59,130,246,0.8)',
                           textDecoration: 'none',
                           fontWeight: '500',
                           whiteSpace: 'nowrap',

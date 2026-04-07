@@ -5,10 +5,21 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const NAV_ITEMS = [
-  { href: '/dashboard',         label: 'Overview',  icon: '▦' },
-  { href: '/dashboard/reports', label: 'Reports',   icon: '◫' },
-  { href: '/dashboard/account', label: 'Account',   icon: '○' },
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  bg:       '#06080F',
+  border:   'rgba(255,255,255,0.07)',
+  accent:   '#3B82F6',
+  accentBg: 'rgba(59,130,246,0.08)',
+  text:     '#F1F5F9',
+  muted:    'rgba(241,245,249,0.45)',
+  hover:    'rgba(255,255,255,0.04)',
+}
+
+const NAV = [
+  { href: '/dashboard',         label: 'Overview' },
+  { href: '/dashboard/reports', label: 'Reports'  },
+  { href: '/dashboard/account', label: 'Account'  },
 ] as const
 
 export function PartnerSidebar() {
@@ -24,83 +35,79 @@ export function PartnerSidebar() {
 
   return (
     <aside style={{
-      width:        '200px',
-      minWidth:     '200px',
-      height:       '100dvh',
-      position:     'sticky',
-      top:          0,
-      display:      'flex',
-      flexDirection:'column',
-      background:   '#0D0F1A',
-      borderRight:  '1px solid rgba(255,255,255,0.06)',
-      zIndex:       40,
+      width: '200px', minWidth: '200px',
+      height: '100dvh', position: 'sticky', top: 0,
+      display: 'flex', flexDirection: 'column',
+      background: T.bg, borderRight: `1px solid ${T.border}`, zIndex: 40,
     }}>
-      {/* Wordmark */}
-      <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+
+      {/* Logo */}
+      <div style={{ padding: '20px 16px 16px', borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
           <div style={{
-            width: '30px', height: '30px', borderRadius: '8px',
-            background: 'linear-gradient(135deg,#C4A35E 0%,#8B6A2E 100%)',
+            width: '28px', height: '28px', borderRadius: '7px',
+            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '13px', fontWeight: '800', color: '#080A10',
+            fontSize: '12px', fontWeight: '800', color: '#fff', flexShrink: 0,
+            boxShadow: '0 0 12px rgba(59,130,246,0.35)',
           }}>G</div>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: '#F0ECE4', letterSpacing: '-0.01em' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: T.text, letterSpacing: '-0.01em' }}>
               GP Dashboard
             </div>
-            <div style={{ fontSize: '10px', color: '#C4A35E', letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.8 }}>
+            <div style={{ fontSize: '10px', color: T.accent, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.7, marginTop: '1px' }}>
               Partner Portal
             </div>
           </div>
         </div>
       </div>
 
-      <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        {NAV_ITEMS.map(item => {
-          const isActive = item.href === '/dashboard'
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+        {NAV.map(item => {
+          const active = item.href === '/dashboard'
             ? pathname === '/dashboard'
             : pathname.startsWith(item.href)
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display:     'flex',
-                alignItems:  'center',
-                gap:         '10px',
-                padding:     '9px 12px',
-                borderRadius:'10px',
-                fontSize:    '13px',
-                fontWeight:  isActive ? '600' : '400',
-                color:       isActive ? '#F0ECE4' : 'rgba(240,236,228,0.5)',
-                background:  isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
-                textDecoration: 'none',
-                transition:  'all 0.15s',
-                borderLeft:  isActive ? '2px solid rgba(196,163,94,0.6)' : '2px solid transparent',
-              }}
+            <Link key={item.href} href={item.href} style={{
+              display: 'flex', alignItems: 'center',
+              height: '36px', padding: '0 12px',
+              borderRadius: '8px', fontSize: '13px',
+              fontWeight: active ? '600' : '400',
+              color: active ? T.text : T.muted,
+              background: active ? T.accentBg : 'transparent',
+              textDecoration: 'none', transition: 'background 0.12s, color 0.12s',
+              borderLeft: active ? `2px solid ${T.accent}` : '2px solid transparent',
+              marginLeft: '-2px',
+            }}
+            onMouseEnter={e => { if (!active) { e.currentTarget.style.background = T.hover; e.currentTarget.style.color = T.text } }}
+            onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = T.muted } }}
             >
-              <span style={{ fontSize: '14px', opacity: 0.8 }}>{item.icon}</span>
               {item.label}
             </Link>
           )
         })}
       </nav>
 
-      <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button
-          onClick={handleSignOut}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '9px 12px', borderRadius: '10px',
-            background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'rgba(240,236,228,0.35)', fontSize: '13px',
-            transition: 'color 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,236,228,0.35)')}
+      {/* Sign out */}
+      <div style={{ padding: '8px', borderTop: `1px solid ${T.border}` }}>
+        <button onClick={handleSignOut} style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+          height: '36px', padding: '0 12px', borderRadius: '8px',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          color: 'rgba(241,245,249,0.3)', fontSize: '13px', textAlign: 'left',
+          transition: 'color 0.12s, background 0.12s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.color = '#F87171'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(241,245,249,0.3)'; e.currentTarget.style.background = 'transparent' }}
         >
-          <span>→</span> Sign out
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Sign out
         </button>
       </div>
     </aside>

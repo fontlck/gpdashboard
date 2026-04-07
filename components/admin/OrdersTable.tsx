@@ -142,8 +142,8 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
   }
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '5px 8px', borderRadius: '6px',
-    border: '1px solid rgba(196,163,94,0.35)',
-    background: 'rgba(196,163,94,0.06)', color: '#F0ECE4',
+    border: '1px solid rgba(255,255,255,0.15)',
+    background: 'rgba(255,255,255,0.05)', color: '#F1F5F9',
     fontSize: '12px', outline: 'none', boxSizing: 'border-box',
   }
 
@@ -302,9 +302,9 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
                             disabled={edit.saving}
                             style={{
                               padding: '4px 10px', borderRadius: 6,
-                              border: '1px solid rgba(196,163,94,0.4)',
-                              background: 'rgba(196,163,94,0.1)',
-                              color: '#C4A35E', fontSize: 11, cursor: 'pointer',
+                              border: '1px solid rgba(59,130,246,0.4)',
+                              background: 'rgba(59,130,246,0.1)',
+                              color: '#60A5FA', fontSize: 11, cursor: 'pointer',
                               opacity: edit.saving ? 0.5 : 1,
                             }}
                           >

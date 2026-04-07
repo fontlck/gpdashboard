@@ -17,7 +17,7 @@ const ROW = ({ label, value, description }: { label: string; value: ReactNode; d
         <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'rgba(240,236,228,0.35)' }}>{description}</p>
       )}
     </div>
-    <span style={{ fontSize: '14px', fontWeight: '600', color: '#C4A35E', whiteSpace: 'nowrap' }}>
+    <span style={{ fontSize: '14px', fontWeight: '600', color: '#F1F5F9', whiteSpace: 'nowrap' }}>
       {value}
     </span>
   </div>

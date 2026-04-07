@@ -8,10 +8,10 @@ interface KpiCardProps {
 }
 
 const ACCENT_COLOUR = {
-  gold:    '#C4A35E',
+  gold:    '#F1F5F9',
   green:   '#22C55E',
   amber:   '#F59E0B',
-  default: 'rgba(240,236,228,0.7)',
+  default: '#F1F5F9',
 }
 
 export function KpiCard({ label, value, sub, trend, accent = 'default', fullWidth }: KpiCardProps) {
@@ -19,9 +19,9 @@ export function KpiCard({ label, value, sub, trend, accent = 'default', fullWidt
 
   return (
     <div style={{
-      background:   '#0D0F1A',
-      border:       '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '16px',
+      background:   '#0C1018',
+      border:       '1px solid rgba(255,255,255,0.07)',
+      borderRadius: '12px',
       padding:      '24px',
       display:      'flex',
       flexDirection:'column',
@@ -40,7 +40,7 @@ export function KpiCard({ label, value, sub, trend, accent = 'default', fullWidt
       )}
 
       <span style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em',
-        textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)' }}>
+        textTransform: 'uppercase', color: 'rgba(241,245,249,0.4)' }}>
         {label}
       </span>
 
@@ -51,7 +51,7 @@ export function KpiCard({ label, value, sub, trend, accent = 'default', fullWidt
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
         {sub && (
-          <span style={{ fontSize: '12px', color: 'rgba(240,236,228,0.35)' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(241,245,249,0.35)' }}>
             {sub}
           </span>
         )}

@@ -139,7 +139,7 @@ export default async function PartnerAccountPage() {
                     <td style={{ padding: '10px 0', color: '#F0ECE4', fontWeight: '500' }}>{b.name}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.4)', fontFamily: 'monospace', fontSize: '12px' }}>{b.code ?? '—'}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.5)' }}>{b.location ?? '—'}</td>
-                    <td style={{ padding: '10px 0', color: '#C4A35E', fontWeight: '600' }}>{b.revenue_share_pct}%</td>
+                    <td style={{ padding: '10px 0', color: '#F1F5F9', fontWeight: '600' }}>{b.revenue_share_pct}%</td>
                     <td style={{ padding: '10px 0' }}>
                       <span style={{
                         fontSize: '11px', fontWeight: '600', letterSpacing: '0.06em',

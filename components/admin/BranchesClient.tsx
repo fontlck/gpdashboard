@@ -27,8 +27,8 @@ const BTN: React.CSSProperties = {
 }
 const GOLD_BTN: React.CSSProperties = {
   ...BTN,
-  background: 'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
-  color: '#080A10',
+  background: '#3B82F6',
+  color: '#F1F5F9',
 }
 const GHOST_BTN: React.CSSProperties = {
   ...BTN,
@@ -121,18 +121,18 @@ function EditForm({
 
   const toggleStyle = (active: boolean): React.CSSProperties => ({
     ...BTN,
-    background: active ? 'rgba(196,163,94,0.15)' : 'rgba(255,255,255,0.04)',
-    color: active ? '#C4A35E' : 'rgba(240,236,228,0.5)',
-    border: `1px solid ${active ? 'rgba(196,163,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
+    background: active ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.04)',
+    color: active ? '#60A5FA' : 'rgba(241,245,249,0.5)',
+    border: `1px solid ${active ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.08)'}`,
   })
 
   return (
     <tr>
       <td colSpan={7} style={{ padding: 0 }}>
         <div style={{
-          background: 'rgba(196,163,94,0.04)',
-          borderTop: '1px solid rgba(196,163,94,0.15)',
-          borderBottom: '1px solid rgba(196,163,94,0.15)',
+          background: 'rgba(255,255,255,0.02)',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
           padding: '20px 24px',
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
@@ -271,7 +271,7 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
                   <tr
                     style={{
                       borderBottom: isEdit ? 'none' : '1px solid rgba(255,255,255,0.04)',
-                      background: isEdit ? 'rgba(196,163,94,0.03)' : 'transparent',
+                      background: isEdit ? 'rgba(59,130,246,0.03)' : 'transparent',
                     }}
                   >
                     {/* Branch name */}
@@ -291,8 +291,8 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
                         <span style={{
                           marginLeft: '8px', fontSize: '10px', fontWeight: '700',
                           letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '4px',
-                          background: 'rgba(196,163,94,0.1)', color: '#C4A35E',
-                          border: '1px solid rgba(196,163,94,0.2)',
+                          background: 'rgba(59,130,246,0.1)', color: '#60A5FA',
+                          border: '1px solid rgba(59,130,246,0.2)',
                         }}>VAT</span>
                       )}
                     </td>
@@ -312,7 +312,7 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
                     </td>
 
                     {/* Amount */}
-                    <td style={{ padding: '14px 20px', color: '#C4A35E', fontWeight: '600' }}>
+                    <td style={{ padding: '14px 20px', color: '#F1F5F9', fontWeight: '600' }}>
                       {b.payout_type === 'fixed_rent'
                         ? `฿${(b.fixed_rent_amount ?? 0).toLocaleString()}/mo`
                         : `${b.revenue_share_pct}%`
@@ -336,7 +336,7 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
                       <button
                         style={{
                           ...GHOST_BTN,
-                          ...(isEdit ? { background: 'rgba(196,163,94,0.1)', color: '#C4A35E' } : {}),
+                          ...(isEdit ? { background: 'rgba(59,130,246,0.1)', color: '#60A5FA' } : {}),
                         }}
                         onClick={() => setEditingId(isEdit ? null : b.id)}
                       >

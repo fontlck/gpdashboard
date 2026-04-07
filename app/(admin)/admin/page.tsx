@@ -74,7 +74,7 @@ export default async function AdminOverviewPage() {
                     <td style={{ padding:'14px 24px', color:'#F0ECE4' }}>
                       {formatReportingPeriod(r.reporting_month, r.reporting_year)}
                     </td>
-                    <td style={{ padding:'14px 24px', color:'#C4A35E', fontWeight:'600' }}>
+                    <td style={{ padding:'14px 24px', color:'#F1F5F9', fontWeight:'600' }}>
                       {formatTHB(Number(r.final_payout))}
                     </td>
                     <td style={{ padding:'14px 24px' }}>

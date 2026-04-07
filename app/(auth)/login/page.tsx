@@ -75,9 +75,10 @@ export default function LoginPage() {
         }}>
           <span style={{
             width: '36px', height: '36px', borderRadius: '10px',
-            background: 'linear-gradient(135deg,#C4A35E 0%,#8B6A2E 100%)',
+            background: 'linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '16px', fontWeight: '700', color: '#080A10',
+            fontSize: '16px', fontWeight: '700', color: '#F1F5F9',
+            boxShadow: '0 0 16px rgba(59,130,246,0.35)',
           }}>G</span>
           <span style={{ fontSize: '20px', fontWeight: '700', color: '#F0ECE4', letterSpacing: '-0.02em' }}>
             GP Dashboard
@@ -121,7 +122,7 @@ export default function LoginPage() {
               autoComplete="username"
               placeholder="username or you@example.com"
               style={inputStyle}
-              onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+              onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
               onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
             />
           </div>
@@ -143,7 +144,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               placeholder="••••••••"
               style={inputStyle}
-              onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
+              onFocus={e  => (e.target.style.borderColor = 'rgba(59,130,246,0.5)')}
               onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
             />
           </div>
@@ -167,11 +168,9 @@ export default function LoginPage() {
             style={{
               marginTop: '4px',
               padding: '12px',
-              background: loading
-                ? 'rgba(196,163,94,0.4)'
-                : 'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
+              background: loading ? 'rgba(59,130,246,0.4)' : '#3B82F6',
               border: 'none', borderRadius: '10px',
-              color: '#080A10', fontSize: '14px', fontWeight: '700',
+              color: '#F1F5F9', fontSize: '14px', fontWeight: '700',
               cursor: loading ? 'not-allowed' : 'pointer',
               letterSpacing: '0.04em',
               transition: 'opacity 0.15s',
@@ -186,12 +185,12 @@ export default function LoginPage() {
               href="/forgot-password"
               style={{
                 fontSize: '12px',
-                color: 'rgba(196,163,94,0.6)',
+                color: 'rgba(59,130,246,0.7)',
                 textDecoration: 'none',
                 letterSpacing: '0.02em',
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(196,163,94,1)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(196,163,94,0.6)')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#3B82F6')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(59,130,246,0.7)')}
             >
               Forgot password?
             </a>

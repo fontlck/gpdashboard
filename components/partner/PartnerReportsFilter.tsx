@@ -256,7 +256,7 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
                       <div style={{
                         fontSize:           '16px',
                         fontWeight:         '700',
-                        color:              '#C4A35E',
+                        color:              '#F1F5F9',
                         whiteSpace:         'nowrap',
                         fontVariantNumeric: 'tabular-nums',
                         letterSpacing:      '-0.01em',
@@ -276,7 +276,7 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
                         {fmtDate(updatedDate)}
                       </div>
                       {isHov && (
-                        <div style={{ fontSize: '11px', color: 'rgba(196,163,94,0.6)', marginTop: '3px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(59,130,246,0.8)', marginTop: '3px' }}>
                           View report →
                         </div>
                       )}

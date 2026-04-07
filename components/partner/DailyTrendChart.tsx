@@ -144,8 +144,8 @@ export function DailyTrendChart({
                 padding: '6px 16px', borderRadius: '7px',
                 border: 'none', cursor: 'pointer',
                 fontSize: '12px', fontWeight: '500',
-                background: mode === t.key ? 'rgba(196,163,94,0.14)' : 'transparent',
-                color: mode === t.key ? '#C4A35E' : 'rgba(240,236,228,0.38)',
+                background: mode === t.key ? 'rgba(59,130,246,0.12)' : 'transparent',
+                color: mode === t.key ? '#60A5FA' : 'rgba(241,245,249,0.38)',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -200,9 +200,9 @@ export function DailyTrendChart({
 
             let barBg: string
             if (isZero)       barBg = 'rgba(255,255,255,0.04)'
-            else if (isHov)   barBg = 'rgba(196,163,94,0.9)'
-            else if (isBest)  barBg = 'rgba(196,163,94,0.75)'
-            else              barBg = 'rgba(196,163,94,0.35)'
+            else if (isHov)   barBg = 'rgba(59,130,246,0.9)'
+            else if (isBest)  barBg = 'rgba(59,130,246,0.75)'
+            else              barBg = 'rgba(59,130,246,0.35)'
 
             return (
               <div
@@ -232,8 +232,8 @@ export function DailyTrendChart({
                     transform: 'translateX(-50%)',
                     width: '5px', height: '5px',
                     borderRadius: '50%',
-                    background: '#C4A35E',
-                    boxShadow: '0 0 6px rgba(196,163,94,0.7)',
+                    background: '#3B82F6',
+                    boxShadow: '0 0 6px rgba(59,130,246,0.7)',
                   }} />
                 )}
               </div>
@@ -270,7 +270,7 @@ export function DailyTrendChart({
               ? 'translateX(-100%)'
               : 'translateX(-50%)',
             background: 'rgba(7,9,18,0.97)',
-            border: '1px solid rgba(196,163,94,0.28)',
+            border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '9px',
             padding: '9px 14px',
             pointerEvents: 'none',
@@ -283,7 +283,7 @@ export function DailyTrendChart({
               {hovered === bestIdx && (
                 <span style={{
                   marginLeft: '6px', fontSize: '10px', fontWeight: '600',
-                  color: 'rgba(196,163,94,0.7)', letterSpacing: '0.06em',
+                  color: 'rgba(59,130,246,0.9)', letterSpacing: '0.06em',
                   textTransform: 'uppercase',
                 }}>
                   Best
@@ -291,7 +291,7 @@ export function DailyTrendChart({
               )}
             </div>
             <div style={{
-              fontSize: '15px', fontWeight: '700', color: '#C4A35E',
+              fontSize: '15px', fontWeight: '700', color: '#F1F5F9',
               letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums',
             }}>
               {fmtValue(values[hovered], mode)}
@@ -318,14 +318,14 @@ export function DailyTrendChart({
             <div style={{
               fontSize: '10px', fontWeight: '600',
               letterSpacing: '0.08em', textTransform: 'uppercase',
-              color: s.gold ? 'rgba(196,163,94,0.5)' : 'rgba(240,236,228,0.25)',
+              color: 'rgba(241,245,249,0.35)',
               marginBottom: '8px',
             }}>
               {s.label}
             </div>
             <div style={{
               fontSize: '16px', fontWeight: '700',
-              color: s.gold ? '#C4A35E' : '#F0ECE4',
+              color: '#F1F5F9',
               marginBottom: '4px',
               letterSpacing: '-0.015em',
               fontVariantNumeric: 'tabular-nums',

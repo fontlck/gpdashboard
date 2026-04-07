@@ -68,9 +68,9 @@ const ROW = ({ label, value, accent = false, warning = false, muted = false }: {
     <span style={{
       fontSize: '14px', fontWeight: accent ? '700' : '500',
       color: warning ? '#F59E0B'
-           : accent  ? '#C4A35E'
-           : muted   ? 'rgba(240,236,228,0.28)'
-           :           '#F0ECE4',
+           : accent  ? '#F1F5F9'
+           : muted   ? 'rgba(241,245,249,0.28)'
+           :           '#F1F5F9',
       fontVariantNumeric: 'tabular-nums',
     }}>{value}</span>
   </div>
@@ -158,17 +158,17 @@ const LedgerPayout = ({ value }: { value: string }) => (
   <div style={{
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '18px 0 4px',
-    borderTop: '2px solid rgba(196,163,94,0.25)',
+    borderTop: '2px solid rgba(255,255,255,0.1)',
     marginTop: '10px',
   }}>
     <span style={{
       fontSize: '12px', fontWeight: '600', letterSpacing: '0.1em',
-      textTransform: 'uppercase', color: 'rgba(196,163,94,0.6)',
+      textTransform: 'uppercase', color: 'rgba(241,245,249,0.45)',
     }}>
       Final Payout
     </span>
     <span style={{
-      fontSize: '24px', fontWeight: '700', color: '#C4A35E',
+      fontSize: '24px', fontWeight: '700', color: '#F1F5F9',
       letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums',
     }}>
       {value}
@@ -384,8 +384,8 @@ export default async function PartnerReportDetailPage({
 
         <div style={{
           marginTop: '16px', padding: '10px 14px', borderRadius: '8px',
-          background: 'rgba(196,163,94,0.04)', border: '1px solid rgba(196,163,94,0.1)',
-          fontSize: '11px', color: 'rgba(196,163,94,0.5)', lineHeight: '1.65',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+          fontSize: '11px', color: 'rgba(241,245,249,0.4)', lineHeight: '1.65',
         }}>
           Your payout is a fixed monthly amount — it does not vary with sales.
         </div>
@@ -401,7 +401,7 @@ export default async function PartnerReportDetailPage({
       {/* ── Back link ──────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: '28px' }}>
         <Link href="/dashboard" style={{
-          fontSize: '13px', color: 'rgba(196,163,94,0.6)',
+          fontSize: '13px', color: 'rgba(59,130,246,0.7)',
           textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px',
           letterSpacing: '0.01em',
         }}>
@@ -412,7 +412,7 @@ export default async function PartnerReportDetailPage({
       {/* ── Hero card ──────────────────────────────────────────────────────── */}
       <div style={{
         background: 'linear-gradient(140deg, #10132A 0%, #0D0F1A 55%, #12152B 100%)',
-        border: '1px solid rgba(196,163,94,0.18)',
+        border: '1px solid rgba(255,255,255,0.07)',
         borderRadius: '20px',
         padding: '32px 36px 30px',
         marginBottom: '14px',
@@ -421,12 +421,12 @@ export default async function PartnerReportDetailPage({
         {/* Ambient radial glow */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse at 80% 0%, rgba(196,163,94,0.06) 0%, transparent 58%)',
+          background: 'radial-gradient(ellipse at 80% 0%, rgba(59,130,246,0.04) 0%, transparent 58%)',
         }} />
         {/* Gold bottom accent line */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px',
-          background: 'linear-gradient(90deg, transparent 0%, rgba(196,163,94,0.55) 40%, rgba(196,163,94,0.55) 60%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.3) 40%, rgba(59,130,246,0.3) 60%, transparent 100%)',
         }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -439,7 +439,7 @@ export default async function PartnerReportDetailPage({
             <div>
               <div style={{
                 fontSize: '11px', fontWeight: '600', letterSpacing: '0.12em',
-                textTransform: 'uppercase', color: 'rgba(196,163,94,0.55)',
+                textTransform: 'uppercase', color: 'rgba(241,245,249,0.35)',
                 marginBottom: '5px',
               }}>
                 {branch?.name ?? 'Branch'}
@@ -471,7 +471,7 @@ export default async function PartnerReportDetailPage({
               Final Payout
             </div>
             <div style={{
-              fontSize: '54px', fontWeight: '700', color: '#C4A35E',
+              fontSize: '54px', fontWeight: '700', color: '#F1F5F9',
               letterSpacing: '-0.035em', lineHeight: '1',
               fontVariantNumeric: 'tabular-nums',
             }}>
@@ -512,23 +512,23 @@ export default async function PartnerReportDetailPage({
       {/* ── Partnership banner ─────────────────────────────────────────────── */}
       {branchStartLocal && (
         <div style={{
-          background: 'rgba(196,163,94,0.04)',
-          border: '1px solid rgba(196,163,94,0.14)',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: '14px', padding: '14px 20px',
           marginBottom: '14px',
           display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
         }}>
           <div style={{
             width: '6px', height: '6px', borderRadius: '50%',
-            background: 'rgba(196,163,94,0.55)', flexShrink: 0,
+            background: 'rgba(59,130,246,0.55)', flexShrink: 0,
           }} />
-          <span style={{ fontSize: '13px', color: 'rgba(196,163,94,0.6)', fontWeight: '500' }}>
+          <span style={{ fontSize: '13px', color: 'rgba(241,245,249,0.4)', fontWeight: '500' }}>
             Partner since
           </span>
-          <span style={{ fontSize: '13px', color: '#C4A35E', fontWeight: '600' }}>
+          <span style={{ fontSize: '13px', color: '#F1F5F9', fontWeight: '600' }}>
             {formatFullDate(branchStartLocal)}
           </span>
-          <span style={{ fontSize: '12px', color: 'rgba(196,163,94,0.38)', marginLeft: '2px' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(241,245,249,0.3)', marginLeft: '2px' }}>
             · {formatDuration(branchStartLocal)}
           </span>
         </div>
@@ -687,13 +687,13 @@ export default async function PartnerReportDetailPage({
               {artists.map((a, idx) => (
                 <tr key={a.id} style={{
                   borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  background: idx === 0 ? 'rgba(196,163,94,0.025)' : 'transparent',
+                  background: idx === 0 ? 'rgba(59,130,246,0.025)' : 'transparent',
                 }}>
                   {/* Rank */}
                   <td style={{ padding: '15px 0', verticalAlign: 'middle' }}>
                     <span style={{
                       fontSize: '12px', fontWeight: '700',
-                      color: idx === 0 ? '#C4A35E' : 'rgba(240,236,228,0.18)',
+                      color: idx === 0 ? '#F1F5F9' : 'rgba(241,245,249,0.18)',
                     }}>
                       {idx + 1}
                     </span>
@@ -710,7 +710,7 @@ export default async function PartnerReportDetailPage({
                             width: 42, height: 42, borderRadius: '50%',
                             objectFit: 'cover', display: 'block', flexShrink: 0,
                             border: idx === 0
-                              ? '1.5px solid rgba(196,163,94,0.45)'
+                              ? '1.5px solid rgba(59,130,246,0.45)'
                               : '1px solid rgba(255,255,255,0.09)',
                           }}
                         />

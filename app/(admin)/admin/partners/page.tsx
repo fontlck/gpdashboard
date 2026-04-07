@@ -39,8 +39,8 @@ export default async function AdminPartnersPage() {
         actions={
           <button style={{
             padding: '10px 18px', borderRadius: '10px',
-            background: 'linear-gradient(135deg,#C4A35E 0%,#9A7A3A 100%)',
-            color: '#080A10', fontSize: '13px', fontWeight: '700',
+            background: '#3B82F6',
+            color: '#F1F5F9', fontSize: '13px', fontWeight: '700',
             border: 'none', cursor: 'pointer', letterSpacing: '0.04em',
           }}>
             + Add Partner
@@ -76,8 +76,8 @@ export default async function AdminPartnersPage() {
                       <span style={{
                         fontSize: '10px', fontWeight: '700', letterSpacing: '0.08em',
                         padding: '3px 8px', borderRadius: '6px',
-                        background: 'rgba(196,163,94,0.1)', color: '#C4A35E',
-                        border: '1px solid rgba(196,163,94,0.2)',
+                        background: 'rgba(59,130,246,0.1)', color: '#60A5FA',
+                        border: '1px solid rgba(59,130,246,0.2)',
                       }}>
                         VAT REG
                       </span>
@@ -120,7 +120,7 @@ export default async function AdminPartnersPage() {
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#C4A35E' }}>
+                  <p style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#F1F5F9' }}>
                     {activeBranches.length}
                   </p>
                   <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(240,236,228,0.3)',

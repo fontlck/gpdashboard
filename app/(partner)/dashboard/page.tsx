@@ -140,25 +140,25 @@ export default async function PartnerOverviewPage() {
       label: 'Total Earned',
       value: formatTHB(totalPayout),
       sub:   'Paid reports only',
-      color: '#C4A35E',
+      color: '#F1F5F9',
     },
     {
       label: 'Awaiting Payment',
       value: awaitingPayment > 0 ? formatTHB(awaitingPayment) : '—',
       sub:   `${approvedReports.length} approved, unpaid`,
-      color: awaitingPayment > 0 ? '#E8A030' : 'rgba(240,236,228,0.35)',
+      color: awaitingPayment > 0 ? '#F1F5F9' : 'rgba(241,245,249,0.35)',
     },
     {
       label: 'Total Reports',
       value: String(totalCount),
       sub:   `${paidCount} paid · ${approvedReports.length} approved`,
-      color: 'rgba(240,236,228,0.75)',
+      color: 'rgba(241,245,249,0.75)',
     },
     {
       label: 'Avg / Month',
       value: paidCount > 0 ? formatTHB(avgPerMonth) : '—',
       sub:   'Based on paid months',
-      color: '#C4A35E',
+      color: '#F1F5F9',
     },
   ]
 
@@ -173,7 +173,7 @@ export default async function PartnerOverviewPage() {
         <div style={{
           position:      'absolute', top: '-60px', right: '-20px',
           width:         '340px',   height: '260px',
-          background:    'radial-gradient(ellipse at top right, rgba(196,163,94,0.09) 0%, transparent 65%)',
+          background:    'radial-gradient(ellipse at top right, rgba(59,130,246,0.05) 0%, transparent 65%)',
           pointerEvents: 'none',
         }} />
 
@@ -186,7 +186,7 @@ export default async function PartnerOverviewPage() {
               fontSize:      '10px',
               letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              color:         'rgba(196,163,94,0.5)',
+              color:         'rgba(241,245,249,0.35)',
               marginBottom:  '10px',
               fontWeight:    '600',
             }}>
@@ -195,7 +195,7 @@ export default async function PartnerOverviewPage() {
             <div style={{
               fontSize:           '52px',
               fontWeight:         '800',
-              color:              '#C4A35E',
+              color:              '#F1F5F9',
               letterSpacing:      '-0.03em',
               lineHeight:         1,
               fontVariantNumeric: 'tabular-nums',
@@ -215,7 +215,7 @@ export default async function PartnerOverviewPage() {
                 <div style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,236,228,0.28)', marginBottom: '7px' }}>
                   Awaiting Payment
                 </div>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#E8A030', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#F1F5F9', fontVariantNumeric: 'tabular-nums' }}>
                   {formatTHB(awaitingPayment)}
                 </div>
                 <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.24)', marginTop: '4px' }}>

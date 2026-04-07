@@ -135,7 +135,7 @@ export default async function AdminReportDetailPage({
       <span style={{
         fontSize: '14px',
         fontWeight: accent ? '700' : '500',
-        color: warning ? '#F59E0B' : accent ? '#C4A35E' : muted ? 'rgba(240,236,228,0.35)' : '#F0ECE4',
+        color: warning ? '#F59E0B' : accent ? '#F1F5F9' : muted ? 'rgba(241,245,249,0.35)' : '#F1F5F9',
       }}>{value}</span>
     </div>
   )
@@ -165,8 +165,8 @@ export default async function AdminReportDetailPage({
 
           <div style={{
             marginTop: '16px', padding: '10px 14px', borderRadius: '10px',
-            background: 'rgba(196,163,94,0.06)', border: '1px solid rgba(196,163,94,0.15)',
-            fontSize: '12px', color: 'rgba(196,163,94,0.7)',
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+            fontSize: '12px', color: 'rgba(241,245,249,0.45)',
           }}>
             Fixed rent model — payout is not affected by sales or refunds.
           </div>

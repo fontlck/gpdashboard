@@ -34,7 +34,7 @@ type ActionStyle = { bg: string; color: string }
 const ACTION_STYLE: Record<string, ActionStyle> = {
   report_created:       { bg: 'rgba(99,120,255,0.1)',   color: '#6378FF'  },
   report_approved:      { bg: 'rgba(34,197,94,0.1)',    color: '#22C55E'  },
-  report_paid:          { bg: 'rgba(196,163,94,0.1)',   color: '#C4A35E'  },
+  report_paid:          { bg: 'rgba(34,197,94,0.1)',    color: '#4ADE80'  },
   report_recalculated:  { bg: 'rgba(245,158,11,0.1)',   color: '#F59E0B'  },
   csv_uploaded:         { bg: 'rgba(255,255,255,0.06)', color: 'rgba(240,236,228,0.5)' },
   refund_added:         { bg: 'rgba(239,68,68,0.1)',    color: '#EF4444'  },
