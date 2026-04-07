@@ -6,9 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 // Creates a new partner auth user + profile row.
 // Body: { username, full_name, partner_id, password, email? }
 //
-// If email is omitted, a placeholder is generated:
-//   {username}@internal.gpdashboard.com
-// The partner logs in with username + password only — email is never shown.
+// The DB trigger handle_new_user() auto-creates the profile row from
+// raw_user_meta_data on auth.users insert. We then UPDATE to add username.
 
 export async function POST(req: Request) {
   try {
@@ -17,13 +16,13 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profile } = await supabase
+    const { data: callerProfile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    if (callerProfile?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -32,9 +31,11 @@ export async function POST(req: Request) {
     const { username, full_name, partner_id, password, email: rawEmail } = body
 
     if (!username || !full_name || !partner_id || !password) {
-      return NextResponse.json({ error: 'username, full_name, partner_id, and password are required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'username, full_name, partner_id, and password are required' },
+        { status: 400 }
+      )
     }
-
     if (password.length < 8) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
     }
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
 
     const admin = createAdminClient()
 
-    // Check username is not already taken
+    // Check username not already taken
     const { data: existing } = await admin
       .from('profiles')
       .select('id')
@@ -55,37 +56,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Username already taken' }, { status: 409 })
     }
 
-    // Create auth user (email_confirm: true skips the confirmation email)
+    // Create auth user — pass metadata so the handle_new_user() trigger can
+    // populate the profile row correctly (it reads raw_user_meta_data).
     const { data: { user: newUser }, error: createError } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
+      user_metadata: {
+        full_name: (full_name as string).trim(),
+        role:       'partner',
+        partner_id,
+      },
     })
 
     if (createError || !newUser) {
-      // If email collision (duplicate placeholder), surface a friendly message
       if (createError?.message?.includes('already registered')) {
         return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
       }
-      return NextResponse.json({ error: createError?.message ?? 'Failed to create user' }, { status: 500 })
+      return NextResponse.json(
+        { error: createError?.message ?? 'Failed to create user' },
+        { status: 500 }
+      )
     }
 
-    // Insert profile row
-    const { error: profileError } = await admin
+    // The trigger already created the profile — just UPDATE to set username.
+    const { error: updateError } = await admin
       .from('profiles')
-      .insert({
-        id:         newUser.id,
-        full_name:  (full_name as string).trim(),
-        role:       'partner',
-        partner_id,
-        username:   cleanUsername,
-        is_active:  true,
-      })
+      .update({ username: cleanUsername })
+      .eq('id', newUser.id)
 
-    if (profileError) {
+    if (updateError) {
       // Roll back the auth user to avoid orphans
       await admin.auth.admin.deleteUser(newUser.id)
-      return NextResponse.json({ error: 'Failed to create profile: ' + profileError.message }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Failed to set username: ' + updateError.message },
+        { status: 500 }
+      )
     }
 
     // Audit log
@@ -98,7 +104,8 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ id: newUser.id, username: cleanUsername }, { status: 201 })
-  } catch {
+  } catch (err) {
+    console.error('POST /api/admin/users error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
