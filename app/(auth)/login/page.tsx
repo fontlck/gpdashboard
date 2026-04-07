@@ -6,10 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState<string | null>(null)
-  const [loading,  setLoading]  = useState(false)
+  const [identifier, setIdentifier] = useState('')  // email OR username
+  const [password,   setPassword]   = useState('')
+  const [error,      setError]      = useState<string | null>(null)
+  const [loading,    setLoading]    = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -17,13 +17,30 @@ export default function LoginPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
+    const raw = identifier.trim()
+
+    // Resolve username → email if no @ in input
+    let email = raw
+    if (!raw.includes('@')) {
+      const res  = await fetch('/api/auth/lookup-username', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ username: raw }),
+      })
+      if (!res.ok) {
+        setError('Invalid username or password.')
+        setLoading(false)
+        return
+      }
+      const json = await res.json()
+      email = json.email
+    }
+
+    // Sign in with resolved email + password
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError || !data.user) {
-      setError(authError?.message ?? 'Invalid email or password.')
+      setError('Invalid username or password.')
       setLoading(false)
       return
     }
@@ -37,6 +54,15 @@ export default function LoginPage() {
 
     router.push(profile?.role === 'admin' ? '/admin' : '/dashboard')
     router.refresh()
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '11px 14px',
+    background: '#13151F',
+    border: '1px solid rgba(255,255,255,0.10)',
+    borderRadius: '10px',
+    color: '#F0ECE4', fontSize: '14px',
+    outline: 'none', transition: 'border-color 0.15s',
   }
 
   return (
@@ -78,27 +104,23 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Email */}
+          {/* Username or Email */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '500',
+            <label style={{
+              display: 'block', fontSize: '12px', fontWeight: '500',
               color: 'rgba(240,236,228,0.55)', letterSpacing: '0.06em',
-              textTransform: 'uppercase', marginBottom: '8px' }}>
-              Email
+              textTransform: 'uppercase', marginBottom: '8px',
+            }}>
+              Username or Email
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              type="text"
+              value={identifier}
+              onChange={e => setIdentifier(e.target.value)}
               required
-              placeholder="you@example.com"
-              style={{
-                width: '100%', padding: '11px 14px',
-                background: '#13151F',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: '10px',
-                color: '#F0ECE4', fontSize: '14px',
-                outline: 'none', transition: 'border-color 0.15s',
-              }}
+              autoComplete="username"
+              placeholder="username or you@example.com"
+              style={inputStyle}
               onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
               onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
             />
@@ -106,9 +128,11 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '500',
+            <label style={{
+              display: 'block', fontSize: '12px', fontWeight: '500',
               color: 'rgba(240,236,228,0.55)', letterSpacing: '0.06em',
-              textTransform: 'uppercase', marginBottom: '8px' }}>
+              textTransform: 'uppercase', marginBottom: '8px',
+            }}>
               Password
             </label>
             <input
@@ -116,15 +140,9 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               placeholder="••••••••"
-              style={{
-                width: '100%', padding: '11px 14px',
-                background: '#13151F',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: '10px',
-                color: '#F0ECE4', fontSize: '14px',
-                outline: 'none', transition: 'border-color 0.15s',
-              }}
+              style={inputStyle}
               onFocus={e  => (e.target.style.borderColor = 'rgba(196,163,94,0.5)')}
               onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.10)')}
             />
@@ -171,7 +189,6 @@ export default function LoginPage() {
                 color: 'rgba(196,163,94,0.6)',
                 textDecoration: 'none',
                 letterSpacing: '0.02em',
-                transition: 'color 0.15s',
               }}
               onMouseEnter={e => (e.currentTarget.style.color = 'rgba(196,163,94,1)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(196,163,94,0.6)')}
