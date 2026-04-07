@@ -17,6 +17,61 @@ type Props = {
   paidAt?:     string | null
 }
 
+// ── Confirmation modal ────────────────────────────────────────────────────────
+
+function ConfirmModal({ message, onConfirm, onCancel, loading }: {
+  message:   string
+  onConfirm: () => void
+  onCancel:  () => void
+  loading:   boolean
+}) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#0C1018', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '16px', padding: '28px 32px', maxWidth: '400px', width: '100%',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+      }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#F1F5F9', margin: '0 0 12px' }}>
+          Revert to Draft?
+        </h3>
+        <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.55)', margin: '0 0 24px', lineHeight: 1.6 }}>
+          {message}
+        </p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+              border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+              color: 'rgba(241,245,249,0.6)',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700',
+              cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
+              border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)',
+              color: '#F87171',
+            }}
+          >
+            {loading ? 'Reverting…' : 'Yes, revert to draft'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string) {
@@ -30,11 +85,12 @@ function fmtDate(iso: string) {
 
 export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Props) {
   const router = useRouter()
-  const [loading, setLoading] = useState<'approve' | 'mark_paid' | null>(null)
-  const [toast,   setToast]   = useState<Toast | null>(null)
-  const [error,   setError]   = useState<string | null>(null)
+  const [loading,     setLoading]     = useState<'approve' | 'mark_paid' | 'revert_to_draft' | null>(null)
+  const [toast,       setToast]       = useState<Toast | null>(null)
+  const [error,       setError]       = useState<string | null>(null)
+  const [showConfirm, setShowConfirm] = useState(false)
 
-  async function transition(action: 'approve' | 'mark_paid') {
+  async function transition(action: 'approve' | 'mark_paid' | 'revert_to_draft') {
     setLoading(action)
     setError(null)
 
@@ -54,7 +110,9 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
 
       const msg = action === 'approve'
         ? 'Report approved — order rows and refunds are now locked.'
-        : 'Report marked as paid.'
+        : action === 'mark_paid'
+          ? 'Report marked as paid.'
+          : 'Report reverted to draft — financial fields are editable again.'
 
       setToast({ message: msg, ok: true })
       setTimeout(() => setToast(null), 6000)
@@ -80,6 +138,15 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
+    <>
+    {showConfirm && (
+      <ConfirmModal
+        message="This will unlock all financial fields and allow re-importing or editing. The approval timestamp will be cleared."
+        loading={loading === 'revert_to_draft'}
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={async () => { await transition('revert_to_draft'); setShowConfirm(false) }}
+      />
+    )}
     <div style={{
       background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
       borderRadius: '16px', padding: '24px',
@@ -132,7 +199,7 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
         </div>
       )}
 
-      {/* approved → mark paid */}
+      {/* approved → mark paid  /  approved → revert to draft */}
       {status === 'approved' && (
         <div>
           {approvedAt && (
@@ -142,19 +209,34 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
           <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.5)', marginBottom: '14px' }}>
             Mark this report as paid once the partner payout has been processed.
           </p>
-          <button
-            onClick={() => transition('mark_paid')}
-            disabled={loading === 'mark_paid'}
-            style={{
-              padding: '10px 20px', borderRadius: '8px',
-              border: '1px solid rgba(34,197,94,0.4)',
-              background: 'rgba(34,197,94,0.1)', color: '#4ADE80',
-              fontSize: '13px', fontWeight: '700', cursor: 'pointer',
-              opacity: loading === 'mark_paid' ? 0.6 : 1,
-            }}
-          >
-            {loading === 'mark_paid' ? 'Saving…' : '฿ Mark as Paid'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => transition('mark_paid')}
+              disabled={!!loading}
+              style={{
+                padding: '10px 20px', borderRadius: '8px',
+                border: '1px solid rgba(34,197,94,0.4)',
+                background: 'rgba(34,197,94,0.1)', color: '#4ADE80',
+                fontSize: '13px', fontWeight: '700', cursor: loading ? 'default' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading === 'mark_paid' ? 'Saving…' : '฿ Mark as Paid'}
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={!!loading}
+              style={{
+                padding: '10px 20px', borderRadius: '8px',
+                border: '1px solid rgba(239,68,68,0.25)',
+                background: 'transparent', color: 'rgba(248,113,113,0.7)',
+                fontSize: '13px', cursor: loading ? 'default' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              ↩ Revert to Draft
+            </button>
+          </div>
         </div>
       )}
 
@@ -177,5 +259,6 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
         </div>
       )}
     </div>
+    </>
   )
 }

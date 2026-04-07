@@ -3,15 +3,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 // ── PATCH /api/admin/reports/:id/status ──────────────────────────────────────
-// Advances a monthly_report through the forward-only status workflow:
-//   draft → approved → paid
+// Manages monthly_report status transitions:
+//   draft → approved → paid   (forward)
+//   approved → draft           (reversal, admin correction only)
 //
-// Body: { action: 'approve' | 'mark_paid' }
+// Body: { action: 'approve' | 'mark_paid' | 'revert_to_draft' }
 //
 // Rules:
-//   • approve   — only valid when status === 'draft'
-//   • mark_paid — only valid when status === 'approved'
-//   • No reversals. Locked reports cannot be re-submitted for import.
+//   • approve         — only valid when status === 'draft'
+//   • mark_paid       — only valid when status === 'approved'
+//   • revert_to_draft — only valid when status === 'approved' (paid is terminal)
 
 export async function PATCH(
   request: NextRequest,
@@ -36,9 +37,9 @@ export async function PATCH(
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }) }
 
-  if (body.action !== 'approve' && body.action !== 'mark_paid') {
+  if (body.action !== 'approve' && body.action !== 'mark_paid' && body.action !== 'revert_to_draft') {
     return NextResponse.json(
-      { error: 'action must be "approve" or "mark_paid"' },
+      { error: 'action must be "approve", "mark_paid", or "revert_to_draft"' },
       { status: 400 }
     )
   }
@@ -69,13 +70,23 @@ export async function PATCH(
       { status: 409 }
     )
   }
+  if (body.action === 'revert_to_draft' && report.status !== 'approved') {
+    return NextResponse.json(
+      { error: report.status === 'paid'
+          ? 'Cannot revert — report is fully paid and locked.'
+          : `Cannot revert — report is already "${report.status}".` },
+      { status: 409 }
+    )
+  }
 
   // ── Build update payload ────────────────────────────────────────────────────
   const now = new Date().toISOString()
   const updatePayload =
     body.action === 'approve'
       ? { status: 'approved', approved_by: user.id, approved_at: now }
-      : { status: 'paid',     paid_by:     user.id, paid_at:     now }
+      : body.action === 'mark_paid'
+        ? { status: 'paid', paid_by: user.id, paid_at: now }
+        : { status: 'draft', approved_by: null, approved_at: null }  // revert_to_draft
 
   const { data: updated, error: updateErr } = await admin
     .from('monthly_reports')
@@ -90,7 +101,10 @@ export async function PATCH(
   }
 
   // ── Audit log ───────────────────────────────────────────────────────────────
-  const auditAction = body.action === 'approve' ? 'report_approved' : 'report_marked_paid'
+  const auditAction =
+    body.action === 'approve'         ? 'report_approved'      :
+    body.action === 'mark_paid'       ? 'report_marked_paid'   :
+                                        'report_reverted_to_draft'
 
   await admin.from('audit_logs').insert({
     actor_id:    user.id,
