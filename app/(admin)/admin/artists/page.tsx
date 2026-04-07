@@ -25,7 +25,7 @@ export default async function AdminArtistsPage() {
       .order('artist_name'),
   ])
 
-  const configured = (artistsRes.data ?? []) as {
+  const configured = (artistsRes.data ?? []) as unknown as {
     id: string
     artist_name: string
     branch_id: string
