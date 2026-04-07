@@ -73,12 +73,9 @@ export default function LoginPage() {
         <img
           src="/logo-fym.svg"
           alt="FlashYourMeme"
-          style={{ height: '36px', width: 'auto', filter: 'brightness(0) invert(1)', marginBottom: '10px' }}
+          style={{ display: 'block', margin: '0 auto 14px', height: '72px', width: 'auto', filter: 'brightness(0) invert(1)' }}
         />
-        <div style={{ fontSize: '15px', fontWeight: '700', color: '#F1F5F9', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>
-          FLASHYOURMEME
-        </div>
-        <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.4)', letterSpacing: '0.04em' }}>
+        <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.35)', letterSpacing: '0.04em', margin: 0 }}>
           Partner Revenue Portal
         </p>
       </div>
