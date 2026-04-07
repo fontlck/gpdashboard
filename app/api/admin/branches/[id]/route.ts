@@ -111,3 +111,65 @@ export async function PATCH(
 
   return NextResponse.json({ branch: updatedBranch })
 }
+
+// ── DELETE /api/admin/branches/[id] ──────────────────────────────────────────
+// Soft-delete a branch by setting is_active = false.
+// Hard delete is blocked if the branch has any monthly_reports.
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { error } = await requireAdmin()
+  if (error) return NextResponse.json({ error }, { status: error === 'Unauthorized' ? 401 : 403 })
+
+  const { id } = await params
+  const admin = createAdminClient()
+
+  // Check branch exists
+  const { data: branch, error: fetchErr } = await admin
+    .from('branches')
+    .select('id, name')
+    .eq('id', id)
+    .single()
+
+  if (fetchErr || !branch)
+    return NextResponse.json({ error: 'Branch not found' }, { status: 404 })
+
+  // Check for any monthly_reports linked to this branch
+  const { count, error: countErr } = await admin
+    .from('monthly_reports')
+    .select('id', { count: 'exact', head: true })
+    .eq('branch_id', id)
+
+  if (countErr)
+    return NextResponse.json({ error: 'Failed to check reports' }, { status: 500 })
+
+  if ((count ?? 0) > 0) {
+    // Has reports — soft delete only (deactivate)
+    const { error: deactivateErr } = await admin
+      .from('branches')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (deactivateErr)
+      return NextResponse.json({ error: 'Failed to deactivate branch' }, { status: 500 })
+
+    return NextResponse.json({
+      deleted: false,
+      deactivated: true,
+      message: `Branch "${branch.name}" has ${count} report(s) and has been deactivated instead of deleted.`,
+    })
+  }
+
+  // No reports — hard delete
+  const { error: deleteErr } = await admin
+    .from('branches')
+    .delete()
+    .eq('id', id)
+
+  if (deleteErr)
+    return NextResponse.json({ error: 'Failed to delete branch' }, { status: 500 })
+
+  return NextResponse.json({ deleted: true, deactivated: false, message: `Branch "${branch.name}" deleted.` })
+}

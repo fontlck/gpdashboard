@@ -229,15 +229,101 @@ function EditForm({
   )
 }
 
+// ── Delete confirm modal ─────────────────────────────────────────────────────
+
+function DeleteModal({ branchName, onConfirm, onCancel, loading }: {
+  branchName: string
+  onConfirm:  () => void
+  onCancel:   () => void
+  loading:    boolean
+}) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#0C1018', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', width: '100%',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+      }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#F1F5F9', margin: '0 0 12px' }}>
+          Delete branch?
+        </h3>
+        <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.55)', margin: '0 0 6px', lineHeight: 1.6 }}>
+          You are about to delete <strong style={{ color: '#F1F5F9' }}>{branchName}</strong>.
+        </p>
+        <p style={{ fontSize: '12px', color: 'rgba(241,245,249,0.35)', margin: '0 0 24px', lineHeight: 1.6 }}>
+          If this branch has existing reports it will be <em>deactivated</em> instead of permanently deleted.
+        </p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+              border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+              color: 'rgba(241,245,249,0.6)',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700',
+              cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
+              border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)',
+              color: '#F87171',
+            }}
+          >
+            {loading ? 'Deleting…' : 'Yes, delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function BranchesClient({ initialBranches }: { initialBranches: BranchRow[] }) {
-  const [branches, setBranches] = useState<BranchRow[]>(initialBranches)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [branches,    setBranches]    = useState<BranchRow[]>(initialBranches)
+  const [editingId,   setEditingId]   = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
+  const [deleting,    setDeleting]    = useState(false)
+  const [deleteMsg,   setDeleteMsg]   = useState<{ text: string; ok: boolean } | null>(null)
 
   function handleSaved(updated: BranchRow) {
     setBranches(prev => prev.map(b => b.id === updated.id ? updated : b))
     setEditingId(null)
+  }
+
+  async function handleDelete(id: string) {
+    setDeleting(true)
+    try {
+      const res  = await fetch(`/api/admin/branches/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) {
+        setDeleteMsg({ text: data.error ?? 'Delete failed', ok: false })
+      } else if (data.deleted) {
+        // Hard deleted — remove from list
+        setBranches(prev => prev.filter(b => b.id !== id))
+        setDeleteMsg({ text: data.message, ok: true })
+      } else {
+        // Soft deactivated — update status in list
+        setBranches(prev => prev.map(b => b.id === id ? { ...b, is_active: false } : b))
+        setDeleteMsg({ text: data.message, ok: true })
+      }
+    } catch {
+      setDeleteMsg({ text: 'Network error — please try again.', ok: false })
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(null)
+      setTimeout(() => setDeleteMsg(null), 6000)
+    }
   }
 
   const TH: React.CSSProperties = {
@@ -248,10 +334,29 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
   }
 
   return (
+    <>
+    {confirmDelete && (
+      <DeleteModal
+        branchName={confirmDelete.name}
+        loading={deleting}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => handleDelete(confirmDelete.id)}
+      />
+    )}
     <div style={{
       background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
       borderRadius: '16px', overflow: 'hidden',
     }}>
+      {deleteMsg && (
+        <div style={{
+          margin: '16px 20px 0', padding: '10px 14px', borderRadius: '8px',
+          background: deleteMsg.ok ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+          border: `1px solid ${deleteMsg.ok ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+          fontSize: '12px', color: deleteMsg.ok ? '#4ADE80' : '#F87171',
+        }}>
+          {deleteMsg.text}
+        </div>
+      )}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
@@ -331,17 +436,29 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
                       </span>
                     </td>
 
-                    {/* Edit button */}
+                    {/* Actions */}
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                      <button
-                        style={{
-                          ...GHOST_BTN,
-                          ...(isEdit ? { background: 'rgba(59,130,246,0.1)', color: '#60A5FA' } : {}),
-                        }}
-                        onClick={() => setEditingId(isEdit ? null : b.id)}
-                      >
-                        {isEdit ? 'Close' : 'Edit'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button
+                          style={{
+                            ...GHOST_BTN,
+                            ...(isEdit ? { background: 'rgba(59,130,246,0.1)', color: '#60A5FA' } : {}),
+                          }}
+                          onClick={() => setEditingId(isEdit ? null : b.id)}
+                        >
+                          {isEdit ? 'Close' : 'Edit'}
+                        </button>
+                        <button
+                          style={{
+                            ...GHOST_BTN,
+                            color: 'rgba(248,113,113,0.7)',
+                            border: '1px solid rgba(239,68,68,0.2)',
+                          }}
+                          onClick={() => setConfirmDelete({ id: b.id, name: b.name })}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
 
@@ -359,5 +476,6 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
         </table>
       </div>
     </div>
+    </>
   )
 }

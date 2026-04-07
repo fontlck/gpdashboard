@@ -752,7 +752,7 @@ export function CsvUploadClient() {
                             <option value="">— Map to existing branch —</option>
                             {dbBranches.map(b => (
                               <option key={b.id} value={b.id}>
-                                {b.name} ({b.partners?.name ?? '?'}) · {b.revenue_share_pct}%
+                                {b.name} ({b.partners?.name ?? '?'}) · {b.payout_type === 'fixed_rent' ? `Fixed ฿${Number(b.fixed_rent_amount ?? 0).toLocaleString()}` : `${b.revenue_share_pct}%`}
                               </option>
                             ))}
                           </select>
