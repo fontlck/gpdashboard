@@ -762,7 +762,10 @@ export default async function PartnerReportDetailPage({
             </thead>
             <tbody>
               {artists.map((a, idx) => {
-                const artistUplift = Number((a as { referral_uplift_amount?: number }).referral_uplift_amount ?? 0)
+                // Use the admin-set snapshot (referred_artist_uplift_snapshot on the report)
+                // rather than artist_summaries.referral_uplift_amount which is never populated
+                const upliftEntry  = upliftEntries.find(e => e.artist_name === a.artist_name)
+                const artistUplift = upliftEntry ? (upliftEntry.uplift_base + upliftEntry.uplift_vat) : 0
                 return (
                 <tr key={a.id} style={{
                   borderBottom: '1px solid rgba(255,255,255,0.04)',
