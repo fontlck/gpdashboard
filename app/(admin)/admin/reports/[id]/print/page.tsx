@@ -41,15 +41,16 @@ export default async function AdminReportPrintPage({
   const hasNeg  = r.has_negative_adjusted_net ?? false
   const adjNetExVat = hasNeg ? 0 : Number(r.adjusted_net) / (1 + vatRate)
 
-  const upliftBase  = Number(r.referred_artist_uplift ?? 0)
-  const upliftVat   = Number(r.referred_artist_uplift_vat ?? 0)
-  const upliftTotal = upliftBase + upliftVat
+  const upliftBase   = Number(r.referred_artist_uplift     ?? 0)
+  const upliftVat    = Number(r.referred_artist_uplift_vat ?? 0)
+  const upliftTotal  = upliftBase + upliftVat
   type UE = { artist_name: string; uplift_pct: number; uplift_base: number; uplift_vat: number }
   const upliftEntries: UE[] = r.referred_artist_uplift_snapshot ?? []
 
   const whtPct    = Number(r.withholding_tax_pct    ?? 0)
   const whtAmount = Number(r.withholding_tax_amount ?? 0)
 
+  // ── Top artists ──
   const { data: artists } = await admin
     .from('artist_summaries')
     .select('artist_name, order_count, gross_sales, total_net')
@@ -57,22 +58,116 @@ export default async function AdminReportPrintPage({
     .order('order_count', { ascending: false })
     .limit(10)
 
-  const printDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+  // ── Daily revenue chart data ──
+  const { data: rows } = await admin
+    .from('report_rows')
+    .select('transaction_date, amount')
+    .eq('monthly_report_id', id)
+
+  const dayMap = new Map<string, number>()
+  for (const row of rows ?? []) {
+    const d = (row.transaction_date as string | null)?.slice(0, 10) ?? ''
+    if (d) dayMap.set(d, (dayMap.get(d) ?? 0) + Number(row.amount ?? 0))
+  }
+  const sortedDays = Array.from(dayMap.entries()).sort(([a], [b]) => a.localeCompare(b))
+
+  const SVG_W = 540
+  const SVG_H = 52
+  const n     = sortedDays.length || 1
+  const gap   = 2
+  const barW  = Math.max(2, Math.floor((SVG_W - gap * (n - 1)) / n))
+  const maxV  = Math.max(...sortedDays.map(([, v]) => v), 1)
+
+  const printDate = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  })
+
+  type SummaryRow = { label: string; value: string; indent?: boolean; muted?: boolean }
+  const summaryRows: SummaryRow[] = [
+    { label: 'Payout Model',  value: isFixed ? 'Fixed Rent' : `Revenue Share · ${r.revenue_share_pct_snapshot}%` },
+    { label: 'Total Orders',  value: Number(r.total_transaction_count).toLocaleString() },
+    { label: 'Gross Sales',   value: formatTHB(Number(r.gross_sales)) },
+    { label: 'Platform Fee',  value: `– ${formatTHB(Number(r.total_opn_fee))}`, muted: true },
+    { label: 'Net Revenue',   value: formatTHB(Number(r.total_net)) },
+    ...(Number(r.total_refunds) > 0
+      ? [{ label: 'Refunds', value: `– ${formatTHB(Number(r.total_refunds))}`, muted: true }]
+      : []),
+    ...(!isFixed
+      ? [{ label: `Adjusted Net (ex-VAT ${vatPct})`, value: formatTHB(adjNetExVat) }]
+      : []),
+    { label: 'Partner Share', value: formatTHB(Number(r.partner_share_base)) },
+    ...(r.is_vat_registered_snapshot
+      ? [{ label: `VAT ${vatPct}`, value: formatTHB(Number(r.vat_amount)), indent: true }]
+      : []),
+    ...(upliftTotal > 0
+      ? [{ label: 'Artist Uplift', value: `+ ${formatTHB(upliftTotal)}`, indent: true }]
+      : []),
+    ...(whtAmount > 0
+      ? [{ label: `WHT ${whtPct}%`, value: `– ${formatTHB(whtAmount)}`, muted: true }]
+      : []),
+  ]
 
   return (
     <>
       <PrintTrigger />
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #fff; color: #111; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; }
-        @page { size: A4 portrait; margin: 18mm 20mm 18mm 20mm; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+          background: #fff;
+          color: #111;
+          font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+          font-size: 10pt;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        @page { size: A4 portrait; margin: 16mm 20mm 16mm 20mm; }
         @media print { .no-print { display: none !important; } }
-        .page { max-width: 680px; margin: 0 auto; padding: 28px 0; }
-        table { width: 100%; border-collapse: collapse; }
-        td, th { padding: 7px 10px; font-size: 10pt; }
+        .wrap { max-width: 680px; margin: 0 auto; padding: 32px 0 24px; }
+
+        .hd { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 14px; margin-bottom: 20px; }
+        .hd-left .eyebrow { font-size: 7pt; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #aaa; margin-bottom: 5px; }
+        .hd-left .period  { font-size: 22pt; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+        .hd-right { text-align: right; }
+        .hd-right .partner-name { font-size: 13pt; font-weight: 700; letter-spacing: -.01em; }
+        .hd-right .detail       { font-size: 8.5pt; color: #666; margin-top: 2px; }
+        .hd-right .meta         { font-size: 8pt; color: #aaa; margin-top: 2px; }
+        .admin-badge { display: inline-block; background: #111; color: #fff; font-size: 6.5pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 7px; margin-bottom: 4px; }
+
+        .kpi-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .kpi { flex: 1; background: #f6f6f6; border-left: 2.5px solid #111; padding: 9px 10px 8px; }
+        .kpi .k { font-size: 6.5pt; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #999; }
+        .kpi .v { font-size: 14pt; font-weight: 800; letter-spacing: -.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+        .sec { font-size: 7pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #aaa; margin: 0 0 8px; }
+
+        .chart-wrap { margin-bottom: 20px; }
+        .chart-svg  { display: block; width: 100%; overflow: visible; }
+
+        .sum-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+        .sum-table td { font-size: 9.5pt; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+        .sum-table .lbl { color: #555; width: 58%; }
+        .sum-table .lbl.indent { padding-left: 14px; color: #888; }
+        .sum-table .lbl.muted  { color: #888; }
+        .sum-table .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+        .sum-table .val.muted { color: #888; }
+        .sum-table tfoot td { padding-top: 12px; border-top: 2px solid #111; border-bottom: none; }
+        .sum-table tfoot .lbl { font-size: 11pt; font-weight: 700; color: #111; }
+        .sum-table tfoot .val { font-size: 14pt; font-weight: 800; }
+
+        .dt { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
+        .dt thead tr { background: #f6f6f6; }
+        .dt thead th { padding: 7px 10px; font-size: 7pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #888; border-bottom: 1.5px solid #e0e0e0; text-align: left; }
+        .dt thead th.r { text-align: right; }
+        .dt tbody td { padding: 6px 10px; border-bottom: 1px solid #f2f2f2; color: #333; }
+        .dt tbody td.r    { text-align: right; font-variant-numeric: tabular-nums; }
+        .dt tbody td.bold { font-weight: 600; }
+        .dt tbody td.dim  { color: #aaa; }
+
+        .ft { border-top: 1px solid #e8e8e8; padding-top: 10px; margin-top: 4px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #bbb; }
       `}</style>
 
-      <div className="page">
+      <div className="wrap">
 
         <div className="no-print" style={{ marginBottom: '20px' }}>
           <a href={`/admin/reports/${id}`} style={{ fontSize: '12px', color: '#555', textDecoration: 'none' }}>
@@ -80,77 +175,121 @@ export default async function AdminReportPrintPage({
           </a>
         </div>
 
-        {/* Header */}
-        <div style={{ borderBottom: '2px solid #111', paddingBottom: '14px', marginBottom: '18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontSize: '8pt', fontWeight: '700', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888', marginBottom: '4px' }}>
-                Partner Earnings Report · Admin Copy
-              </div>
-              <div style={{ fontSize: '20pt', fontWeight: '700', letterSpacing: '-0.03em' }}>{period}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '14pt', fontWeight: '700' }}>{partner?.name ?? branch?.name}</div>
-              {partner?.vat_number && <div style={{ fontSize: '9pt', color: '#666', marginTop: '2px' }}>VAT {partner.vat_number}</div>}
-              <div style={{ fontSize: '9pt', color: '#666', marginTop: '2px' }}>{branch?.name}</div>
-              <div style={{ fontSize: '9pt', color: '#aaa', marginTop: '2px' }}>Printed {printDate}</div>
-              <div style={{ fontSize: '9pt', color: '#aaa', marginTop: '2px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{r.status}</div>
-            </div>
+        {/* ── Header ── */}
+        <div className="hd">
+          <div className="hd-left">
+            <div className="eyebrow">Partner Earnings Report</div>
+            <div className="period">{period}</div>
+          </div>
+          <div className="hd-right">
+            <div><span className="admin-badge">Admin Copy</span></div>
+            <div className="partner-name">{partner?.name ?? branch?.name}</div>
+            {partner?.vat_number && <div className="detail">VAT {partner.vat_number}</div>}
+            {branch?.name && <div className="detail">{branch.name}</div>}
+            <div className="meta">Printed {printDate}</div>
+            <div className="meta" style={{ textTransform: 'capitalize' }}>{r.status}</div>
           </div>
         </div>
 
-        {/* Summary */}
-        <table style={{ marginBottom: '22px' }}>
+        {/* ── KPI Strip ── */}
+        <div className="kpi-row">
+          <div className="kpi">
+            <div className="k">Gross Sales</div>
+            <div className="v">{formatTHB(Number(r.gross_sales))}</div>
+          </div>
+          <div className="kpi">
+            <div className="k">Net Revenue</div>
+            <div className="v">{formatTHB(Number(r.total_net))}</div>
+          </div>
+          <div className="kpi">
+            <div className="k">Final Payout</div>
+            <div className="v">{formatTHB(Number(r.final_payout))}</div>
+          </div>
+          <div className="kpi">
+            <div className="k">Orders</div>
+            <div className="v">{Number(r.total_transaction_count).toLocaleString()}</div>
+          </div>
+        </div>
+
+        {/* ── Daily Revenue Chart ── */}
+        {sortedDays.length > 0 && (
+          <div className="chart-wrap">
+            <div className="sec">Daily Revenue</div>
+            <svg
+              className="chart-svg"
+              viewBox={`0 0 ${SVG_W} ${SVG_H + 14}`}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <line x1={0} y1={SVG_H} x2={SVG_W} y2={SVG_H} stroke="#e8e8e8" strokeWidth={1} />
+              {sortedDays.map(([date, val], i) => {
+                const h   = Math.max(3, (val / maxV) * SVG_H)
+                const x   = i * (barW + gap)
+                const day = parseInt(date.split('-')[2])
+                return (
+                  <g key={date}>
+                    <rect x={x} y={SVG_H - h} width={barW} height={h} fill="#111" rx={1} />
+                    {(day === 1 || day % 5 === 0) && (
+                      <text
+                        x={x + barW / 2}
+                        y={SVG_H + 11}
+                        textAnchor="middle"
+                        fontSize={6}
+                        fill="#bbb"
+                        fontFamily="DM Sans, Helvetica Neue, Arial, sans-serif"
+                      >
+                        {day}
+                      </text>
+                    )}
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+        )}
+
+        {/* ── Payout Summary ── */}
+        <div className="sec">Payout Summary</div>
+        <table className="sum-table">
           <tbody>
-            {[
-              { label: 'Payout Model',    value: isFixed ? 'Fixed Rent' : `Revenue Share (${r.revenue_share_pct_snapshot}%)` },
-              { label: 'Total Orders',    value: Number(r.total_transaction_count).toLocaleString() },
-              { label: 'Gross Sales',     value: formatTHB(Number(r.gross_sales)) },
-              { label: 'Platform Fee',    value: `– ${formatTHB(Number(r.total_opn_fee))}` },
-              { label: 'Net Revenue',     value: formatTHB(Number(r.total_net)) },
-              ...(Number(r.total_refunds) > 0 ? [{ label: 'Refunds', value: `– ${formatTHB(Number(r.total_refunds))}` }] : []),
-              ...(!isFixed ? [{ label: `Adjusted NET (ex-VAT ${vatPct})`, value: formatTHB(adjNetExVat) }] : []),
-              { label: 'Partner Share',   value: formatTHB(Number(r.partner_share_base)) },
-              ...(r.is_vat_registered_snapshot ? [{ label: `VAT ${vatPct}`, value: formatTHB(Number(r.vat_amount)) }] : []),
-              ...(upliftTotal > 0 ? [{ label: 'Artist Uplift', value: `+ ${formatTHB(upliftTotal)}` }] : []),
-              ...(whtAmount > 0 ? [{ label: `Withholding Tax (${whtPct}%)`, value: `– ${formatTHB(whtAmount)}` }] : []),
-            ].map((row, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ color: '#555', width: '55%' }}>{row.label}</td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#111' }}>{row.value}</td>
+            {summaryRows.map((row, i) => (
+              <tr key={i}>
+                <td className={`lbl${row.indent ? ' indent' : ''}${row.muted ? ' muted' : ''}`}>
+                  {row.label}
+                </td>
+                <td className={`val${row.muted ? ' muted' : ''}`}>{row.value}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
-              <td style={{ paddingTop: '12px', fontWeight: '700', fontSize: '12pt', borderTop: '2px solid #111' }}>Final Payout</td>
-              <td style={{ paddingTop: '12px', textAlign: 'right', fontWeight: '700', fontSize: '14pt', fontVariantNumeric: 'tabular-nums', borderTop: '2px solid #111' }}>
-                {formatTHB(Number(r.final_payout))}
-              </td>
+              <td className="lbl">Final Payout</td>
+              <td className="val">{formatTHB(Number(r.final_payout))}</td>
             </tr>
           </tfoot>
         </table>
 
-        {/* Uplift detail */}
+        {/* ── Artist Uplift Detail ── */}
         {upliftEntries.length > 0 && (
           <>
-            <div style={{ fontSize: '8pt', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', marginBottom: '8px' }}>Artist Uplift Detail</div>
-            <table style={{ marginBottom: '22px', border: '1px solid #eee' }}>
-              <thead style={{ background: '#f7f7f7' }}>
+            <div className="sec">Artist Uplift Detail</div>
+            <table className="dt">
+              <thead>
                 <tr>
-                  {['Artist', 'Rate', 'Uplift (ex-VAT)', 'VAT', 'Total'].map(h => (
-                    <th key={h} style={{ textAlign: h === 'Artist' ? 'left' : 'right', fontWeight: '600', fontSize: '9pt', color: '#555', borderBottom: '1px solid #ddd' }}>{h}</th>
-                  ))}
+                  <th>Artist</th>
+                  <th className="r">Rate</th>
+                  <th className="r">Uplift (ex-VAT)</th>
+                  <th className="r">VAT</th>
+                  <th className="r">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {upliftEntries.map((e, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <tr key={i}>
                     <td>{e.artist_name}</td>
-                    <td style={{ textAlign: 'right' }}>{e.uplift_pct}%</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(e.uplift_base)}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(e.uplift_vat)}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: '600' }}>{formatTHB(e.uplift_base + e.uplift_vat)}</td>
+                    <td className="r">{e.uplift_pct}%</td>
+                    <td className="r">{formatTHB(e.uplift_base)}</td>
+                    <td className="r">{formatTHB(e.uplift_vat)}</td>
+                    <td className="r bold">{formatTHB(e.uplift_base + e.uplift_vat)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -158,26 +297,28 @@ export default async function AdminReportPrintPage({
           </>
         )}
 
-        {/* Top Artists */}
+        {/* ── Artist Performance ── */}
         {artists && artists.length > 0 && (
           <>
-            <div style={{ fontSize: '8pt', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', marginBottom: '8px' }}>Artist Performance</div>
-            <table style={{ marginBottom: '22px', border: '1px solid #eee' }}>
-              <thead style={{ background: '#f7f7f7' }}>
+            <div className="sec">Artist Performance</div>
+            <table className="dt">
+              <thead>
                 <tr>
-                  {['#', 'Artist', 'Orders', 'Gross', 'NET'].map((h, i) => (
-                    <th key={h} style={{ textAlign: ['Orders','Gross','NET'].includes(h) ? 'right' : 'left', fontWeight: '600', fontSize: '9pt', color: '#555', borderBottom: '1px solid #ddd', width: i === 0 ? '30px' : undefined }}>{h}</th>
-                  ))}
+                  <th style={{ width: '28px' }}>#</th>
+                  <th>Artist</th>
+                  <th className="r">Orders</th>
+                  <th className="r">Gross Sales</th>
+                  <th className="r">Net</th>
                 </tr>
               </thead>
               <tbody>
                 {artists.map((a, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ color: '#aaa' }}>{i + 1}</td>
+                  <tr key={i}>
+                    <td className="dim">{i + 1}</td>
                     <td>{a.artist_name === '(Unknown)' ? '—' : a.artist_name}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{a.order_count}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.gross_sales))}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.total_net))}</td>
+                    <td className="r">{a.order_count}</td>
+                    <td className="r">{formatTHB(Number(a.gross_sales))}</td>
+                    <td className="r bold">{formatTHB(Number(a.total_net))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -185,10 +326,12 @@ export default async function AdminReportPrintPage({
           </>
         )}
 
-        <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', fontSize: '8pt', color: '#aaa', display: 'flex', justifyContent: 'space-between' }}>
+        {/* ── Footer ── */}
+        <div className="ft">
           <span>{partner?.name ?? ''} · {branch?.name ?? ''} · {period}</span>
-          <span>GP Dashboard · Admin Copy · Confidential</span>
+          <span>Admin Copy · Confidential</span>
         </div>
+
       </div>
     </>
   )
