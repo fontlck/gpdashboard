@@ -7,7 +7,7 @@ import { formatReportingPeriod, formatFullDate, formatDuration } from '@/lib/uti
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
-import type { DayData } from '@/components/partner/DailyTrendChart'
+import type { DayData, ArtistDayEntry } from '@/components/partner/DailyTrendChart'
 import { ArtistAvatar } from '@/components/shared/ArtistAvatar'
 
 export const metadata: Metadata = { title: 'Report Detail' }
@@ -267,25 +267,36 @@ export default async function PartnerReportDetailPage({
     supabase.from('refunds').select('amount, reason, reference_number').eq('monthly_report_id', id).maybeSingle(),
     supabase.from('artist_summaries').select('id, artist_name, artist_image_url, order_count, gross_sales, total_net, referral_uplift_amount, referral_uplift_pct_snapshot')
       .eq('monthly_report_id', id).order('order_count', { ascending: false }),
-    supabase.from('report_rows').select('transaction_date, amount, net')
+    supabase.from('report_rows').select('transaction_date, amount, net, artist_name_raw')
       .eq('monthly_report_id', id),
   ])
 
   const refund  = refundRes.data
   const artists = artistRes.data ?? []
 
-  // ── Aggregate daily data (Bangkok UTC+7) ──────────────────────────────────
+  // ── Aggregate daily data (Bangkok UTC+7) — with per-artist breakdown ───────
   const BKK_OFFSET_MS = 7 * 60 * 60 * 1000
-  const dailyMap = new Map<number, { gross: number; net: number; orders: number }>()
+  type DayAgg = { gross: number; net: number; orders: number; byArtist: Map<string, { gross: number; net: number; orders: number }> }
+  const dailyMap = new Map<number, DayAgg>()
 
   for (const row of rowsRes.data ?? []) {
-    const bkkMs  = new Date(row.transaction_date).getTime() + BKK_OFFSET_MS
-    const bkkDate = new Date(bkkMs)
-    const day    = bkkDate.getUTCDate()
-    const existing = dailyMap.get(day) ?? { gross: 0, net: 0, orders: 0 }
-    existing.gross  += Number(row.amount)
-    existing.net    += Number(row.net)
+    const bkkMs   = new Date(row.transaction_date).getTime() + BKK_OFFSET_MS
+    const day     = new Date(bkkMs).getUTCDate()
+    const gross   = Number(row.amount)
+    const net     = Number(row.net)
+    const artist  = (row as { artist_name_raw?: string | null }).artist_name_raw?.trim() || '(Unknown)'
+
+    const existing = dailyMap.get(day) ?? { gross: 0, net: 0, orders: 0, byArtist: new Map() }
+    existing.gross  += gross
+    existing.net    += net
     existing.orders += 1
+
+    const aEntry = existing.byArtist.get(artist) ?? { gross: 0, net: 0, orders: 0 }
+    aEntry.gross  += gross
+    aEntry.net    += net
+    aEntry.orders += 1
+    existing.byArtist.set(artist, aEntry)
+
     dailyMap.set(day, existing)
   }
 
@@ -293,8 +304,12 @@ export default async function PartnerReportDetailPage({
   const daysInMonth = new Date(report.reporting_year, report.reporting_month, 0).getDate()
   const dailyData: DayData[] = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1
-    const agg = dailyMap.get(day) ?? { gross: 0, net: 0, orders: 0 }
-    return { day, ...agg }
+    const agg = dailyMap.get(day)
+    if (!agg) return { day, gross: 0, net: 0, orders: 0, artists: [] }
+    const artistEntries: ArtistDayEntry[] = [...agg.byArtist.entries()].map(([artist, v]) => ({
+      artist, gross: v.gross, net: v.net, orders: v.orders,
+    }))
+    return { day, gross: agg.gross, net: agg.net, orders: agg.orders, artists: artistEntries }
   })
 
   // ── Derived values ────────────────────────────────────────────────────────
@@ -616,6 +631,17 @@ export default async function PartnerReportDetailPage({
         />
       </div>
 
+      {/* ── Daily Trend Chart — below KPI strip ──────────────────────────── */}
+      {dailyData.some(d => d.orders > 0) && (
+        <div style={{ marginBottom: '14px' }}>
+          <DailyTrendChart
+            data={dailyData}
+            month={report.reporting_month}
+            year={report.reporting_year}
+          />
+        </div>
+      )}
+
       {/* ── Two-column: breakdown + details ───────────────────────────────── */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr',
@@ -806,14 +832,6 @@ export default async function PartnerReportDetailPage({
         </div>
       )}
 
-      {/* ── Daily Trend Chart ─────────────────────────────────────────────── */}
-      {dailyData.some(d => d.orders > 0) && (
-        <DailyTrendChart
-          data={dailyData}
-          month={report.reporting_month}
-          year={report.reporting_year}
-        />
-      )}
 
     </div>
   )
