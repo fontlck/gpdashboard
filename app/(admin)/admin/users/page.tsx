@@ -2,14 +2,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { formatFullDate } from '@/lib/utils/date'
 import { CreatePartnerForm } from '@/components/admin/CreatePartnerForm'
+import { UserRowActions } from '@/components/admin/UserRowActions'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Users' }
 export const dynamic = 'force-dynamic'
 
 const ROLE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  admin:   { bg: 'rgba(59,130,246,0.1)', color: '#60A5FA', label: 'ADMIN'   },
-  partner: { bg: 'rgba(99,120,255,0.1)', color: '#6378FF', label: 'PARTNER' },
+  admin:   { bg: 'rgba(59,130,246,0.1)',  color: '#60A5FA', label: 'ADMIN'   },
+  partner: { bg: 'rgba(99,120,255,0.1)',  color: '#818CF8', label: 'PARTNER' },
 }
 
 export default async function AdminUsersPage() {
@@ -18,7 +19,7 @@ export default async function AdminUsersPage() {
   const [profilesRes, partnersRes] = await Promise.all([
     admin
       .from('profiles')
-      .select('id, full_name, role, username, is_active, created_at, partners ( name )')
+      .select('id, full_name, role, username, is_active, partner_id, created_at, partners ( name )')
       .order('created_at', { ascending: false }),
     admin
       .from('partners')
@@ -34,10 +35,10 @@ export default async function AdminUsersPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <AdminHeader
         title="Users"
-        subtitle="Partner accounts and their access credentials"
+        subtitle="Manage admin and partner accounts"
       />
 
-      {/* Create Partner form */}
+      {/* Create form */}
       <CreatePartnerForm partners={partners} />
 
       {/* Users table */}
@@ -67,9 +68,9 @@ export default async function AdminUsersPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Name', 'Username', 'Role', 'Partner', 'Status', 'Joined'].map(h => (
-                    <th key={h} style={{
-                      padding: '12px 20px', textAlign: 'left',
+                  {['Name', 'Username', 'Role', 'Partner', 'Status', 'Joined', ''].map((h, i) => (
+                    <th key={i} style={{
+                      padding: '12px 20px', textAlign: i === 6 ? 'right' : 'left',
                       fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
                       textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
                       whiteSpace: 'nowrap',
@@ -79,13 +80,15 @@ export default async function AdminUsersPage() {
               </thead>
               <tbody>
                 {profiles.map(u => {
-                  const partner = Array.isArray(u.partners) ? u.partners[0] : u.partners
+                  const partnerRecord = Array.isArray(u.partners) ? u.partners[0] : u.partners
                   const rs = ROLE_STYLE[u.role] ?? ROLE_STYLE.partner
 
                   return (
                     <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                       <td style={{ padding: '14px 20px', color: '#F0ECE4', fontWeight: '500' }}>
-                        {u.full_name ?? <span style={{ color: 'rgba(240,236,228,0.3)', fontStyle: 'italic' }}>No name</span>}
+                        {u.full_name ?? (
+                          <span style={{ color: 'rgba(240,236,228,0.3)', fontStyle: 'italic' }}>No name</span>
+                        )}
                       </td>
                       <td style={{ padding: '14px 20px' }}>
                         {u.username ? (
@@ -111,7 +114,7 @@ export default async function AdminUsersPage() {
                         </span>
                       </td>
                       <td style={{ padding: '14px 20px', color: 'rgba(240,236,228,0.5)' }}>
-                        {partner?.name ?? '—'}
+                        {partnerRecord?.name ?? '—'}
                       </td>
                       <td style={{ padding: '14px 20px' }}>
                         <span style={{
@@ -123,6 +126,19 @@ export default async function AdminUsersPage() {
                       </td>
                       <td style={{ padding: '14px 20px', color: 'rgba(240,236,228,0.4)', whiteSpace: 'nowrap' }}>
                         {u.created_at ? formatFullDate(u.created_at) : '—'}
+                      </td>
+                      <td style={{ padding: '14px 20px' }}>
+                        <UserRowActions
+                          user={{
+                            id:         u.id,
+                            full_name:  u.full_name,
+                            username:   u.username,
+                            role:       u.role,
+                            partner_id: u.partner_id ?? null,
+                            is_active:  u.is_active ?? true,
+                          }}
+                          partners={partners}
+                        />
                       </td>
                     </tr>
                   )

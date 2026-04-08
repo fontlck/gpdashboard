@@ -28,11 +28,21 @@ export async function POST(req: Request) {
 
     // Parse body
     const body = await req.json()
-    const { username, full_name, partner_id, password, email: rawEmail } = body
+    const { username, full_name, partner_id, password, email: rawEmail, role: rawRole } = body
 
-    if (!username || !full_name || !partner_id || !password) {
+    const role = rawRole === 'admin' ? 'admin' : 'partner'
+
+    if (!username || !full_name || !password) {
       return NextResponse.json(
-        { error: 'username, full_name, partner_id, and password are required' },
+        { error: 'username, full_name, and password are required' },
+        { status: 400 }
+      )
+    }
+
+    // Partner is required for partner-role users
+    if (role === 'partner' && !partner_id) {
+      return NextResponse.json(
+        { error: 'Please select a partner.' },
         { status: 400 }
       )
     }
@@ -64,8 +74,8 @@ export async function POST(req: Request) {
       email_confirm: true,
       user_metadata: {
         full_name: (full_name as string).trim(),
-        role:       'partner',
-        partner_id,
+        role,
+        partner_id: partner_id || null,
       },
     })
 
@@ -100,7 +110,7 @@ export async function POST(req: Request) {
       action:      'user_created',
       entity_type: 'profiles',
       entity_id:   newUser.id,
-      after_state: { username: cleanUsername, full_name, partner_id, role: 'partner' },
+      after_state: { username: cleanUsername, full_name, partner_id: partner_id || null, role },
     })
 
     return NextResponse.json({ id: newUser.id, username: cleanUsername }, { status: 201 })
