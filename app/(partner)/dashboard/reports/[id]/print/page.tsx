@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatTHB } from '@/lib/utils/currency'
 import { formatReportingPeriod } from '@/lib/utils/date'
-import { PrintTrigger } from '@/components/shared/PrintTrigger'
+import { DownloadPDFButton } from '@/components/shared/DownloadPDFButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -125,7 +125,6 @@ export default async function PartnerReportPrintPage({
 
   return (
     <>
-      <PrintTrigger />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -137,6 +136,11 @@ export default async function PartnerReportPrintPage({
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
+        /* Strip parent layout — hide sidebar, reset flex wrapper + main padding */
+        body > div { display: block !important; background: #fff !important; }
+        body > div > nav,
+        body > div > aside { display: none !important; }
+        body > div > main { padding: 0 !important; overflow: visible !important; }
         @page { size: A4 portrait; margin: 16mm 20mm 16mm 20mm; }
         @media print { .no-print { display: none !important; } }
         .wrap { max-width: 680px; margin: 0 auto; padding: 32px 0 24px; }
@@ -191,11 +195,12 @@ export default async function PartnerReportPrintPage({
 
       <div className="wrap">
 
-        {/* ── Back link (screen only) ── */}
-        <div className="no-print" style={{ marginBottom: '20px' }}>
-          <a href={`/dashboard/reports/${id}`} style={{ fontSize: '12px', color: '#555', textDecoration: 'none' }}>
+        {/* ── Toolbar (screen only) ── */}
+        <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid #eee' }}>
+          <a href={`/dashboard/reports/${id}`} style={{ fontSize: '13px', color: '#888', textDecoration: 'none', fontFamily: 'inherit' }}>
             ← Back to report
           </a>
+          <DownloadPDFButton />
         </div>
 
         {/* ── Header ── */}
