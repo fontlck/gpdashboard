@@ -6,7 +6,9 @@ import { formatTHB } from '@/lib/utils/currency'
 import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
 import { OrdersTable } from '@/components/admin/OrdersTable'
 import { ReportStatusActions } from '@/components/admin/ReportStatusActions'
+import { ArtistUpliftTable } from '@/components/admin/ArtistUpliftTable'
 import type { OrderRow } from '@/components/admin/OrdersTable'
+import type { ArtistSummaryRow, UpliftSnapshotEntry } from '@/components/admin/ArtistUpliftTable'
 import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 
@@ -355,7 +357,7 @@ export default async function AdminReportDetailPage({
           </div>
         </div>
 
-        {/* Artist Summary */}
+        {/* Artist Breakdown — interactive uplift editor */}
         {artists.length > 0 && (
           <div style={{
             background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
@@ -367,65 +369,16 @@ export default async function AdminReportDetailPage({
             }}>
               Artist Breakdown
             </h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['', 'Artist', 'Orders', 'Gross Sales', 'NET', ...(hasUplift ? ['Uplift'] : [])].map(h => (
-                    <th key={h} style={{
-                      padding: '8px 0', textAlign: h === '' ? 'left' : 'left',
-                      fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
-                      textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
-                      width: h === '' ? 44 : undefined,
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {artists.map(a => {
-                  const artistUplift = Number((a as { referral_uplift_amount?: number }).referral_uplift_amount ?? 0)
-                  return (
-                  <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '8px 0' }}>
-                      {a.artist_image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={a.artist_image_url}
-                          alt=""
-                          style={{
-                            width: 36, height: 36, borderRadius: '50%',
-                            objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)',
-                            display: 'block',
-                          }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: 36, height: 36, borderRadius: '50%',
-                          background: 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '12px', color: 'rgba(240,236,228,0.2)',
-                        }}>?</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '10px 0', color: a.artist_name === '(Unknown)' ? 'rgba(240,236,228,0.3)' : '#F0ECE4' }}>
-                      {a.artist_name === '(Unknown)' ? '—' : a.artist_name}
-                    </td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)' }}>{a.order_count}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.gross_sales))}</td>
-                    <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.7)', fontVariantNumeric: 'tabular-nums' }}>{formatTHB(Number(a.total_net))}</td>
-                    {hasUplift && (
-                      <td style={{
-                        padding: '10px 0', fontVariantNumeric: 'tabular-nums',
-                        color: artistUplift > 0 ? 'rgba(59,130,246,0.85)' : 'rgba(241,245,249,0.2)',
-                      }}>
-                        {artistUplift > 0 ? `+${formatTHB(artistUplift)}` : '—'}
-                      </td>
-                    )}
-                  </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <ArtistUpliftTable
+              reportId={id}
+              artists={artists as unknown as ArtistSummaryRow[]}
+              vatRate={Number(report.vat_rate_snapshot)}
+              isVatRegistered={report.is_vat_registered_snapshot}
+              partnerShareBase={Number(report.partner_share_base)}
+              baseVatAmount={Number(report.vat_amount)}
+              existingSnapshot={upliftEntries as UpliftSnapshotEntry[]}
+              locked={locked}
+            />
           </div>
         )}
 
