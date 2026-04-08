@@ -9,6 +9,8 @@ import type { Metadata } from 'next'
 import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
 import type { DayData, ArtistDayEntry } from '@/components/partner/DailyTrendChart'
 import { ArtistAvatar } from '@/components/shared/ArtistAvatar'
+import { ReportDocumentView } from '@/components/shared/ReportDocumentView'
+import { ReportOrdersSection } from '@/components/shared/ReportOrdersSection'
 
 export const metadata: Metadata = { title: 'Report Detail' }
 export const dynamic = 'force-dynamic'
@@ -50,6 +52,13 @@ type ReportRow = {
   referred_artist_uplift:          number | null
   referred_artist_uplift_vat:      number | null
   referred_artist_uplift_snapshot: unknown[] | null
+  // Documents
+  payment_slip_path:        string | null
+  payment_slip_name:        string | null
+  payment_slip_uploaded_at: string | null
+  wht_cert_path:            string | null
+  wht_cert_name:            string | null
+  wht_cert_uploaded_at:     string | null
   // Counts
   total_transaction_count: number
   // Timestamps
@@ -214,6 +223,8 @@ export default async function PartnerReportDetailPage({
       fixed_rent_snapshot, fixed_rent_vat_mode_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
       referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
+      payment_slip_path, payment_slip_name, payment_slip_uploaded_at,
+      wht_cert_path, wht_cert_name, wht_cert_uploaded_at,
       total_transaction_count,
       approved_at, paid_at,
       branches (
@@ -463,8 +474,8 @@ export default async function PartnerReportDetailPage({
   return (
     <div>
 
-      {/* ── Back link ──────────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: '28px' }}>
+      {/* ── Back link + PDF button ─────────────────────────────────────────── */}
+      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link href="/dashboard" style={{
           fontSize: '13px', color: 'rgba(59,130,246,0.7)',
           textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -472,6 +483,21 @@ export default async function PartnerReportDetailPage({
         }}>
           ← Back to Overview
         </Link>
+        <a
+          href={`/dashboard/reports/${report.id}/print`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: '8px 18px', borderRadius: '9px',
+            border: '1px solid rgba(0,212,255,0.2)',
+            background: 'rgba(0,212,255,0.06)',
+            fontSize: '12px', color: '#00D4FF',
+            textDecoration: 'none', fontWeight: '500',
+            letterSpacing: '0.01em',
+          }}
+        >
+          ↓ Download PDF
+        </a>
       </div>
 
       {/* ── Hero card ──────────────────────────────────────────────────────── */}
@@ -835,6 +861,19 @@ export default async function PartnerReportDetailPage({
         </div>
       )}
 
+      {/* Documents — payment slip + WHT certificate */}
+      <div style={{ marginBottom: '14px' }}>
+        <ReportDocumentView
+          reportId={report.id}
+          slipName={report.payment_slip_name ?? null}
+          slipUploadedAt={report.payment_slip_uploaded_at ?? null}
+          whtName={report.wht_cert_name ?? null}
+          whtUploadedAt={report.wht_cert_uploaded_at ?? null}
+        />
+      </div>
+
+      {/* All Orders drill-down */}
+      <ReportOrdersSection reportId={report.id} />
 
     </div>
   )

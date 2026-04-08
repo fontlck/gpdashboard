@@ -8,6 +8,8 @@ import { OrdersTable } from '@/components/admin/OrdersTable'
 import { ReportStatusActions } from '@/components/admin/ReportStatusActions'
 import { ArtistUpliftTable } from '@/components/admin/ArtistUpliftTable'
 import { WithholdingTaxControl } from '@/components/admin/WithholdingTaxControl'
+import { ReportDocumentUpload } from '@/components/admin/ReportDocumentUpload'
+import { ReportOrdersSection } from '@/components/shared/ReportOrdersSection'
 import type { OrderRow } from '@/components/admin/OrdersTable'
 import type { ArtistSummaryRow, UpliftSnapshotEntry } from '@/components/admin/ArtistUpliftTable'
 import type { ReactNode } from 'react'
@@ -55,6 +57,13 @@ type ReportDetailRow = {
   // Withholding tax
   withholding_tax_pct:    number | null
   withholding_tax_amount: number | null
+  // Documents
+  payment_slip_path:        string | null
+  payment_slip_name:        string | null
+  payment_slip_uploaded_at: string | null
+  wht_cert_path:            string | null
+  wht_cert_name:            string | null
+  wht_cert_uploaded_at:     string | null
   // Counts
   total_transaction_count: number
   total_skipped_currency:  number
@@ -88,6 +97,8 @@ export default async function AdminReportDetailPage({
       is_vat_registered_snapshot, vat_rate_snapshot,
       referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
       withholding_tax_pct, withholding_tax_amount,
+      payment_slip_path, payment_slip_name, payment_slip_uploaded_at,
+      wht_cert_path, wht_cert_name, wht_cert_uploaded_at,
       total_transaction_count, total_skipped_currency, total_skipped_date,
       recalculated_at, approved_at, approved_by, paid_at, paid_by,
       branches (
@@ -289,7 +300,25 @@ export default async function AdminReportDetailPage({
       <AdminHeader
         title={`${branch?.name ?? 'Branch'} — ${period}`}
         subtitle={`Partner: ${partner?.name ?? '—'}`}
-        actions={<StatusBadge status={report.status as 'draft'} />}
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <a
+              href={`/admin/reports/${id}/print`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '7px 16px', borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.04)',
+                fontSize: '12px', color: 'rgba(240,236,228,0.65)',
+                textDecoration: 'none', fontWeight: '500',
+              }}
+            >
+              ↓ PDF
+            </a>
+            <StatusBadge status={report.status as 'draft'} />
+          </div>
+        }
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -404,6 +433,23 @@ export default async function AdminReportDetailPage({
             <OrdersTable rows={orderRows} locked={locked} />
           </div>
         )}
+
+        {/* Documents — payment slip + WHT cert upload */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <ReportDocumentUpload
+            reportId={id}
+            slipName={report.payment_slip_name ?? null}
+            slipUploadedAt={report.payment_slip_uploaded_at ?? null}
+            whtName={report.wht_cert_name ?? null}
+            whtUploadedAt={report.wht_cert_uploaded_at ?? null}
+          />
+        </div>
+
+        {/* All Orders drill-down */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <ReportOrdersSection reportId={id} />
+        </div>
+
       </div>
     </div>
   )
