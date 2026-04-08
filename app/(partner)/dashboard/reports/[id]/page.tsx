@@ -8,6 +8,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
 import type { DayData } from '@/components/partner/DailyTrendChart'
+import { ArtistAvatar } from '@/components/shared/ArtistAvatar'
 
 export const metadata: Metadata = { title: 'Report Detail' }
 export const dynamic = 'force-dynamic'
@@ -753,28 +754,7 @@ export default async function PartnerReportDetailPage({
                   {/* Artist name + avatar */}
                   <td style={{ padding: '15px 16px 15px 0', verticalAlign: 'middle' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
-                      {a.artist_image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={a.artist_image_url}
-                          alt=""
-                          style={{
-                            width: 42, height: 42, borderRadius: '50%',
-                            objectFit: 'cover', display: 'block', flexShrink: 0,
-                            border: idx === 0
-                              ? '1.5px solid rgba(59,130,246,0.45)'
-                              : '1px solid rgba(255,255,255,0.09)',
-                          }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '13px', color: 'rgba(240,236,228,0.18)',
-                        }}>?</div>
-                      )}
+                      <ArtistAvatar name={a.artist_name} imageUrl={a.artist_image_url} size={42} />
                       <span style={{
                         fontSize: '14px',
                         fontWeight: idx === 0 ? '600' : '400',

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { ArtistAvatar } from '@/components/shared/ArtistAvatar'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -172,16 +173,7 @@ export function ArtistUpliftTable({
               <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 {/* Avatar */}
                 <td style={{ padding: '10px 0' }}>
-                  {a.artist_image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={a.artist_image_url}
-                      alt=""
-                      style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', display: 'block' }}
-                    />
-                  ) : (
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'rgba(240,236,228,0.2)' }}>?</div>
-                  )}
+                  <ArtistAvatar name={a.artist_name} imageUrl={a.artist_image_url} />
                 </td>
 
                 {/* Name */}
