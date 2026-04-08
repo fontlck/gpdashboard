@@ -303,7 +303,7 @@ export default async function AdminReportDetailPage({
         actions={
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <a
-              href={`/admin/reports/${id}/print`}
+              href={`/print/admin/${id}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{

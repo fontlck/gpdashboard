@@ -484,7 +484,7 @@ export default async function PartnerReportDetailPage({
           ← Back to Overview
         </Link>
         <a
-          href={`/dashboard/reports/${report.id}/print`}
+          href={`/print/reports/${report.id}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{
