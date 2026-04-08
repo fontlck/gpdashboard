@@ -7,6 +7,7 @@ import { formatReportingPeriod, formatFullDate } from '@/lib/utils/date'
 import { OrdersTable } from '@/components/admin/OrdersTable'
 import { ReportStatusActions } from '@/components/admin/ReportStatusActions'
 import { ArtistUpliftTable } from '@/components/admin/ArtistUpliftTable'
+import { WithholdingTaxControl } from '@/components/admin/WithholdingTaxControl'
 import type { OrderRow } from '@/components/admin/OrdersTable'
 import type { ArtistSummaryRow, UpliftSnapshotEntry } from '@/components/admin/ArtistUpliftTable'
 import type { ReactNode } from 'react'
@@ -51,6 +52,9 @@ type ReportDetailRow = {
   referred_artist_uplift:          number | null
   referred_artist_uplift_vat:      number | null
   referred_artist_uplift_snapshot: unknown[] | null
+  // Withholding tax
+  withholding_tax_pct:    number | null
+  withholding_tax_amount: number | null
   // Counts
   total_transaction_count: number
   total_skipped_currency:  number
@@ -83,6 +87,7 @@ export default async function AdminReportDetailPage({
       fixed_rent_snapshot, fixed_rent_vat_mode_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
       referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
+      withholding_tax_pct, withholding_tax_amount,
       total_transaction_count, total_skipped_currency, total_skipped_date,
       recalculated_at, approved_at, approved_by, paid_at, paid_by,
       branches (
@@ -301,6 +306,14 @@ export default async function AdminReportDetailPage({
             Financial Breakdown
           </h2>
           <FinancialBreakdown />
+          <WithholdingTaxControl
+            reportId={id}
+            finalPayout={Number(report.final_payout ?? 0)}
+            partnerShareBase={Number(report.partner_share_base ?? 0)}
+            upliftBase={Number(report.referred_artist_uplift ?? 0)}
+            initialPct={report.withholding_tax_pct as 3 | 5 | null}
+            locked={locked}
+          />
         </div>
 
         {/* Right column */}
