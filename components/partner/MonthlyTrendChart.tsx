@@ -49,34 +49,36 @@ export function MonthlyTrendChart({ data }: { data: MonthPoint[] }) {
       borderRadius: '12px',
       padding:      '20px 24px',
       position:     'relative',
-      overflow:     'hidden',
+      overflow:     'visible',   // allow tooltip to overflow top
     }}>
-      {/* Grid background */}
+      {/* Decorative backgrounds — clipped to border-radius in their own wrapper */}
       <div style={{
-        position:        'absolute', inset: 0,
-        backgroundImage: 'linear-gradient(rgba(59,130,246,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.055) 1px, transparent 1px)',
-        backgroundSize:  '28px 28px',
-        WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
-        maskImage:       'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
-        pointerEvents:   'none', borderRadius: 'inherit',
-      }} />
-      {/* Bottom glow */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '72px',
-        background: 'radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.13) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-1px', left: '12%', right: '12%', height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.7), transparent)',
-        pointerEvents: 'none',
-      }} />
-      {/* Top shimmer */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)',
-        pointerEvents: 'none',
-      }} />
+        position: 'absolute', inset: 0, borderRadius: 'inherit',
+        overflow: 'hidden', pointerEvents: 'none', zIndex: 0,
+      }}>
+        {/* Grid */}
+        <div style={{
+          position:        'absolute', inset: 0,
+          backgroundImage: 'linear-gradient(rgba(59,130,246,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.055) 1px, transparent 1px)',
+          backgroundSize:  '28px 28px',
+          WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+          maskImage:       'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)',
+        }} />
+        {/* Bottom glow */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '72px',
+          background: 'radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.13) 0%, transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-1px', left: '12%', right: '12%', height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.7), transparent)',
+        }} />
+        {/* Top shimmer */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)',
+        }} />
+      </div>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'relative', zIndex: 1 }}>
         <span style={{

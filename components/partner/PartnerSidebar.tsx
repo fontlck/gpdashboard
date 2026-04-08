@@ -18,7 +18,6 @@ const T = {
 
 const NAV = [
   { href: '/dashboard',         label: 'Overview' },
-  { href: '/dashboard/reports', label: 'Reports'  },
   { href: '/dashboard/account', label: 'Account'  },
 ] as const
 
