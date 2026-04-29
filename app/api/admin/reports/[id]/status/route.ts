@@ -7,12 +7,13 @@ import { createClient } from '@/lib/supabase/server'
 //   draft → approved → paid   (forward)
 //   approved → draft           (reversal, admin correction only)
 //
-// Body: { action: 'approve' | 'mark_paid' | 'revert_to_draft' }
+// Body: { action: 'approve' | 'mark_paid' | 'revert_to_draft' | 'update_paid_date', paid_at?: string }
 //
 // Rules:
-//   • approve         — only valid when status === 'draft'
-//   • mark_paid       — only valid when status === 'approved'
-//   • revert_to_draft — only valid when status === 'approved' (paid is terminal)
+//   • approve           — only valid when status === 'draft'
+//   • mark_paid         — only valid when status === 'approved'
+//   • revert_to_draft   — only valid when status === 'approved' (paid is terminal)
+//   • update_paid_date  — only valid when status === 'paid'; requires paid_at in body
 
 export async function PATCH(
   request: NextRequest,
@@ -33,15 +34,26 @@ export async function PATCH(
   }
 
   // ── Parse body ──────────────────────────────────────────────────────────────
-  let body: { action?: string }
+  let body: { action?: string; paid_at?: string }
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }) }
 
-  if (body.action !== 'approve' && body.action !== 'mark_paid' && body.action !== 'revert_to_draft') {
+  if (body.action !== 'approve' && body.action !== 'mark_paid' && body.action !== 'revert_to_draft' && body.action !== 'update_paid_date') {
     return NextResponse.json(
-      { error: 'action must be "approve", "mark_paid", or "revert_to_draft"' },
+      { error: 'action must be "approve", "mark_paid", "revert_to_draft", or "update_paid_date"' },
       { status: 400 }
     )
+  }
+
+  // Validate paid_at for actions that require or accept it
+  if ((body.action === 'mark_paid' || body.action === 'update_paid_date') && body.paid_at !== undefined) {
+    const d = new Date(body.paid_at)
+    if (isNaN(d.getTime())) {
+      return NextResponse.json({ error: 'paid_at must be a valid date string' }, { status: 400 })
+    }
+  }
+  if (body.action === 'update_paid_date' && !body.paid_at) {
+    return NextResponse.json({ error: 'paid_at is required for update_paid_date' }, { status: 400 })
   }
 
   const admin = createAdminClient()
@@ -78,15 +90,26 @@ export async function PATCH(
       { status: 409 }
     )
   }
+  if (body.action === 'update_paid_date' && report.status !== 'paid') {
+    return NextResponse.json(
+      { error: `Cannot update paid date — report is not paid (currently "${report.status}").` },
+      { status: 409 }
+    )
+  }
 
   // ── Build update payload ────────────────────────────────────────────────────
   const now = new Date().toISOString()
+  const resolvedPaidAt = (body.action === 'mark_paid' || body.action === 'update_paid_date') && body.paid_at
+    ? new Date(body.paid_at).toISOString()
+    : now
   const updatePayload =
     body.action === 'approve'
       ? { status: 'approved', approved_by: user.id, approved_at: now }
       : body.action === 'mark_paid'
-        ? { status: 'paid', paid_by: user.id, paid_at: now }
-        : { status: 'draft', approved_by: null, approved_at: null }  // revert_to_draft
+        ? { status: 'paid', paid_by: user.id, paid_at: resolvedPaidAt }
+        : body.action === 'update_paid_date'
+          ? { paid_at: resolvedPaidAt }
+          : { status: 'draft', approved_by: null, approved_at: null }  // revert_to_draft
 
   const { data: updated, error: updateErr } = await admin
     .from('monthly_reports')
@@ -102,17 +125,18 @@ export async function PATCH(
 
   // ── Audit log ───────────────────────────────────────────────────────────────
   const auditAction =
-    body.action === 'approve'         ? 'report_approved'      :
-    body.action === 'mark_paid'       ? 'report_marked_paid'   :
-                                        'report_reverted_to_draft'
+    body.action === 'approve'           ? 'report_approved'          :
+    body.action === 'mark_paid'         ? 'report_marked_paid'       :
+    body.action === 'update_paid_date'  ? 'report_paid_date_updated' :
+                                          'report_reverted_to_draft'
 
   await admin.from('audit_logs').insert({
     actor_id:    user.id,
     action:      auditAction,
     entity_type: 'monthly_report',
     entity_id:   reportId,
-    before_state: { status: report.status },
-    after_state:  { status: updated.status },
+    before_state: body.action === 'update_paid_date' ? { paid_at: report.status } : { status: report.status },
+    after_state:  body.action === 'update_paid_date' ? { paid_at: updated.paid_at } : { status: updated.status },
     metadata: {
       branch_id:       report.branch_id,
       reporting_month: report.reporting_month,

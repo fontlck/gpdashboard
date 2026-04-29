@@ -17,7 +17,7 @@ type Props = {
   paidAt?:     string | null
 }
 
-// ── Confirmation modal ────────────────────────────────────────────────────────
+// ── Revert confirmation modal ─────────────────────────────────────────────────
 
 function ConfirmModal({ message, onConfirm, onCancel, loading }: {
   message:   string
@@ -72,6 +72,85 @@ function ConfirmModal({ message, onConfirm, onCancel, loading }: {
   )
 }
 
+// ── Date picker modal (shared by Mark as Paid and Edit paid date) ─────────────
+
+function PaidDateModal({ title, confirmLabel, initialDate, onConfirm, onCancel, loading }: {
+  title:        string
+  confirmLabel: string
+  initialDate:  string
+  onConfirm:    (paidAt: string) => void
+  onCancel:     () => void
+  loading:      boolean
+}) {
+  const todayLocal = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+  const [paidDate, setPaidDate] = useState(initialDate)
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#0C1018', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '16px', padding: '28px 32px', maxWidth: '400px', width: '100%',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+      }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#F1F5F9', margin: '0 0 8px' }}>
+          {title}
+        </h3>
+        <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.5)', margin: '0 0 20px', lineHeight: 1.6 }}>
+          Select the date the payment was made to the partner.
+        </p>
+
+        <label style={{ display: 'block', fontSize: '12px', color: 'rgba(241,245,249,0.45)', marginBottom: '6px' }}>
+          Payment Date
+        </label>
+        <input
+          type="date"
+          value={paidDate}
+          onChange={e => setPaidDate(e.target.value)}
+          max={todayLocal}
+          style={{
+            width: '100%', padding: '9px 12px', borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(255,255,255,0.04)', color: '#F1F5F9',
+            fontSize: '14px', boxSizing: 'border-box',
+            colorScheme: 'dark',
+          }}
+        />
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+              border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+              color: 'rgba(241,245,249,0.6)',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(paidDate)}
+            disabled={loading || !paidDate}
+            style={{
+              padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '700',
+              cursor: (loading || !paidDate) ? 'default' : 'pointer',
+              opacity: (loading || !paidDate) ? 0.6 : 1,
+              border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.1)',
+              color: '#4ADE80',
+            }}
+          >
+            {loading ? 'Saving…' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string) {
@@ -85,20 +164,27 @@ function fmtDate(iso: string) {
 
 export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Props) {
   const router = useRouter()
-  const [loading,     setLoading]     = useState<'approve' | 'mark_paid' | 'revert_to_draft' | null>(null)
-  const [toast,       setToast]       = useState<Toast | null>(null)
-  const [error,       setError]       = useState<string | null>(null)
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [loading,        setLoading]        = useState<'approve' | 'mark_paid' | 'revert_to_draft' | 'update_paid_date' | null>(null)
+  const [toast,          setToast]          = useState<Toast | null>(null)
+  const [error,          setError]          = useState<string | null>(null)
+  const [showConfirm,    setShowConfirm]    = useState(false)
+  const [showMarkPaid,   setShowMarkPaid]   = useState(false)
+  const [showEditPaidAt, setShowEditPaidAt] = useState(false)
 
-  async function transition(action: 'approve' | 'mark_paid' | 'revert_to_draft') {
+  async function transition(action: 'approve' | 'mark_paid' | 'revert_to_draft' | 'update_paid_date', paidAtDate?: string) {
     setLoading(action)
     setError(null)
 
     try {
+      const body: { action: string; paid_at?: string } = { action }
+      if ((action === 'mark_paid' || action === 'update_paid_date') && paidAtDate) {
+        body.paid_at = paidAtDate
+      }
+
       const res  = await fetch(`/api/admin/reports/${reportId}/status`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action }),
+        body:    JSON.stringify(body),
       })
       const json = await res.json()
 
@@ -112,7 +198,9 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
         ? 'Report approved — order rows and refunds are now locked.'
         : action === 'mark_paid'
           ? 'Report marked as paid.'
-          : 'Report reverted to draft — financial fields are editable again.'
+          : action === 'update_paid_date'
+            ? 'Payment date updated.'
+            : 'Report reverted to draft — financial fields are editable again.'
 
       setToast({ message: msg, ok: true })
       setTimeout(() => setToast(null), 6000)
@@ -145,6 +233,32 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
         loading={loading === 'revert_to_draft'}
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => { await transition('revert_to_draft'); setShowConfirm(false) }}
+      />
+    )}
+    {showMarkPaid && (
+      <PaidDateModal
+        title="Mark as Paid"
+        confirmLabel="฿ Confirm Payment"
+        initialDate={new Date().toLocaleDateString('en-CA')}
+        loading={loading === 'mark_paid'}
+        onCancel={() => setShowMarkPaid(false)}
+        onConfirm={async (paidAtDate) => {
+          await transition('mark_paid', paidAtDate)
+          setShowMarkPaid(false)
+        }}
+      />
+    )}
+    {showEditPaidAt && (
+      <PaidDateModal
+        title="Edit payment date"
+        confirmLabel="Save date"
+        initialDate={paidAt ? new Date(paidAt).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA')}
+        loading={loading === 'update_paid_date'}
+        onCancel={() => setShowEditPaidAt(false)}
+        onConfirm={async (paidAtDate) => {
+          await transition('update_paid_date', paidAtDate)
+          setShowEditPaidAt(false)
+        }}
       />
     )}
     <div style={{
@@ -211,7 +325,7 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
           </p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button
-              onClick={() => transition('mark_paid')}
+              onClick={() => setShowMarkPaid(true)}
               disabled={!!loading}
               style={{
                 padding: '10px 20px', borderRadius: '8px',
@@ -247,7 +361,21 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
             <p style={metaLine}>Approved {fmtDate(approvedAt)}</p>
           )}
           {paidAt && (
-            <p style={metaLine}>Paid {fmtDate(paidAt)}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <p style={{ ...metaLine, marginTop: 0 }}>Paid {fmtDate(paidAt)}</p>
+              <button
+                onClick={() => setShowEditPaidAt(true)}
+                disabled={!!loading}
+                style={{
+                  padding: '2px 8px', borderRadius: '6px', fontSize: '11px',
+                  border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                  color: 'rgba(241,245,249,0.4)', cursor: 'pointer',
+                  lineHeight: '1.6',
+                }}
+              >
+                Edit date
+              </button>
+            </div>
           )}
           <div style={{
             marginTop: '14px', padding: '10px 14px', borderRadius: '8px',
