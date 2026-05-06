@@ -1,9 +1,20 @@
 'use client'
 
-export function DownloadPDFButton() {
+interface Props {
+  filename?: string
+}
+
+export function DownloadPDFButton({ filename }: Props) {
+  const handleClick = () => {
+    const prev = document.title
+    if (filename) document.title = filename
+    window.print()
+    if (filename) setTimeout(() => { document.title = prev }, 1000)
+  }
+
   return (
     <button
-      onClick={() => window.print()}
+      onClick={handleClick}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

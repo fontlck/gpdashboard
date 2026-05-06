@@ -6,6 +6,20 @@ import { DownloadPDFButton } from '@/components/shared/DownloadPDFButton'
 
 export const dynamic = 'force-dynamic'
 
+/** Format a date string as dd/mm/yy */
+function fmtDate(d: string | null): string {
+  if (!d) return '—'
+  const s = d.slice(0, 10)
+  const [y, m, day] = s.split('-')
+  return `${day}/${m}/${y.slice(2)}`
+}
+
+/** Extract HH:MM from a datetime string */
+function fmtTime(d: string | null): string {
+  if (!d || d.length < 16) return '—'
+  return d.slice(11, 16)
+}
+
 export default async function AdminReportPrintPage({
   params,
 }: { params: Promise<{ id: string }> }) {
@@ -23,6 +37,9 @@ export default async function AdminReportPrintPage({
       referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
       withholding_tax_pct, withholding_tax_amount,
       total_transaction_count, approved_at, paid_at,
+      compensation_amount, compensation_note,
+      service_fee_amount, service_fee_note, service_fee_wht,
+      fee_deduction_amount, fee_deduction_note,
       branches ( name, partners ( name, vat_number ) )
     `)
     .eq('id', id)
@@ -50,6 +67,13 @@ export default async function AdminReportPrintPage({
   const whtPct    = Number(r.withholding_tax_pct    ?? 0)
   const whtAmount = Number(r.withholding_tax_amount ?? 0)
 
+  // ── Extra Adjustments ──
+  const extComp   = Number(r.compensation_amount  ?? 0)
+  const extSvc    = Number(r.service_fee_amount   ?? 0)
+  const extSvcWht = r.service_fee_wht ? extSvc * 0.03 : 0
+  const extFee    = Number(r.fee_deduction_amount ?? 0)
+  const hasExtras = extComp > 0 || extSvc > 0 || extFee > 0
+
   // ── Top artists ──
   const { data: artists } = await admin
     .from('artist_summaries')
@@ -58,14 +82,16 @@ export default async function AdminReportPrintPage({
     .order('order_count', { ascending: false })
     .limit(10)
 
-  // ── Daily revenue chart data ──
-  const { data: rows } = await admin
+  // ── All transaction rows (for page 2) ──
+  const { data: txRows } = await admin
     .from('report_rows')
-    .select('transaction_date, amount')
+    .select('charge_id, transaction_date, artist_name_raw, amount, net')
     .eq('monthly_report_id', id)
+    .order('transaction_date', { ascending: true })
 
+  // ── Daily revenue chart data ──
   const dayMap = new Map<string, number>()
-  for (const row of rows ?? []) {
+  for (const row of txRows ?? []) {
     const d = (row.transaction_date as string | null)?.slice(0, 10) ?? ''
     if (d) dayMap.set(d, (dayMap.get(d) ?? 0) + Number(row.amount ?? 0))
   }
@@ -82,7 +108,10 @@ export default async function AdminReportPrintPage({
     day: '2-digit', month: 'long', year: 'numeric',
   })
 
-  type SummaryRow = { label: string; value: string; indent?: boolean; muted?: boolean }
+  // Suggested PDF filename: "BranchName_Month YYYY"
+  const pdfFilename = `${branch?.name ?? 'Report'}_${period}`
+
+  type SummaryRow = { label: string; value: string; indent?: boolean; muted?: boolean; section?: string }
   const summaryRows: SummaryRow[] = [
     { label: 'Payout Model',  value: isFixed ? 'Fixed Rent' : `Revenue Share · ${r.revenue_share_pct_snapshot}%` },
     { label: 'Total Orders',  value: Number(r.total_transaction_count).toLocaleString() },
@@ -125,6 +154,9 @@ export default async function AdminReportPrintPage({
         .wrap { max-width: 680px; margin: 0 auto; padding: 32px 0 24px; }
 
         .hd { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 14px; margin-bottom: 20px; }
+        .hd-logo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .hd-logo img { width: 34px; height: 29px; object-fit: cover; display: block; }
+        .hd-logo-name { font-size: 7.5pt; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.2; }
         .hd-left .eyebrow { font-size: 7pt; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #aaa; margin-bottom: 5px; }
         .hd-left .period  { font-size: 22pt; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
         .hd-right { text-align: right; }
@@ -154,6 +186,11 @@ export default async function AdminReportPrintPage({
         .sum-table tfoot .lbl { font-size: 11pt; font-weight: 700; color: #111; }
         .sum-table tfoot .val { font-size: 14pt; font-weight: 800; }
 
+        /* Extra Adjustments */
+        .extra-divider td { border-bottom: none !important; padding-top: 10px !important; padding-bottom: 2px !important; }
+        .extra-label { font-size: 7pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #aaa; }
+        .sum-table .lbl.extra { padding-left: 14px; color: #888; }
+
         .dt { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
         .dt thead tr { background: #f6f6f6; }
         .dt thead th { padding: 7px 10px; font-size: 7pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #888; border-bottom: 1.5px solid #e0e0e0; text-align: left; }
@@ -162,6 +199,13 @@ export default async function AdminReportPrintPage({
         .dt tbody td.r    { text-align: right; font-variant-numeric: tabular-nums; }
         .dt tbody td.bold { font-weight: 600; }
         .dt tbody td.dim  { color: #aaa; }
+        .dt tbody td.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 7.5pt; }
+
+        /* Page 2 transaction detail */
+        .page-break { break-before: page; page-break-before: always; }
+        .tx-hd { border-bottom: 1.5px solid #111; padding-bottom: 8px; margin-bottom: 16px; }
+        .tx-hd .title { font-size: 16pt; font-weight: 800; letter-spacing: -.02em; }
+        .tx-hd .sub   { font-size: 8pt; color: #888; margin-top: 2px; }
 
         .ft { border-top: 1px solid #e8e8e8; padding-top: 10px; margin-top: 4px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #bbb; }
       `}</style>
@@ -173,12 +217,19 @@ export default async function AdminReportPrintPage({
           <a href={`/admin/reports/${id}`} style={{ fontSize: '13px', color: '#888', textDecoration: 'none', fontFamily: 'inherit' }}>
             ← Back to report
           </a>
-          <DownloadPDFButton />
+          <DownloadPDFButton filename={pdfFilename} />
         </div>
+
+        {/* ══════════════ PAGE 1 — SUMMARY ══════════════ */}
 
         {/* ── Header ── */}
         <div className="hd">
           <div className="hd-left">
+            <div className="hd-logo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-mark.svg" alt="FLASHYOURMEME" />
+              <div className="hd-logo-name">FLASHYOURMEME<br />CO., LTD.</div>
+            </div>
             <div className="eyebrow">Partner Earnings Report</div>
             <div className="period">{period}</div>
           </div>
@@ -260,6 +311,41 @@ export default async function AdminReportPrintPage({
                 <td className={`val${row.muted ? ' muted' : ''}`}>{row.value}</td>
               </tr>
             ))}
+
+            {/* Extra Adjustments section */}
+            {hasExtras && (
+              <>
+                <tr className="extra-divider">
+                  <td colSpan={2}><span className="extra-label">Extra Adjustments</span></td>
+                </tr>
+                {extComp > 0 && (
+                  <tr>
+                    <td className="lbl extra">Compensation{r.compensation_note ? ` — ${r.compensation_note}` : ''}</td>
+                    <td className="val">+ {formatTHB(extComp)}</td>
+                  </tr>
+                )}
+                {extSvc > 0 && (
+                  <>
+                    <tr>
+                      <td className="lbl extra">Service Fee{r.service_fee_note ? ` — ${r.service_fee_note}` : ''}</td>
+                      <td className="val">+ {formatTHB(extSvc)}</td>
+                    </tr>
+                    {r.service_fee_wht && (
+                      <tr>
+                        <td className="lbl extra" style={{ paddingLeft: '28px' }}>WHT 3%</td>
+                        <td className="val muted">– {formatTHB(extSvcWht)}</td>
+                      </tr>
+                    )}
+                  </>
+                )}
+                {extFee > 0 && (
+                  <tr>
+                    <td className="lbl extra">Fee{r.fee_deduction_note ? ` — ${r.fee_deduction_note}` : ''}</td>
+                    <td className="val muted">– {formatTHB(extFee)}</td>
+                  </tr>
+                )}
+              </>
+            )}
           </tbody>
           <tfoot>
             <tr>
@@ -327,11 +413,54 @@ export default async function AdminReportPrintPage({
           </>
         )}
 
-        {/* ── Footer ── */}
+        {/* ── Footer page 1 ── */}
         <div className="ft">
-          <span>{partner?.name ?? ''} · {branch?.name ?? ''} · {period}</span>
+          <span>FLASHYOURMEME CO., LTD. · {branch?.name ?? ''} · {period}</span>
           <span>Admin Copy · Confidential</span>
         </div>
+
+        {/* ══════════════ PAGE 2 — TRANSACTION DETAIL ══════════════ */}
+        {txRows && txRows.length > 0 && (
+          <div className="page-break">
+            <div className="tx-hd">
+              <div className="title">Transaction Detail — {period}</div>
+              <div className="sub">{partner?.name ?? ''} · {branch?.name ?? ''} · Admin Copy</div>
+            </div>
+
+            <table className="dt">
+              <thead>
+                <tr>
+                  <th style={{ width: '28px' }}>#</th>
+                  <th>Charge ID</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Artist</th>
+                  <th className="r">Amount</th>
+                  <th className="r">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                {txRows.map((row, i) => (
+                  <tr key={i}>
+                    <td className="dim">{i + 1}</td>
+                    <td className="mono">{row.charge_id ?? '—'}</td>
+                    <td>{fmtDate(row.transaction_date as string | null)}</td>
+                    <td>{fmtTime(row.transaction_date as string | null)}</td>
+                    <td>{(row.artist_name_raw as string | null) ?? '—'}</td>
+                    <td className="r">{formatTHB(Number(row.amount ?? 0))}</td>
+                    <td className="r bold">{formatTHB(Number(row.net ?? 0))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* ── Footer page 2 ── */}
+            <div className="ft">
+              <span>FLASHYOURMEME CO., LTD. · {branch?.name ?? ''} · {period}</span>
+              <span>Admin Copy · Confidential</span>
+            </div>
+          </div>
+        )}
 
       </div>
     </>
