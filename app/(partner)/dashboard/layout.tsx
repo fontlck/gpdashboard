@@ -137,24 +137,23 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
         display:       'flex',
         flexDirection: 'column',
       }}>
-        {/* Compact partnership line */}
-        <div style={{ padding: '20px 32px 0' }}>
-          <span style={{ fontSize: '12px', color: 'rgba(241,245,249,0.3)', letterSpacing: '0.01em' }}>
-            <span style={{ color: 'rgba(59,130,246,0.6)', marginRight: '8px' }}>◆</span>
+        {/* Greeting header */}
+        <div style={{ padding: '32px 32px 0' }}>
+          <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.4)', margin: '0 0 2px', letterSpacing: '0.01em' }}>
+            Hello,
+          </p>
+          <p style={{ fontSize: '42px', fontWeight: 500, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
             {partnerName}
-            {startDate && (
-              <>
-                <span style={{ margin: '0 8px', opacity: 0.35 }}>·</span>
-                Partner since {formatFullDate(parseLocalDate(startDate))}
-                <span style={{ margin: '0 8px', opacity: 0.35 }}>·</span>
-                {formatDuration(startDate)}
-              </>
-            )}
-          </span>
+          </p>
+          {startDate && (
+            <p style={{ fontSize: '12px', color: 'rgba(241,245,249,0.25)', margin: '10px 0 0', letterSpacing: '0.01em' }}>
+              Partner since {formatFullDate(parseLocalDate(startDate))} · {formatDuration(startDate)}
+            </p>
+          )}
         </div>
 
         {/* Page content */}
-        <div style={{ padding: '16px 32px 32px' }}>
+        <div style={{ padding: '20px 32px 32px' }}>
           {children}
         </div>
       </main>
