@@ -102,10 +102,13 @@ export async function middleware(request: NextRequest) {
       }
 
       if (orgs.length === 1) {
-        // Auto-select the only org — set cookie and continue
-        supabaseResponse.cookies.set(ORG_COOKIE, orgs[0].organization_id, {
+        // Auto-select the only org — redirect so the page sees the new cookie
+        const url = request.nextUrl.clone()
+        const res = NextResponse.redirect(url)
+        res.cookies.set(ORG_COOKIE, orgs[0].organization_id, {
           path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30,
         })
+        return res
       } else {
         // Multiple orgs — let user pick
         const url = request.nextUrl.clone()
