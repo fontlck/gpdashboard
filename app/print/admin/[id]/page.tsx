@@ -139,12 +139,12 @@ export default async function AdminReportPrintPage({
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans:wght@400;600;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
           background: #fff;
           color: #111;
-          font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+          font-family: 'DM Sans', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
           font-size: 10pt;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
