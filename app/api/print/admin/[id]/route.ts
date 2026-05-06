@@ -70,7 +70,7 @@ export async function GET(
       margin: { top: '16mm', right: '20mm', bottom: '16mm', left: '20mm' },
     })
 
-    return new NextResponse(pdf, {
+    return new NextResponse(Buffer.from(pdf), {
       headers: {
         'Content-Type':        'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
