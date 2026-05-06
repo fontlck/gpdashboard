@@ -217,7 +217,7 @@ export default async function AdminReportPrintPage({
           <a href={`/admin/reports/${id}`} style={{ fontSize: '13px', color: '#888', textDecoration: 'none', fontFamily: 'inherit' }}>
             ← Back to report
           </a>
-          <DownloadPDFButton filename={pdfFilename} />
+          <DownloadPDFButton filename={pdfFilename} pdfHref={`/api/print/admin/${id}`} />
         </div>
 
         {/* ══════════════ PAGE 1 — SUMMARY ══════════════ */}

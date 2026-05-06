@@ -215,7 +215,7 @@ export default async function PartnerReportPrintPage({
           <a href={`/dashboard/reports/${id}`} style={{ fontSize: '13px', color: '#888', textDecoration: 'none', fontFamily: 'inherit' }}>
             ← Back to report
           </a>
-          <DownloadPDFButton filename={pdfFilename} />
+          <DownloadPDFButton filename={pdfFilename} pdfHref={`/api/print/reports/${id}`} />
         </div>
 
         {/* ══════════════ PAGE 1 — SUMMARY ══════════════ */}

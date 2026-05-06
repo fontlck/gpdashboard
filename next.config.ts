@@ -1,6 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // ── PDF generation (Puppeteer + Chromium) ───────────────────
+  // These heavy native packages must not be bundled by webpack
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium-min'],
+
   // ── Public env vars — provide build-time fallbacks so the Edge
   //    Middleware always has these values even if the Vercel project
   //    settings were not configured before the first deploy.
