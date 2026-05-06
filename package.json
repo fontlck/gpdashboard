@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource/noto-sans-thai": "^5.2.8",
     "@sparticuz/chromium-min": "^148.0.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.4",

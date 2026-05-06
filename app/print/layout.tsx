@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import '@fontsource/noto-sans-thai/400.css'
+import '@fontsource/noto-sans-thai/700.css'
 
 export default function PrintLayout({ children }: { children: ReactNode }) {
   return (
