@@ -551,7 +551,7 @@ export async function POST(request: NextRequest) {
     // ── Write audit_log ───────────────────────────────────────────────────────
     // Captures who imported what, with before/after report state for overwrites.
     await admin.from('audit_logs').insert({
-      actor_id:     user.id,
+      actor_id:     user!.id,
       action:       isOverwriteAction ? 'csv_overwrite' : 'csv_import',
       entity_type:  'monthly_report',
       entity_id:    monthlyReportId,
