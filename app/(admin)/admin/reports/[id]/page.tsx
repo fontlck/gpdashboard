@@ -11,6 +11,7 @@ import { WithholdingTaxControl } from '@/components/admin/WithholdingTaxControl'
 import { ReportDocumentUpload } from '@/components/admin/ReportDocumentUpload'
 import { ReportOrdersSection } from '@/components/shared/ReportOrdersSection'
 import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
+import { ExtraLineItems } from '@/components/admin/ExtraLineItems'
 import type { DayData, ArtistDayEntry } from '@/components/partner/DailyTrendChart'
 import type { OrderRow } from '@/components/admin/OrdersTable'
 import type { ArtistSummaryRow, UpliftSnapshotEntry } from '@/components/admin/ArtistUpliftTable'
@@ -70,6 +71,14 @@ type ReportDetailRow = {
   total_transaction_count: number
   total_skipped_currency:  number
   total_skipped_date:      number
+  // Extra line items
+  compensation_amount:  number | string | null
+  compensation_note:    string | null
+  service_fee_amount:   number | string | null
+  service_fee_note:     string | null
+  service_fee_wht:      boolean
+  fee_deduction_amount: number | string | null
+  fee_deduction_note:   string | null
   // Timestamps
   recalculated_at: string | null
   approved_at:     string | null
@@ -102,6 +111,9 @@ export default async function AdminReportDetailPage({
       payment_slip_path, payment_slip_name, payment_slip_uploaded_at,
       wht_cert_path, wht_cert_name, wht_cert_uploaded_at,
       total_transaction_count, total_skipped_currency, total_skipped_date,
+      compensation_amount, compensation_note,
+      service_fee_amount, service_fee_note, service_fee_wht,
+      fee_deduction_amount, fee_deduction_note,
       recalculated_at, approved_at, approved_by, paid_at, paid_by,
       branches (
         name, code, location,
@@ -190,6 +202,14 @@ export default async function AdminReportDetailPage({
   const upliftEntries = (report.referred_artist_uplift_snapshot ?? []) as UpliftEntry[]
   const hasUplift   = upliftTotal > 0
 
+  // ── Extra line items — compute base payout (before extras) ─────────────────
+  const extComp    = Number(report.compensation_amount  ?? 0)
+  const extSvc     = Number(report.service_fee_amount   ?? 0)
+  const extSvcWht  = report.service_fee_wht ? extSvc * 0.03 : 0
+  const extFee     = Number(report.fee_deduction_amount ?? 0)
+  const extAdj     = extComp + extSvc - extSvcWht - extFee
+  const basePayout = Number(report.final_payout) - extAdj
+
   // ── Shared row component ────────────────────────────────────────────────────
 
   const ROW = ({ label, value, accent = false, warning = false, muted = false }: {
@@ -241,9 +261,6 @@ export default async function AdminReportDetailPage({
               )}
             </>
           )}
-
-          <div style={{ height: '8px' }} />
-          <ROW label="Final Payout" value={formatTHB(Number(report.final_payout))} accent />
 
           <div style={{
             marginTop: '16px', padding: '10px 14px', borderRadius: '10px',
@@ -317,9 +334,6 @@ export default async function AdminReportDetailPage({
           </>
         )}
 
-        <div style={{ height: '8px' }} />
-        <ROW label="Final Payout" value={formatTHB(Number(report.final_payout))} accent />
-
         {hasNeg && (
           <div style={{
             marginTop: '16px', padding: '12px', borderRadius: '10px',
@@ -373,6 +387,19 @@ export default async function AdminReportDetailPage({
             Financial Breakdown
           </h2>
           <FinancialBreakdown />
+          <ExtraLineItems
+            reportId={id}
+            locked={locked}
+            basePayout={basePayout}
+            currentFinalPayout={Number(report.final_payout)}
+            initialComp={report.compensation_amount  != null ? Number(report.compensation_amount)  : null}
+            initialCompNote={report.compensation_note ?? null}
+            initialSvc={report.service_fee_amount    != null ? Number(report.service_fee_amount)   : null}
+            initialSvcNote={report.service_fee_note ?? null}
+            initialSvcWht={report.service_fee_wht ?? false}
+            initialFee={report.fee_deduction_amount  != null ? Number(report.fee_deduction_amount) : null}
+            initialFeeNote={report.fee_deduction_note ?? null}
+          />
           <WithholdingTaxControl
             reportId={id}
             finalPayout={Number(report.final_payout ?? 0)}

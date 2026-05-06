@@ -20,6 +20,11 @@ type ReportSnapshot = {
   // Referred artist uplift — preserved across refund recalculations
   referred_artist_uplift:     number | string
   referred_artist_uplift_vat: number | string
+  // Extra line items — preserved across refund recalculations
+  compensation_amount:  number | string | null
+  service_fee_amount:   number | string | null
+  service_fee_wht:      boolean
+  fee_deduction_amount: number | string | null
 }
 
 function recalculate(report: ReportSnapshot, newRefundAmount: number) {
@@ -31,6 +36,13 @@ function recalculate(report: ReportSnapshot, newRefundAmount: number) {
   // Manual refunds do not change artist transaction data, so uplift is preserved.
   const uplift    = Number(report.referred_artist_uplift    ?? 0)
   const upliftVat = Number(report.referred_artist_uplift_vat ?? 0)
+
+  // Extra line items are admin-entered adjustments — also preserved across recalculations.
+  const extComp   = Number(report.compensation_amount  ?? 0)
+  const extSvc    = Number(report.service_fee_amount   ?? 0)
+  const extSvcWht = report.service_fee_wht ? extSvc * 0.03 : 0
+  const extFee    = Number(report.fee_deduction_amount ?? 0)
+  const extAdj    = extComp + extSvc - extSvcWht - extFee
 
   const base: Record<string, unknown> = {
     total_refunds:            newRefundAmount,
@@ -50,15 +62,15 @@ function recalculate(report: ReportSnapshot, newRefundAmount: number) {
     const vatAmount        = report.is_vat_registered_snapshot
       ? partnerShareBase * vatR
       : 0
-    // Add uplift back — it is independent of refunds
-    const finalPayout      = partnerShareBase + vatAmount + uplift + upliftVat
+    // Re-apply uplift and extras — both are independent of refunds
+    const finalPayout      = partnerShareBase + vatAmount + uplift + upliftVat + extAdj
 
     base.partner_share_base = partnerShareBase
     base.vat_amount         = vatAmount
     base.final_payout       = finalPayout
   }
-  // fixed_rent: payout fields (partner_share_base, vat_amount, final_payout) unchanged
-  // final_payout already includes uplift as set at import time — no adjustment needed
+  // fixed_rent: payout fields (partner_share_base, vat_amount, final_payout) unchanged.
+  // final_payout already includes extras + uplift as set — no adjustment needed.
 
   return base
 }
@@ -136,7 +148,8 @@ export async function POST(request: NextRequest) {
       payout_type_snapshot, revenue_share_pct_snapshot,
       is_vat_registered_snapshot, vat_rate_snapshot,
       total_net, partner_share_base, vat_amount, final_payout,
-      referred_artist_uplift, referred_artist_uplift_vat
+      referred_artist_uplift, referred_artist_uplift_vat,
+      compensation_amount, service_fee_amount, service_fee_wht, fee_deduction_amount
     `)
     .eq('branch_id', branch_id)
     .eq('reporting_month', reporting_month)
