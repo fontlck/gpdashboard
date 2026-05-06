@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
       organization_id:   orgId,
       reporting_month:   reportingMonth,
       reporting_year:    reportingYear,
-      uploaded_by:       user.id,
+      uploaded_by:       user!.id,
       original_filename: filename,
       storage_path:      storagePath,
       status:            'pending',
