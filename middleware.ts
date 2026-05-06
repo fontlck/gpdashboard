@@ -75,12 +75,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Org selection ────────────────────────────────────────────────────────────
-  // If user is on a protected page but has no org cookie, check how many orgs
-  // they belong to. If >1, send them to org-select. If exactly 1, auto-set it.
+  // Fetch all active orgs for this user
   const orgCookie = request.cookies.get(ORG_COOKIE)?.value
 
-  if (!orgCookie && !isOrgSelect && (isAdminRoute || isPartnerRoute)) {
-    // Fetch orgs for this user
+  if (!isOrgSelect && (isAdminRoute || isPartnerRoute)) {
     const { data: memberships } = await supabase
       .from('org_memberships')
       .select('organization_id')
@@ -88,24 +86,34 @@ export async function middleware(request: NextRequest) {
       .eq('is_active', true)
 
     const orgs = memberships ?? []
+    const validOrgIds = orgs.map(m => m.organization_id)
 
-    if (orgs.length === 0) {
-      // No org assigned — show error at org-select
-      const url = request.nextUrl.clone()
-      url.pathname = '/org-select'
-      return NextResponse.redirect(url)
-    }
+    // Check if current cookie points to an org the user actually belongs to
+    const cookieIsValid = orgCookie && validOrgIds.includes(orgCookie)
 
-    if (orgs.length === 1) {
-      // Auto-select the only org — set cookie and continue
-      supabaseResponse.cookies.set(ORG_COOKIE, orgs[0].organization_id, {
-        path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, // 30 days
-      })
-    } else {
-      // Multiple orgs — let user pick
-      const url = request.nextUrl.clone()
-      url.pathname = '/org-select'
-      return NextResponse.redirect(url)
+    if (!cookieIsValid) {
+      if (orgs.length === 0) {
+        // No org — redirect to org-select to show error
+        const url = request.nextUrl.clone()
+        url.pathname = '/org-select'
+        const res = NextResponse.redirect(url)
+        res.cookies.delete(ORG_COOKIE)
+        return res
+      }
+
+      if (orgs.length === 1) {
+        // Auto-select the only org — set cookie and continue
+        supabaseResponse.cookies.set(ORG_COOKIE, orgs[0].organization_id, {
+          path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30,
+        })
+      } else {
+        // Multiple orgs — let user pick
+        const url = request.nextUrl.clone()
+        url.pathname = '/org-select'
+        const res = NextResponse.redirect(url)
+        res.cookies.delete(ORG_COOKIE)
+        return res
+      }
     }
   }
 
