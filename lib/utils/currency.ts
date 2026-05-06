@@ -20,6 +20,16 @@ export function formatTHB(value: number): string {
   return THB_FORMATTER.format(value)
 }
 
+/**
+ * Format a number as Thai Baht for PDF print pages.
+ * Uses "THB " prefix instead of ฿ (U+0E3F) because the Chromium binary
+ * used for server-side PDF generation does not bundle a Thai font that
+ * includes that glyph.  Result: "THB 1,234.56"
+ */
+export function formatTHBPrint(value: number): string {
+  return 'THB ' + NUMBER_FORMATTER.format(value)
+}
+
 /** Format a number with 2 decimal places, no currency symbol: 1,234.56 */
 export function formatNumber(value: number): string {
   return NUMBER_FORMATTER.format(value)

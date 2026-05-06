@@ -148,7 +148,7 @@ export default async function AdminReportPrintPage({
         html, body {
           background: #fff;
           color: #111;
-          font-family: 'DM Sans', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+          font-family: 'DM Sans', 'Noto Sans Thai', 'Helvetica Neue', Arial, sans-serif;
           font-size: 10pt;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
