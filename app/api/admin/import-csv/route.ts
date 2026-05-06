@@ -484,7 +484,7 @@ export async function POST(request: NextRequest) {
     } else {
       const { data: newReport, error: reportErr } = await admin
         .from('monthly_reports')
-        .insert({ branch_id: branchId, reporting_month: reportingMonth, reporting_year: reportingYear, ...reportPayload })
+        .insert({ branch_id: branchId, reporting_month: reportingMonth, reporting_year: reportingYear, organization_id: orgId, ...reportPayload })
         .select('id')
         .single()
 
@@ -551,6 +551,7 @@ export async function POST(request: NextRequest) {
     // ── Write audit_log ───────────────────────────────────────────────────────
     // Captures who imported what, with before/after report state for overwrites.
     await admin.from('audit_logs').insert({
+      organization_id: orgId,
       actor_id:     user!.id,
       action:       isOverwriteAction ? 'csv_overwrite' : 'csv_import',
       entity_type:  'monthly_report',
