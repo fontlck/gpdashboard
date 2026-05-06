@@ -142,8 +142,12 @@ export default async function PartnerReportPrintPage({
 
   return (
     <>
+      {/* eslint-disable-next-line @next/next/no-head-element */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/google-font-display */}
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans:wght@400;600;700&display=block" rel="stylesheet" />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans:wght@400;600;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
           background: #fff;

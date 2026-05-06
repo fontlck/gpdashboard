@@ -63,6 +63,8 @@ export async function GET(
     }
 
     await page.goto(printUrl, { waitUntil: 'networkidle0', timeout: 30_000 })
+    // Wait for all web fonts to finish loading before capturing PDF
+    await page.evaluateHandle('document.fonts.ready')
 
     const pdf = await page.pdf({
       format:          'A4',
