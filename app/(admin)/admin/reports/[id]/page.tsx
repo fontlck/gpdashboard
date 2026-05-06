@@ -313,11 +313,13 @@ export default async function AdminReportDetailPage({
           value={formatTHB(adjustedNet)}
           warning={hasNeg}
         />
-        <ROW
-          label={`÷ (1 + ${vatPct}) → ex-VAT`}
-          value={formatTHB(adjustedNetExVat)}
-          muted
-        />
+        {vatR > 0 && (
+          <ROW
+            label={`÷ (1 + ${vatPct}) → ex-VAT`}
+            value={formatTHB(adjustedNetExVat)}
+            muted
+          />
+        )}
         <div style={{ height: '8px' }} />
         <ROW
           label={`Revenue Share (${report.revenue_share_pct_snapshot}%)`}
