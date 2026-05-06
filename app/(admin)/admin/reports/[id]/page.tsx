@@ -10,6 +10,8 @@ import { ArtistUpliftTable } from '@/components/admin/ArtistUpliftTable'
 import { WithholdingTaxControl } from '@/components/admin/WithholdingTaxControl'
 import { ReportDocumentUpload } from '@/components/admin/ReportDocumentUpload'
 import { ReportOrdersSection } from '@/components/shared/ReportOrdersSection'
+import { DailyTrendChart } from '@/components/partner/DailyTrendChart'
+import type { DayData, ArtistDayEntry } from '@/components/partner/DailyTrendChart'
 import type { OrderRow } from '@/components/admin/OrdersTable'
 import type { ArtistSummaryRow, UpliftSnapshotEntry } from '@/components/admin/ArtistUpliftTable'
 import type { ReactNode } from 'react'
@@ -135,6 +137,42 @@ export default async function AdminReportDetailPage({
     artist_name_raw:  r.artist_name_raw  ?? null,
     artist_image_url: r.artist_image_url ?? null,
   }))
+
+  // ── Aggregate daily data (Bangkok UTC+7) — same logic as partner view ────────
+  const BKK_OFFSET_MS = 7 * 60 * 60 * 1000
+  type DayAgg = { gross: number; net: number; orders: number; byArtist: Map<string, { gross: number; net: number; orders: number }> }
+  const dailyMap = new Map<number, DayAgg>()
+
+  for (const row of rowsRes.data ?? []) {
+    const bkkMs  = new Date(row.transaction_date).getTime() + BKK_OFFSET_MS
+    const day    = new Date(bkkMs).getUTCDate()
+    const gross  = Number(row.amount)
+    const net    = Number(row.net)
+    const artist = (row.artist_name_raw ?? '').trim() || '(Unknown)'
+
+    const existing = dailyMap.get(day) ?? { gross: 0, net: 0, orders: 0, byArtist: new Map() }
+    existing.gross  += gross
+    existing.net    += net
+    existing.orders += 1
+
+    const aEntry = existing.byArtist.get(artist) ?? { gross: 0, net: 0, orders: 0 }
+    aEntry.gross  += gross
+    aEntry.net    += net
+    aEntry.orders += 1
+    existing.byArtist.set(artist, aEntry)
+    dailyMap.set(day, existing)
+  }
+
+  const daysInMonth = new Date(report.reporting_year, report.reporting_month, 0).getDate()
+  const dailyData: DayData[] = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1
+    const agg = dailyMap.get(day)
+    if (!agg) return { day, gross: 0, net: 0, orders: 0, artists: [] }
+    const artistEntries: ArtistDayEntry[] = [...agg.byArtist.entries()].map(([artist, v]) => ({
+      artist, gross: v.gross, net: v.net, orders: v.orders,
+    }))
+    return { day, gross: agg.gross, net: agg.net, orders: agg.orders, artists: artistEntries }
+  })
 
   const branch  = Array.isArray(report.branches) ? report.branches[0] : report.branches
   const partner = branch && (Array.isArray(branch.partners) ? branch.partners[0] : branch.partners)
@@ -398,6 +436,26 @@ export default async function AdminReportDetailPage({
             )}
           </div>
         </div>
+
+        {/* Daily Trend Chart — same view as partner sees */}
+        {orderRows.length > 0 && (
+          <div style={{
+            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
+          }}>
+            <h2 style={{
+              fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
+              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
+            }}>
+              Daily Trend
+            </h2>
+            <DailyTrendChart
+              data={dailyData}
+              month={report.reporting_month}
+              year={report.reporting_year}
+            />
+          </div>
+        )}
 
         {/* Artist Breakdown — interactive uplift editor */}
         {artists.length > 0 && (
