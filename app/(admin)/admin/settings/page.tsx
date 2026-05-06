@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { requireOrgId } from '@/lib/org'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import type { Metadata } from 'next'
 
@@ -25,10 +26,12 @@ const ROW = ({ label, value, description }: { label: string; value: ReactNode; d
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient()
+  const orgId = await requireOrgId()
 
   const { data: settings } = await supabase
     .from('settings')
     .select('key, value')
+    .eq('organization_id', orgId)
 
   const settingsMap = Object.fromEntries((settings ?? []).map(s => [s.key, s.value]))
 

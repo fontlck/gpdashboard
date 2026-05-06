@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireOrgId } from '@/lib/org'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ReportsClient } from '@/components/admin/ReportsClient'
@@ -39,6 +40,7 @@ type RawReport = {
 
 export default async function AdminReportsPage() {
   const admin = createAdminClient()
+  const orgId = await requireOrgId()
 
   const { data: rawReports } = await admin
     .from('monthly_reports')
@@ -54,6 +56,7 @@ export default async function AdminReportsPage() {
         partners ( name, is_vat_registered )
       )
     `)
+    .eq('organization_id', orgId)
     .order('reporting_year',  { ascending: false })
     .order('reporting_month', { ascending: false })
     .order('created_at',      { ascending: true  })

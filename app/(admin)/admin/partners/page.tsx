@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requireOrgId } from '@/lib/org'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import type { Metadata } from 'next'
@@ -19,6 +20,7 @@ type PartnerRow = {
 
 export default async function AdminPartnersPage() {
   const supabase = await createClient()
+  const orgId = await requireOrgId()
 
   const { data: rawPartners } = await supabase
     .from('partners')
@@ -27,6 +29,7 @@ export default async function AdminPartnersPage() {
       created_at,
       branches ( id, name, is_active )
     `)
+    .eq('organization_id', orgId)
     .order('name', { ascending: true })
 
   const partners = (rawPartners as unknown as PartnerRow[] | null) ?? []

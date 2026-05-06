@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireOrgId } from '@/lib/org'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { BranchesClient } from '@/components/admin/BranchesClient'
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function AdminBranchesPage() {
   const admin = createAdminClient()
+  const orgId = await requireOrgId()
 
   const { data: rawBranches } = await admin
     .from('branches')
@@ -18,6 +20,7 @@ export default async function AdminBranchesPage() {
       is_active, partner_id,
       partners ( id, name, is_vat_registered )
     `)
+    .eq('organization_id', orgId)
     .order('name', { ascending: true })
 
   const branches = (rawBranches as unknown as Parameters<typeof BranchesClient>[0]['initialBranches']) ?? []

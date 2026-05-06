@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requireOrgId } from '@/lib/org'
 import { AdminHeader } from '@/components/admin/AdminHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { formatFullDate } from '@/lib/utils/date'
@@ -48,10 +49,12 @@ function actionLabel(action: string): string {
 
 export default async function AdminAuditPage() {
   const supabase = await createClient()
+  const orgId = await requireOrgId()
 
   const { data: rawLogs } = await supabase
     .from('audit_logs')
     .select('id, action, entity_type, entity_id, actor_id, created_at, metadata')
+    .eq('organization_id', orgId)
     .order('created_at', { ascending: false })
     .limit(200)
 

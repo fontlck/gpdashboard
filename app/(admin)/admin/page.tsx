@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { requireOrgId } from '@/lib/org'
 import { formatTHB } from '@/lib/utils/currency'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatReportingPeriod } from '@/lib/utils/date'
@@ -14,22 +15,27 @@ function monthName(m: number) {
 
 export default async function AdminOverviewPage() {
   const supabase = await createClient()
+  const orgId = await requireOrgId()
 
   const [reportsRes, branchesRes, pendingRes, recentRes] = await Promise.all([
     supabase
       .from('monthly_reports')
-      .select('id, status, final_payout, total_net, reporting_month, reporting_year'),
+      .select('id, status, final_payout, total_net, reporting_month, reporting_year')
+      .eq('organization_id', orgId),
     supabase
       .from('branches')
       .select('id', { count: 'exact' })
+      .eq('organization_id', orgId)
       .eq('is_active', true),
     supabase
       .from('monthly_reports')
       .select('id', { count: 'exact' })
+      .eq('organization_id', orgId)
       .eq('status', 'pending_review'),
     supabase
       .from('monthly_reports')
       .select('id, status, final_payout, reporting_month, reporting_year, branches(name, partners(name))')
+      .eq('organization_id', orgId)
       .order('reporting_year',  { ascending: false })
       .order('reporting_month', { ascending: false })
       .limit(6),

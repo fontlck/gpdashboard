@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireOrgId } from '@/lib/org'
 import { RefundPageClient } from '@/components/admin/RefundPageClient'
 import type { BranchOption, RefundRow } from '@/components/admin/RefundPageClient'
 import type { Metadata } from 'next'
@@ -30,23 +31,27 @@ type RawRefundRow = {
 
 export default async function AdminRefundsPage() {
   const admin = createAdminClient()
+  const orgId = await requireOrgId()
 
-  const [branchesRes, refundsRes] = await Promise.all([
-    admin
-      .from('branches')
-      .select('id, name')
-      .order('name'),
+  // Fetch branches for this org first (needed for both selector and refunds filter)
+  const branchesRes = await admin
+    .from('branches')
+    .select('id, name')
+    .eq('organization_id', orgId)
+    .order('name')
 
-    admin
-      .from('refunds')
-      .select(`
-        id, amount, reason, reference_number, created_at,
-        branch_id, reporting_month, reporting_year, monthly_report_id,
-        branches ( name ),
-        monthly_reports ( id, status )
-      `)
-      .order('created_at', { ascending: false }),
-  ])
+  const orgBranchIds = (branchesRes.data ?? []).map(b => b.id)
+
+  const refundsRes = await admin
+    .from('refunds')
+    .select(`
+      id, amount, reason, reference_number, created_at,
+      branch_id, reporting_month, reporting_year, monthly_report_id,
+      branches ( name ),
+      monthly_reports ( id, status )
+    `)
+    .in('branch_id', orgBranchIds.length > 0 ? orgBranchIds : [''])
+    .order('created_at', { ascending: false })
 
   // ── Branches for form selector ────────────────────────────────────────────
   const branches: BranchOption[] = (branchesRes.data ?? []).map(b => ({
