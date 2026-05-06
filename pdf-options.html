@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Report — 5 Design Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f0f0f;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    padding: 40px 24px 60px;
+    color: #fff;
+  }
+  h1 {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.3);
+    margin-bottom: 44px;
+  }
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 36px;
+    justify-content: center;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .label {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.3);
+    font-weight: 500;
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: -4px;
+  }
+
+  /* ── A4 page shell ── */
+  .page {
+    width: 320px;
+    height: 452px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 64px rgba(0,0,0,.55);
+    flex-shrink: 0;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── shared mini bar chart ── */
+  .mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 36px;
+  }
+  .mini-chart .bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+  }
+  .mini-chart .bar { width: 100%; border-radius: 2px 2px 0 0; }
+  .mini-chart .bar-lbl { font-size: 5.5px; opacity: .5; }
+
+  /* ════════════════════════════════════════════
+     OPTION 1 · Clean Monochrome
+  ════════════════════════════════════════════ */
+  .opt1 {
+    background: #fff;
+    padding: 26px 24px 20px;
+    color: #111;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .opt1 .top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 12px; border-bottom: 1.5px solid #111; margin-bottom: 14px;
+  }
+  .opt1 .co { font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+  .opt1 .sub { font-size: 7.5px; color: #888; letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; }
+  .opt1 .period { font-size: 8px; color: #555; text-align: right; line-height: 1.65; }
+  .opt1 .kpi-row { display: flex; gap: 6px; margin-bottom: 14px; }
+  .opt1 .kpi { flex: 1; padding: 7px 8px 6px; background: #f6f6f6; border-left: 2px solid #111; }
+  .opt1 .kpi .k { font-size: 6.5px; color: #999; text-transform: uppercase; letter-spacing: .1em; font-weight: 500; }
+  .opt1 .kpi .v { font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .opt1 .sec { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #aaa; margin: 12px 0 5px; }
+  .opt1 .chart-wrap { margin-bottom: 12px; }
+  .opt1 .chart-wrap .mini-chart .bar { background: #111; }
+  .opt1 .chart-wrap .mini-chart .bar-lbl { color: #555; }
+  .opt1 table { width: 100%; border-collapse: collapse; font-size: 7.5px; }
+  .opt1 thead th { color: #aaa; font-weight: 500; font-size: 6.5px; letter-spacing: .1em; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid #e8e8e8; text-align: left; }
+  .opt1 thead th:last-child { text-align: right; }
+  .opt1 tbody td { padding: 4.5px 0; border-bottom: 1px solid #f2f2f2; color: #333; }
+  .opt1 tbody td:last-child { text-align: right; font-weight: 600; }
+  .opt1 .payout { margin-top: 12px; padding-top: 8px; border-top: 1.5px solid #111; }
+  .opt1 .payout .row { display: flex; justify-content: space-between; font-size: 7.5px; color: #666; margin-bottom: 3px; }
+  .opt1 .payout .final { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ddd; }
+  .opt1 .footer { position: absolute; bottom: 14px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 6.5px; color: #ccc; border-top: 1px solid #eee; padding-top: 5px; }
+
+  /* ════════════════════════════════════════════
+     OPTION 2 · Dark Executive
+  ════════════════════════════════════════════ */
+  .opt2 {
+    background: #0d0d0d;
+    padding: 24px 22px 20px;
+    color: #f0ece4;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .opt2 .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .opt2 .co { font-size: 12px; font-weight: 700; letter-spacing: -.01em; }
+  .opt2 .sub { font-size: 7px; color: rgba(240,236,228,.35); letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
+  .opt2 .tag { background: #c9993a; color: #000; font-size: 7px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; }
+  .opt2 .kpi-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 14px; }
+  .opt2 .kpi { padding: 8px 7px; border: 1px solid rgba(240,236,228,.08); }
+  .opt2 .kpi .k { font-size: 6.5px; color: rgba(240,236,228,.35); letter-spacing: .1em; text-transform: uppercase; font-weight: 500; }
+  .opt2 .kpi .v { font-size: 12px; font-weight: 700; margin-top: 3px; }
+  .opt2 .kpi .v.gold { color: #c9993a; }
+  .opt2 .sec { font-size: 6.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #c9993a; margin-bottom: 7px; }
+  .opt2 .chart-wrap { margin-bottom: 12px; background: rgba(255,255,255,.02); padding: 8px 6px 4px; border-radius: 3px; }
+  .opt2 .chart-wrap .mini-chart .bar { background: #c9993a; opacity: .85; }
+  .opt2 .chart-wrap .mini-chart .bar-lbl { color: rgba(240,236,228,.35); }
+  .opt2 table { width: 100%; border-collapse: collapse; font-size: 7.5px; }
+  .opt2 thead th { color: rgba(240,236,228,.35); font-weight: 400; font-size: 6.5px; letter-spacing: .1em; text-transform: uppercase; padding: 3.5px 0; border-bottom: 1px solid rgba(240,236,228,.08); text-align: left; }
+  .opt2 thead th:last-child { text-align: right; }
+  .opt2 tbody td { padding: 4.5px 0; border-bottom: 1px solid rgba(240,236,228,.05); color: rgba(240,236,228,.7); }
+  .opt2 tbody td:last-child { text-align: right; color: #f0ece4; font-weight: 600; }
+  .opt2 .payout { background: rgba(201,153,58,.08); border: 1px solid rgba(201,153,58,.2); padding: 9px 10px; margin-top: 12px; }
+  .opt2 .payout .row { display: flex; justify-content: space-between; font-size: 7.5px; color: rgba(240,236,228,.5); margin-bottom: 3px; }
+  .opt2 .payout .final { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #c9993a; border-top: 1px solid rgba(201,153,58,.25); padding-top: 5px; margin-top: 5px; }
+  .opt2 .footer { position: absolute; bottom: 13px; left: 22px; right: 22px; display: flex; justify-content: space-between; font-size: 6.5px; color: rgba(240,236,228,.18); }
+
+  /* ════════════════════════════════════════════
+     OPTION 3 · Navy Blueprint
+  ════════════════════════════════════════════ */
+  .opt3 {
+    background: #fff;
+    font-family: 'DM Sans', sans-serif;
+    color: #1a2340;
+  }
+  .opt3 .header-band {
+    background: #1a2340; padding: 18px 22px 16px; color: #fff;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .opt3 .co { font-size: 12px; font-weight: 700; letter-spacing: -.01em; }
+  .opt3 .sub { font-size: 7px; color: rgba(255,255,255,.4); letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; }
+  .opt3 .period-tag .p { font-size: 10px; font-weight: 700; color: #4dc9e6; }
+  .opt3 .period-tag .y { font-size: 7px; color: rgba(255,255,255,.35); text-align: right; }
+  .opt3 .accent-bar { height: 3px; background: linear-gradient(90deg, #4dc9e6 0%, #1a2340 100%); }
+  .opt3 .body { padding: 16px 22px; }
+  .opt3 .kpi-row { display: flex; gap: 7px; margin-bottom: 14px; }
+  .opt3 .kpi { flex: 1; padding: 7px 7px 5px; border-bottom: 2px solid #4dc9e6; }
+  .opt3 .kpi .k { font-size: 6.5px; color: #8a9ab8; text-transform: uppercase; letter-spacing: .1em; font-weight: 500; }
+  .opt3 .kpi .v { font-size: 12px; font-weight: 700; color: #1a2340; margin-top: 2px; }
+  .opt3 .sec { font-size: 7px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #1a2340; margin-bottom: 7px; padding-bottom: 4px; border-bottom: 1.5px solid #1a2340; }
+  .opt3 .chart-wrap { margin-bottom: 12px; background: #f4f7ff; padding: 8px 6px 4px; }
+  .opt3 .chart-wrap .mini-chart .bar { background: #4dc9e6; }
+  .opt3 .chart-wrap .mini-chart .bar-lbl { color: #8a9ab8; }
+  .opt3 table { width: 100%; border-collapse: collapse; font-size: 7.5px; }
+  .opt3 thead th { color: #8a9ab8; font-weight: 500; font-size: 6.5px; letter-spacing: .1em; text-transform: uppercase; padding: 3.5px 0; text-align: left; }
+  .opt3 thead th:last-child { text-align: right; }
+  .opt3 tbody td { padding: 4px 0; border-bottom: 1px solid #eef0f5; color: #3a4a6b; font-size: 7.5px; }
+  .opt3 tbody td:last-child { text-align: right; font-weight: 600; color: #1a2340; }
+  .opt3 .payout { background: #f0f5ff; border-left: 3px solid #4dc9e6; padding: 9px 10px; margin-top: 12px; }
+  .opt3 .payout .row { display: flex; justify-content: space-between; font-size: 7.5px; color: #5a6a8a; margin-bottom: 3px; }
+  .opt3 .payout .final { font-size: 10px; font-weight: 700; color: #1a2340; border-top: 1px solid #c8d4ee; padding-top: 5px; margin-top: 5px; display: flex; justify-content: space-between; }
+  .opt3 .footer { position: absolute; bottom: 0; left: 0; right: 0; background: #1a2340; padding: 7px 22px; display: flex; justify-content: space-between; font-size: 6.5px; color: rgba(255,255,255,.25); }
+
+  /* ════════════════════════════════════════════
+     OPTION 4 · Editorial Serif
+  ════════════════════════════════════════════ */
+  .opt4 {
+    background: #faf9f6;
+    font-family: 'DM Sans', sans-serif;
+    color: #1a1a1a;
+    padding: 26px 24px 20px;
+  }
+  .opt4 .top { border-bottom: 2px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 12px; }
+  .opt4 .report-type { font-size: 7px; letter-spacing: .18em; text-transform: uppercase; color: #aaa; margin-bottom: 3px; font-weight: 500; }
+  .opt4 .co { font-size: 16px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+  .opt4 .meta { display: flex; justify-content: space-between; margin-top: 5px; }
+  .opt4 .meta span { font-size: 7.5px; color: #777; }
+  .opt4 .big-number { font-size: 32px; font-weight: 800; letter-spacing: -.03em; line-height: 1; color: #1a1a1a; margin: 10px 0 1px; }
+  .opt4 .big-label { font-size: 6.5px; text-transform: uppercase; letter-spacing: .15em; color: #aaa; margin-bottom: 10px; font-weight: 500; }
+  .opt4 .cols { display: flex; gap: 14px; margin-bottom: 12px; }
+  .opt4 .col .k { font-size: 6.5px; text-transform: uppercase; letter-spacing: .1em; color: #bbb; border-top: 1px solid #ddd; padding-top: 5px; margin-bottom: 2px; font-weight: 500; }
+  .opt4 .col .v { font-size: 13px; font-weight: 700; }
+  .opt4 .sec { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: #aaa; margin-bottom: 6px; }
+  .opt4 .chart-wrap { margin-bottom: 10px; }
+  .opt4 .chart-wrap .mini-chart .bar { background: #1a1a1a; border-radius: 1px 1px 0 0; }
+  .opt4 .chart-wrap .mini-chart .bar-lbl { color: #bbb; }
+  .opt4 table { width: 100%; border-collapse: collapse; font-size: 7.5px; }
+  .opt4 thead th { color: #bbb; font-weight: 500; font-size: 6.5px; letter-spacing: .1em; text-transform: uppercase; padding-bottom: 4px; text-align: left; }
+  .opt4 thead th:last-child { text-align: right; }
+  .opt4 tbody td { padding: 4px 0; border-bottom: 1px solid #eee; color: #555; }
+  .opt4 tbody td:last-child { text-align: right; font-weight: 700; }
+  .opt4 .payout { margin-top: 12px; background: #1a1a1a; color: #faf9f6; padding: 10px 11px; }
+  .opt4 .payout .row { display: flex; justify-content: space-between; font-size: 7.5px; color: rgba(250,249,246,.45); margin-bottom: 3px; }
+  .opt4 .payout .final { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-top: 6px; border-top: 1px solid rgba(250,249,246,.18); padding-top: 6px; }
+  .opt4 .footer { position: absolute; bottom: 14px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 6.5px; color: #ccc; }
+
+  /* ════════════════════════════════════════════
+     OPTION 5 · Soft Modern (sidebar)
+  ════════════════════════════════════════════ */
+  .opt5 {
+    background: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    color: #1e1e2e;
+    position: relative;
+  }
+  .opt5 .sidebar {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 64px;
+    background: #1e1e2e;
+    display: flex; flex-direction: column; align-items: center; padding: 20px 0 16px;
+  }
+  .opt5 .sidebar .logo { width: 26px; height: 26px; background: #d6f73c; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+  .opt5 .sidebar .logo span { font-size: 9px; font-weight: 800; color: #1e1e2e; }
+  .opt5 .sidebar .vertical { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 6px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.2); margin-top: 16px; font-weight: 500; }
+  .opt5 .sidebar .pg { position: absolute; bottom: 18px; font-size: 9px; font-weight: 700; color: rgba(255,255,255,.18); }
+  .opt5 .main { margin-left: 64px; padding: 20px 18px 14px; }
+  .opt5 .report-tag { font-size: 6.5px; letter-spacing: .16em; text-transform: uppercase; color: #bbb; margin-bottom: 3px; font-weight: 500; }
+  .opt5 .co { font-size: 13px; font-weight: 800; letter-spacing: -.01em; }
+  .opt5 .period { font-size: 7.5px; color: #999; margin-top: 1px; margin-bottom: 12px; }
+  .opt5 .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 12px; }
+  .opt5 .kpi { padding: 7px 8px; border-radius: 4px; }
+  .opt5 .kpi.hi { background: #d6f73c; }
+  .opt5 .kpi.lo { background: #f4f4f8; }
+  .opt5 .kpi .k { font-size: 6.5px; text-transform: uppercase; letter-spacing: .1em; color: rgba(30,30,46,.45); font-weight: 500; }
+  .opt5 .kpi .v { font-size: 13px; font-weight: 800; color: #1e1e2e; margin-top: 1px; }
+  .opt5 .sec { font-size: 6.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #1e1e2e; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .opt5 .sec::after { content: ''; flex: 1; height: 1px; background: #eee; }
+  .opt5 .chart-wrap { margin-bottom: 10px; }
+  .opt5 .chart-wrap .mini-chart .bar { background: #d6f73c; border-radius: 2px 2px 0 0; }
+  .opt5 .chart-wrap .mini-chart .bar-lbl { color: #bbb; }
+  .opt5 table { width: 100%; border-collapse: collapse; font-size: 7.5px; }
+  .opt5 thead th { color: #bbb; font-weight: 500; font-size: 6.5px; letter-spacing: .1em; text-transform: uppercase; padding: 3.5px 0; text-align: left; }
+  .opt5 thead th:last-child { text-align: right; }
+  .opt5 tbody td { padding: 4px 0; border-bottom: 1px solid #f2f2f5; color: #555; }
+  .opt5 tbody td:last-child { text-align: right; font-weight: 700; color: #1e1e2e; }
+  .opt5 .payout { background: #1e1e2e; padding: 9px 10px; margin-top: 10px; border-radius: 4px; }
+  .opt5 .payout .row { display: flex; justify-content: space-between; font-size: 7.5px; color: rgba(255,255,255,.4); margin-bottom: 3px; }
+  .opt5 .payout .final { display: flex; justify-content: space-between; font-size: 10px; font-weight: 800; color: #d6f73c; border-top: 1px solid rgba(255,255,255,.1); margin-top: 5px; padding-top: 5px; }
+</style>
+</head>
+<body>
+
+<h1>Sales Report PDF — 5 Options · DM Sans</h1>
+
+<div class="grid">
+
+  <!-- ══ OPTION 1 ·  Clean Monochrome ══ -->
+  <div class="card">
+    <div class="page">
+      <div class="opt1">
+        <div class="top">
+          <div><div class="co">Grand Palace Studio</div><div class="sub">Monthly Revenue Report</div></div>
+          <div class="period">March 2025<br>Partner Report</div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="k">Gross</div><div class="v">฿184,200</div></div>
+          <div class="kpi"><div class="k">Net</div><div class="v">฿147,360</div></div>
+          <div class="kpi"><div class="k">Payout</div><div class="v">฿110,603</div></div>
+        </div>
+        <div class="sec">Daily Revenue</div>
+        <div class="chart-wrap">
+          <div class="mini-chart" id="chart1"></div>
+        </div>
+        <div class="sec">Artist Performance</div>
+        <table>
+          <thead><tr><th>Artist</th><th>Orders</th><th>Gross</th></tr></thead>
+          <tbody>
+            <tr><td>Aom Thanya</td><td>98</td><td>฿58,400</td></tr>
+            <tr><td>Bella Nakorn</td><td>74</td><td>฿44,200</td></tr>
+            <tr><td>Cherry Suda</td><td>61</td><td>฿36,600</td></tr>
+            <tr><td>Dao Praew</td><td>48</td><td>฿28,800</td></tr>
+          </tbody>
+        </table>
+        <div class="payout">
+          <div class="row"><span>Partner Share (70%)</span><span>฿103,152</span></div>
+          <div class="row"><span>Uplift + VAT</span><span>+฿10,646</span></div>
+          <div class="row"><span>WHT (3%)</span><span>−฿3,195</span></div>
+          <div class="final"><span>Final Payout</span><span>฿110,603</span></div>
+        </div>
+        <div class="footer"><span>Confidential</span><span>Page 1 of 1</span></div>
+      </div>
+    </div>
+    <div class="label">1 · Clean Monochrome</div>
+    <div class="badge" style="background:#efefef;color:#111">Classic · Finance</div>
+  </div>
+
+  <!-- ══ OPTION 2 · Dark Executive ══ -->
+  <div class="card">
+    <div class="page">
+      <div class="opt2">
+        <div class="header">
+          <div><div class="co">Grand Palace Studio</div><div class="sub">Monthly Revenue Report</div></div>
+          <div class="tag">Mar 2025</div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="k">Gross</div><div class="v">฿184,200</div></div>
+          <div class="kpi"><div class="k">Net</div><div class="v">฿147,360</div></div>
+          <div class="kpi"><div class="k">Payout</div><div class="v gold">฿110,603</div></div>
+        </div>
+        <div class="sec">Daily Revenue</div>
+        <div class="chart-wrap">
+          <div class="mini-chart" id="chart2"></div>
+        </div>
+        <div class="sec">Artist Performance</div>
+        <table>
+          <thead><tr><th>Artist</th><th>Orders</th><th>Gross</th></tr></thead>
+          <tbody>
+            <tr><td>Aom Thanya</td><td>98</td><td>฿58,400</td></tr>
+            <tr><td>Bella Nakorn</td><td>74</td><td>฿44,200</td></tr>
+            <tr><td>Cherry Suda</td><td>61</td><td>฿36,600</td></tr>
+            <tr><td>Dao Praew</td><td>48</td><td>฿28,800</td></tr>
+          </tbody>
+        </table>
+        <div class="payout">
+          <div class="row"><span>Partner Share (70%)</span><span>฿103,152</span></div>
+          <div class="row"><span>Uplift + VAT</span><span>+฿10,646</span></div>
+          <div class="row"><span>WHT (3%)</span><span>−฿3,195</span></div>
+          <div class="final"><span>Final Payout</span><span>฿110,603</span></div>
+        </div>
+        <div class="footer"><span>Confidential · Grand Palace Studio</span><span>1 / 1</span></div>
+      </div>
+    </div>
+    <div class="label">2 · Dark Executive</div>
+    <div class="badge" style="background:#c9993a;color:#000">Premium · Dark</div>
+  </div>
+
+  <!-- ══ OPTION 3 · Navy Blueprint ══ -->
+  <div class="card">
+    <div class="page">
+      <div class="opt3">
+        <div class="header-band">
+          <div><div class="co">Grand Palace Studio</div><div class="sub">Monthly Revenue Report</div></div>
+          <div class="period-tag"><div class="p">March 2025</div><div class="y">Partner Report</div></div>
+        </div>
+        <div class="accent-bar"></div>
+        <div class="body">
+          <div class="kpi-row">
+            <div class="kpi"><div class="k">Gross</div><div class="v">฿184,200</div></div>
+            <div class="kpi"><div class="k">Net</div><div class="v">฿147,360</div></div>
+            <div class="kpi"><div class="k">Payout</div><div class="v">฿110,603</div></div>
+          </div>
+          <div class="sec">Daily Revenue</div>
+          <div class="chart-wrap">
+            <div class="mini-chart" id="chart3"></div>
+          </div>
+          <div class="sec">Artist Performance</div>
+          <table>
+            <thead><tr><th>Artist</th><th>Orders</th><th>Gross</th></tr></thead>
+            <tbody>
+              <tr><td>Aom Thanya</td><td>98</td><td>฿58,400</td></tr>
+              <tr><td>Bella Nakorn</td><td>74</td><td>฿44,200</td></tr>
+              <tr><td>Cherry Suda</td><td>61</td><td>฿36,600</td></tr>
+            </tbody>
+          </table>
+          <div class="payout">
+            <div class="row"><span>Partner Share (70%)</span><span>฿103,152</span></div>
+            <div class="row"><span>Uplift + VAT</span><span>+฿10,646</span></div>
+            <div class="row"><span>WHT (3%)</span><span>−฿3,195</span></div>
+            <div class="final"><span>Final Payout</span><span>฿110,603</span></div>
+          </div>
+        </div>
+        <div class="footer"><span>Confidential</span><span>Page 1 of 1</span></div>
+      </div>
+    </div>
+    <div class="label">3 · Navy Blueprint</div>
+    <div class="badge" style="background:#1a2340;color:#4dc9e6">Corporate · Structured</div>
+  </div>
+
+  <!-- ══ OPTION 4 · Editorial ══ -->
+  <div class="card">
+    <div class="page">
+      <div class="opt4">
+        <div class="top">
+          <div class="report-type">Monthly Revenue Report</div>
+          <div class="co">Grand Palace Studio</div>
+          <div class="meta"><span>March 2025</span><span>Partner Report</span></div>
+        </div>
+        <div class="big-number">฿184,200</div>
+        <div class="big-label">Total Gross Sales</div>
+        <div class="cols">
+          <div class="col"><div class="k">Net Revenue</div><div class="v">฿147,360</div></div>
+          <div class="col"><div class="k">Orders</div><div class="v">312</div></div>
+          <div class="col"><div class="k">Artists</div><div class="v">5</div></div>
+        </div>
+        <div class="sec">Daily Revenue</div>
+        <div class="chart-wrap">
+          <div class="mini-chart" id="chart4"></div>
+        </div>
+        <div class="sec">Artist Performance</div>
+        <table>
+          <thead><tr><th>Artist</th><th>Orders</th><th>Gross</th></tr></thead>
+          <tbody>
+            <tr><td>Aom Thanya</td><td>98</td><td>฿58,400</td></tr>
+            <tr><td>Bella Nakorn</td><td>74</td><td>฿44,200</td></tr>
+            <tr><td>Cherry Suda</td><td>61</td><td>฿36,600</td></tr>
+          </tbody>
+        </table>
+        <div class="payout">
+          <div class="row"><span>Partner Share (70%)</span><span>฿103,152</span></div>
+          <div class="row"><span>Uplift + VAT</span><span>+฿10,646</span></div>
+          <div class="row"><span>WHT (3%)</span><span>−฿3,195</span></div>
+          <div class="final"><span>Final Payout</span><span>฿110,603</span></div>
+        </div>
+        <div class="footer"><span>Confidential</span><span>Page 1 of 1</span></div>
+      </div>
+    </div>
+    <div class="label">4 · Editorial Bold</div>
+    <div class="badge" style="background:#1a1a1a;color:#faf9f6">Typographic · Impact</div>
+  </div>
+
+  <!-- ══ OPTION 5 · Soft Modern ══ -->
+  <div class="card">
+    <div class="page">
+      <div class="opt5">
+        <div class="sidebar">
+          <div class="logo"><span>GP</span></div>
+          <div class="vertical">Revenue Report</div>
+          <div class="pg">01</div>
+        </div>
+        <div class="main">
+          <div class="report-tag">Monthly · Mar 2025</div>
+          <div class="co">Grand Palace Studio</div>
+          <div class="period">Partner Report · Approved</div>
+          <div class="kpi-grid">
+            <div class="kpi hi"><div class="k">Final Payout</div><div class="v">฿110,603</div></div>
+            <div class="kpi lo"><div class="k">Gross Sales</div><div class="v">฿184,200</div></div>
+            <div class="kpi lo"><div class="k">Net Revenue</div><div class="v">฿147,360</div></div>
+            <div class="kpi lo"><div class="k">Orders</div><div class="v">312</div></div>
+          </div>
+          <div class="sec">Daily Revenue</div>
+          <div class="chart-wrap">
+            <div class="mini-chart" id="chart5"></div>
+          </div>
+          <div class="sec">Artist Performance</div>
+          <table>
+            <thead><tr><th>Artist</th><th>Orders</th><th>Gross</th></tr></thead>
+            <tbody>
+              <tr><td>Aom Thanya</td><td>98</td><td>฿58,400</td></tr>
+              <tr><td>Bella Nakorn</td><td>74</td><td>฿44,200</td></tr>
+              <tr><td>Cherry Suda</td><td>61</td><td>฿36,600</td></tr>
+            </tbody>
+          </table>
+          <div class="payout">
+            <div class="row"><span>Partner Share (70%)</span><span>฿103,152</span></div>
+            <div class="row"><span>Uplift + VAT</span><span>+฿10,646</span></div>
+            <div class="row"><span>WHT (3%)</span><span>−฿3,195</span></div>
+            <div class="final"><span>Final Payout</span><span>฿110,603</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="label">5 · Soft Modern</div>
+    <div class="badge" style="background:#d6f73c;color:#1e1e2e">Contemporary · Sidebar</div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:44px;font-size:11px;color:rgba(255,255,255,.2);font-family:'DM Sans',sans-serif;">
+  Reply with a number — e.g. "3" or "2 but white background"
+</p>
+
+<script>
+  // Shared daily data (31 days, Mar)
+  const days = [
+    {d:'1',v:4200},{d:'2',v:5800},{d:'3',v:3900},{d:'4',v:6100},{d:'5',v:4700},
+    {d:'6',v:7200},{d:'7',v:5500},{d:'8',v:4100},{d:'9',v:6800},{d:'10',v:5300},
+    {d:'11',v:7900},{d:'12',v:6200},{d:'13',v:4800},{d:'14',v:8100},{d:'15',v:5600},
+    {d:'16',v:4300},{d:'17',v:7400},{d:'18',v:6000},{d:'19',v:5100},{d:'20',v:8800},
+    {d:'21',v:6600},{d:'22',v:4900},{d:'23',v:7100},{d:'24',v:5800},{d:'25',v:9200},
+    {d:'26',v:6400},{d:'27',v:5000},{d:'28',v:7600},{d:'29',v:6100},{d:'30',v:4400},{d:'31',v:5700},
+  ];
+  const max = Math.max(...days.map(d => d.v));
+
+  function buildChart(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    days.forEach(day => {
+      const pct = (day.v / max) * 100;
+      const wrap = document.createElement('div');
+      wrap.className = 'bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = pct + '%';
+      bar.style.minHeight = '2px';
+      // show label every 5 days
+      const lbl = document.createElement('div');
+      lbl.className = 'bar-lbl';
+      lbl.textContent = (parseInt(day.d) % 5 === 0) ? day.d : '';
+      wrap.appendChild(bar);
+      wrap.appendChild(lbl);
+      el.appendChild(wrap);
+    });
+  }
+
+  ['chart1','chart2','chart3','chart4','chart5'].forEach(buildChart);
+</script>
+</body>
+</html>

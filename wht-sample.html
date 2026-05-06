@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WHT Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080A12;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 40px 24px;
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .card {
+    background: #0D0F1A;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 24px;
+    width: 360px;
+  }
+  .card-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(240,236,228,0.4);
+    margin-bottom: 20px;
+  }
+
+  /* ledger rows */
+  .row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .row .lbl { color: rgba(240,236,228,0.5); }
+  .row .val { color: #F1F5F9; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .row.accent .val { font-weight: 700; font-size: 14px; }
+  .row.muted .lbl, .row.muted .val { color: rgba(241,245,249,0.3); font-size: 12px; }
+  .row.danger .val { color: #EF4444; }
+  .row.blue .val { color: #60A5FA; }
+
+  .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+  .spacer { height: 10px; }
+
+  /* WHT section */
+  .wht-section {
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .wht-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .wht-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
+    color: rgba(240,236,228,0.5); text-transform: uppercase;
+  }
+  .wht-controls { display: flex; gap: 6px; align-items: center; }
+
+  /* Toggle */
+  .toggle {
+    width: 36px; height: 20px; border-radius: 10px; border: none; padding: 0;
+    cursor: pointer; position: relative; transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .toggle.on  { background: #3B82F6; }
+  .toggle.off { background: rgba(255,255,255,0.12); }
+  .toggle .knob {
+    display: block; width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; position: absolute; top: 3px;
+    transition: left 0.15s;
+  }
+  .toggle.on  .knob { left: 19px; }
+  .toggle.off .knob { left: 3px; }
+
+  /* Pct buttons */
+  .pct-btn {
+    padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    cursor: pointer; border: 1px solid transparent; transition: all 0.12s;
+  }
+  .pct-btn.active {
+    background: rgba(59,130,246,0.15); color: #93C5FD;
+    border-color: rgba(59,130,246,0.35);
+  }
+  .pct-btn.inactive {
+    background: rgba(255,255,255,0.04); color: rgba(241,245,249,0.4);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  /* Net payout */
+  .net-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0 0;
+    font-size: 13px;
+  }
+  .net-row .lbl { color: rgba(240,236,228,0.5); }
+  .net-row .val { font-size: 16px; font-weight: 700; color: #F1F5F9; font-variant-numeric: tabular-nums; }
+
+  .save-row {
+    display: flex; justify-content: flex-end; margin-top: 14px;
+  }
+  .save-btn {
+    padding: 7px 18px; border-radius: 8px; font-size: 12px; font-weight: 700;
+    border: none; cursor: pointer;
+    background: rgba(59,130,246,0.8); color: #fff;
+  }
+
+  .label-tag {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    padding: 2px 7px; border-radius: 4px;
+    background: rgba(255,255,255,0.05); color: rgba(241,245,249,0.3);
+    margin-bottom: 10px; display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<!-- State A: WHT OFF -->
+<div class="card">
+  <div class="label-tag">State A — WHT off</div>
+  <div class="card-title">Financial Breakdown</div>
+
+  <div class="row muted"><span class="lbl">Gross Sales</span><span class="val">฿28,560.00</span></div>
+  <div class="row muted"><span class="lbl">OPN Fee</span><span class="val">− ฿504.56</span></div>
+  <div class="row muted"><span class="lbl">NET (VAT-incl.)</span><span class="val">฿28,055.44</span></div>
+  <div class="row muted"><span class="lbl">÷ 1.07 → ex-VAT</span><span class="val">฿26,219.10</span></div>
+  <div class="spacer"></div>
+  <div class="row"><span class="lbl">Revenue Share (25%)</span><span class="val">฿6,555.01</span></div>
+  <div class="row"><span class="lbl">VAT 7%</span><span class="val">฿458.85</span></div>
+  <div class="spacer"></div>
+  <div class="row accent"><span class="lbl">Final Payout</span><span class="val">฿7,013.86</span></div>
+
+  <!-- WHT section OFF -->
+  <div class="wht-section">
+    <div class="wht-header">
+      <span class="wht-label">Withholding Tax</span>
+      <div class="wht-controls">
+        <button class="toggle off"><span class="knob"></span></button>
+      </div>
+    </div>
+    <div style="font-size:12px; color:rgba(241,245,249,0.25); padding-bottom:4px;">
+      No WHT applied — partner receives full payout.
+    </div>
+  </div>
+</div>
+
+<!-- State B: WHT ON 3% -->
+<div class="card">
+  <div class="label-tag">State B — WHT 3%</div>
+  <div class="card-title">Financial Breakdown</div>
+
+  <div class="row muted"><span class="lbl">Gross Sales</span><span class="val">฿28,560.00</span></div>
+  <div class="row muted"><span class="lbl">OPN Fee</span><span class="val">− ฿504.56</span></div>
+  <div class="row muted"><span class="lbl">NET (VAT-incl.)</span><span class="val">฿28,055.44</span></div>
+  <div class="row muted"><span class="lbl">÷ 1.07 → ex-VAT</span><span class="val">฿26,219.10</span></div>
+  <div class="spacer"></div>
+  <div class="row"><span class="lbl">Revenue Share (25%)</span><span class="val">฿6,555.01</span></div>
+  <div class="row"><span class="lbl">VAT 7%</span><span class="val">฿458.85</span></div>
+  <div class="spacer"></div>
+  <div class="row accent"><span class="lbl">Final Payout</span><span class="val">฿7,013.86</span></div>
+
+  <!-- WHT ON 3% -->
+  <div class="wht-section">
+    <div class="wht-header">
+      <span class="wht-label">Withholding Tax</span>
+      <div class="wht-controls">
+        <button class="toggle on"><span class="knob"></span></button>
+        <button class="pct-btn active">3%</button>
+        <button class="pct-btn inactive">5%</button>
+      </div>
+    </div>
+    <div class="row danger" style="padding:8px 0 4px; border:none;">
+      <span class="lbl" style="font-size:12px;">WHT deducted (3% of ฿6,555.01)</span>
+      <span class="val" style="font-size:13px;">− ฿196.65</span>
+    </div>
+    <div class="net-row">
+      <span class="lbl">Net to Partner</span>
+      <span class="val">฿6,817.21</span>
+    </div>
+    <div class="save-row"><button class="save-btn">Save</button></div>
+  </div>
+</div>
+
+<!-- State C: WHT ON 5% -->
+<div class="card">
+  <div class="label-tag">State C — WHT 5%</div>
+  <div class="card-title">Financial Breakdown</div>
+
+  <div class="row muted"><span class="lbl">Gross Sales</span><span class="val">฿28,560.00</span></div>
+  <div class="row muted"><span class="lbl">OPN Fee</span><span class="val">− ฿504.56</span></div>
+  <div class="row muted"><span class="lbl">NET (VAT-incl.)</span><span class="val">฿28,055.44</span></div>
+  <div class="row muted"><span class="lbl">÷ 1.07 → ex-VAT</span><span class="val">฿26,219.10</span></div>
+  <div class="spacer"></div>
+  <div class="row"><span class="lbl">Revenue Share (25%)</span><span class="val">฿6,555.01</span></div>
+  <div class="row"><span class="lbl">VAT 7%</span><span class="val">฿458.85</span></div>
+  <div class="spacer"></div>
+  <div class="row accent"><span class="lbl">Final Payout</span><span class="val">฿7,013.86</span></div>
+
+  <!-- WHT ON 5% -->
+  <div class="wht-section">
+    <div class="wht-header">
+      <span class="wht-label">Withholding Tax</span>
+      <div class="wht-controls">
+        <button class="toggle on"><span class="knob"></span></button>
+        <button class="pct-btn inactive">3%</button>
+        <button class="pct-btn active">5%</button>
+      </div>
+    </div>
+    <div class="row danger" style="padding:8px 0 4px; border:none;">
+      <span class="lbl" style="font-size:12px;">WHT deducted (5% of ฿6,555.01)</span>
+      <span class="val" style="font-size:13px;">− ฿327.75</span>
+    </div>
+    <div class="net-row">
+      <span class="lbl">Net to Partner</span>
+      <span class="val">฿6,686.11</span>
+    </div>
+    <div class="save-row"><button class="save-btn">Save</button></div>
+  </div>
+</div>
+
+</body>
+</html>

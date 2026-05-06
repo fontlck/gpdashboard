@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/api/require-admin'
 
 // ── CSV Parser ───────────────────────────────────────────────────────────────
 
@@ -115,15 +115,10 @@ function parseDate(s: string | undefined): Date | null {
 // explicit admin action via POST /api/admin/branches.
 
 export async function POST(request: NextRequest) {
-  // Auth
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin')
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Auth + org
+  const auth = await requireAdmin()
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  const { user, orgId } = auth
 
   // Body
   let body: {
@@ -234,9 +229,13 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient()
 
-  // Fetch VAT rate
+  // Fetch VAT rate — org-specific first, fall back to global
   const { data: vatSetting } = await admin
-    .from('settings').select('value').eq('key', 'vat_rate').single()
+    .from('settings')
+    .select('value')
+    .eq('key', 'vat_rate')
+    .eq('organization_id', orgId)
+    .maybeSingle()
   const vatRate = parseFloat(vatSetting?.value ?? '0.07')
 
   // Create csv_uploads record
@@ -244,6 +243,7 @@ export async function POST(request: NextRequest) {
   const { data: csvUpload, error: uploadErr } = await admin
     .from('csv_uploads')
     .insert({
+      organization_id:   orgId,
       reporting_month:   reportingMonth,
       reporting_year:    reportingYear,
       uploaded_by:       user.id,

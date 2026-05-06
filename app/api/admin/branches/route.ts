@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-
-async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { user: null, error: 'Unauthorized' }
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return { user: null, error: 'Forbidden' }
-  return { user, error: null }
-}
+import { requireAdmin } from '@/lib/api/require-admin'
 
 // ── GET /api/admin/branches ──────────────────────────────────────────────────
-// Returns all active branches (with partner info) and all partners.
-// Used by the CSV upload branch-mapping step.
+// Returns all active branches (with partner info) and all partners — scoped to current org.
 
 export async function GET() {
-  const { error } = await requireAdmin()
-  if (error) return NextResponse.json({ error }, { status: error === 'Unauthorized' ? 401 : 403 })
+  const auth = await requireAdmin()
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  const { orgId } = auth
 
   const admin = createAdminClient()
 
@@ -26,11 +16,13 @@ export async function GET() {
     admin
       .from('branches')
       .select('id, name, code, payout_type, revenue_share_pct, fixed_rent_amount, fixed_rent_vat_mode, partner_id, partners(id, name, is_vat_registered)')
+      .eq('organization_id', orgId)
       .eq('is_active', true)
       .order('name'),
     admin
       .from('partners')
       .select('id, name')
+      .eq('organization_id', orgId)
       .eq('is_active', true)
       .order('name'),
   ])
@@ -39,15 +31,12 @@ export async function GET() {
 }
 
 // ── POST /api/admin/branches ─────────────────────────────────────────────────
-// Explicit admin action: create a new branch.
-// If partner_id is provided, use that partner.
-// If partner_name is provided (and no partner_id), create that partner first.
-// No implicit or automatic creation — this endpoint is only called when
-// the admin explicitly clicks "Create Branch" in the mapping UI.
+// Explicit admin action: create a new branch within the current org.
 
 export async function POST(request: NextRequest) {
-  const { error } = await requireAdmin()
-  if (error) return NextResponse.json({ error }, { status: error === 'Unauthorized' ? 401 : 403 })
+  const auth = await requireAdmin()
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status })
+  const { orgId } = auth
 
   let body: {
     branch_name: string
@@ -80,7 +69,6 @@ export async function POST(request: NextRequest) {
   if (!['revenue_share', 'fixed_rent'].includes(payout_type))
     return NextResponse.json({ error: 'payout_type must be revenue_share or fixed_rent' }, { status: 400 })
 
-  // Validate payout-model-specific fields
   if (payout_type === 'revenue_share') {
     const pct = revenue_share_pct ?? 50
     if (typeof pct !== 'number' || pct < 0 || pct > 100)
@@ -95,14 +83,24 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient()
 
-  // Resolve partner
+  // Resolve partner — must belong to same org
   let resolvedPartnerId: string = partner_id ?? ''
 
-  if (!resolvedPartnerId) {
-    // Create new partner explicitly requested by admin
+  if (partner_id) {
+    // Verify the given partner belongs to this org
+    const { data: existingPartner } = await admin
+      .from('partners')
+      .select('id')
+      .eq('id', partner_id)
+      .eq('organization_id', orgId)
+      .maybeSingle()
+    if (!existingPartner)
+      return NextResponse.json({ error: 'Partner not found in this organization' }, { status: 404 })
+  } else {
+    // Create new partner in this org
     const { data: newPartner, error: partnerErr } = await admin
       .from('partners')
-      .insert({ name: partner_name!.trim(), is_vat_registered: partner_is_vat_registered, is_active: true })
+      .insert({ name: partner_name!.trim(), is_vat_registered: partner_is_vat_registered, is_active: true, organization_id: orgId })
       .select('id')
       .single()
 
@@ -112,23 +110,22 @@ export async function POST(request: NextRequest) {
     resolvedPartnerId = newPartner.id
   }
 
-  // Derive a unique code if not provided
+  // Derive a unique code — scoped to org
   const baseCode = (code?.trim() || (() => {
     const words = branch_name.trim().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/)
-    if (words.length === 1) {
-      // Single word: use up to first 3 consonant-anchored chars for a less collision-prone code
-      return words[0].slice(0, 3).toUpperCase()
-    }
+    if (words.length === 1) return words[0].slice(0, 3).toUpperCase()
     return words.map((w: string) => w[0] ?? '').join('').toUpperCase().slice(0, 6)
   })()) || 'BR'
 
-  // Ensure the code is unique — append suffix if taken
-  const { data: existingCodes } = await admin.from('branches').select('code')
+  const { data: existingCodes } = await admin
+    .from('branches')
+    .select('code')
+    .eq('organization_id', orgId)
+
   const takenCodes = new Set((existingCodes ?? []).map((r: { code: string }) => r.code))
 
   let branchCode = baseCode
   if (takenCodes.has(branchCode)) {
-    // Try progressively longer slices of the name first, then numeric suffixes
     const namePart = branch_name.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
     let found = false
     for (let len = baseCode.length + 1; len <= Math.min(namePart.length, 6); len++) {
@@ -143,10 +140,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Create branch
   const { data: newBranch, error: branchErr } = await admin
     .from('branches')
     .insert({
+      organization_id:     orgId,
       partner_id:          resolvedPartnerId,
       name:                branch_name.trim(),
       code:                branchCode,

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chart Design Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #070910;
+    color: #F0ECE4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    padding: 40px;
+  }
+
+  h1 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(240,236,228,0.3);
+    margin-bottom: 36px;
+  }
+
+  .option-row {
+    margin-bottom: 48px;
+  }
+  .option-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .option-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    background: rgba(255,255,255,0.06);
+    color: rgba(241,245,249,0.55);
+    flex-shrink: 0;
+  }
+  .option-desc {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: rgba(240,236,228,0.38);
+  }
+
+  /* ── Chart card shell ── */
+  .chart-card {
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .chart-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .tab-group {
+    display: flex;
+    gap: 2px;
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .tab-btn {
+    padding: 6px 16px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .artist-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .bars-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    position: relative;
+    z-index: 1;
+    padding-bottom: 1px;
+  }
+  .bar-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+  }
+  .bar-stack {
+    width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    position: relative;
+    border-radius: 2px 2px 0 0;
+    overflow: hidden;
+  }
+  .bar-segment { width: 100%; }
+  .bar-zero { width: 100%; height: 3px; border-radius: 2px; }
+  .x-axis {
+    display: flex;
+    margin-top: 8px;
+  }
+  .x-label {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    min-width: 0;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+  .stat-cell {
+    padding: 14px 18px;
+  }
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-sub { font-size: 11px; }
+
+  /* ── Grid lines overlay ── */
+  .chart-body { position: relative; }
+  .grid-overlay {
+    position: absolute;
+    inset: 0 0 28px 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .grid-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+  }
+  .grid-base {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+  }
+
+  /* ── Option-specific themes ── */
+
+  /* 1 · Ocean Depth */
+  .opt1 .chart-card {
+    background: #0D0F1A;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .opt1 .chart-title { color: rgba(240,236,228,0.3); }
+  .opt1 .tab-group { background: rgba(255,255,255,0.04); }
+  .opt1 .tab-btn { background: transparent; color: rgba(241,245,249,0.38); }
+  .opt1 .tab-btn.active { background: rgba(0,212,255,0.12); color: #00D4FF; }
+  .opt1 .grid-line { background: rgba(255,255,255,0.04); }
+  .opt1 .grid-base { background: rgba(255,255,255,0.09); }
+  .opt1 .x-label { color: rgba(240,236,228,0.22); }
+  .opt1 .stats-grid { background: rgba(255,255,255,0.04); }
+  .opt1 .stat-cell { background: #0D0F1A; }
+  .opt1 .stat-label { color: rgba(241,245,249,0.35); }
+  .opt1 .stat-value { color: #F1F5F9; }
+  .opt1 .stat-sub { color: rgba(240,236,228,0.25); }
+  .opt1 .legend-item { color: rgba(241,245,249,0.5); }
+
+  /* 2 · Aurora */
+  .opt2 .chart-card {
+    background: #0E0A1A;
+    border: 1px solid rgba(138,30,255,0.15);
+    box-shadow: inset 0 0 80px rgba(138,30,255,0.03);
+  }
+  .opt2 .chart-title { color: rgba(220,200,255,0.35); }
+  .opt2 .tab-group { background: rgba(138,30,255,0.08); }
+  .opt2 .tab-btn { background: transparent; color: rgba(220,200,255,0.38); }
+  .opt2 .tab-btn.active { background: rgba(138,30,255,0.18); color: #C084FC; }
+  .opt2 .grid-line { background: rgba(138,30,255,0.07); }
+  .opt2 .grid-base { background: rgba(138,30,255,0.18); }
+  .opt2 .x-label { color: rgba(220,200,255,0.22); }
+  .opt2 .stats-grid { background: rgba(138,30,255,0.08); }
+  .opt2 .stat-cell { background: #0E0A1A; }
+  .opt2 .stat-label { color: rgba(220,200,255,0.35); }
+  .opt2 .stat-value { color: #F1F5F9; }
+  .opt2 .stat-sub { color: rgba(220,200,255,0.25); }
+  .opt2 .legend-item { color: rgba(220,200,255,0.5); }
+
+  /* 3 · Amber Warm */
+  .opt3 .chart-card {
+    background: #110D09;
+    border: 1px solid rgba(245,158,11,0.12);
+  }
+  .opt3 .chart-title { color: rgba(253,230,180,0.35); }
+  .opt3 .tab-group { background: rgba(245,158,11,0.07); }
+  .opt3 .tab-btn { background: transparent; color: rgba(253,230,180,0.38); }
+  .opt3 .tab-btn.active { background: rgba(245,158,11,0.14); color: #FCD34D; }
+  .opt3 .grid-line { background: rgba(245,158,11,0.06); }
+  .opt3 .grid-base { background: rgba(245,158,11,0.15); }
+  .opt3 .x-label { color: rgba(253,230,180,0.22); }
+  .opt3 .stats-grid { background: rgba(245,158,11,0.07); }
+  .opt3 .stat-cell { background: #110D09; }
+  .opt3 .stat-label { color: rgba(253,230,180,0.35); }
+  .opt3 .stat-value { color: #FEF3C7; }
+  .opt3 .stat-sub { color: rgba(253,230,180,0.25); }
+  .opt3 .legend-item { color: rgba(253,230,180,0.5); }
+
+  /* 4 · Neon Pop */
+  .opt4 .chart-card {
+    background: #080810;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .opt4 .chart-title { color: rgba(241,245,249,0.3); }
+  .opt4 .tab-group { background: rgba(255,255,255,0.05); }
+  .opt4 .tab-btn { background: transparent; color: rgba(241,245,249,0.38); }
+  .opt4 .tab-btn.active { background: rgba(255,0,128,0.12); color: #FF4DA6; }
+  .opt4 .grid-line { background: rgba(255,255,255,0.04); }
+  .opt4 .grid-base { background: rgba(255,255,255,0.1); }
+  .opt4 .x-label { color: rgba(240,236,228,0.2); }
+  .opt4 .stats-grid { background: rgba(255,255,255,0.05); }
+  .opt4 .stat-cell { background: #080810; }
+  .opt4 .stat-label { color: rgba(241,245,249,0.35); }
+  .opt4 .stat-value { color: #F1F5F9; }
+  .opt4 .stat-sub { color: rgba(240,236,228,0.25); }
+  .opt4 .legend-item { color: rgba(241,245,249,0.5); }
+
+  /* 5 · Emerald */
+  .opt5 .chart-card {
+    background: #091210;
+    border: 1px solid rgba(16,185,129,0.12);
+  }
+  .opt5 .chart-title { color: rgba(180,255,220,0.35); }
+  .opt5 .tab-group { background: rgba(16,185,129,0.07); }
+  .opt5 .tab-btn { background: transparent; color: rgba(180,255,220,0.38); }
+  .opt5 .tab-btn.active { background: rgba(16,185,129,0.14); color: #34D399; }
+  .opt5 .grid-line { background: rgba(16,185,129,0.06); }
+  .opt5 .grid-base { background: rgba(16,185,129,0.18); }
+  .opt5 .x-label { color: rgba(180,255,220,0.22); }
+  .opt5 .stats-grid { background: rgba(16,185,129,0.07); }
+  .opt5 .stat-cell { background: #091210; }
+  .opt5 .stat-label { color: rgba(180,255,220,0.35); }
+  .opt5 .stat-value { color: #ECFDF5; }
+  .opt5 .stat-sub { color: rgba(180,255,220,0.25); }
+  .opt5 .legend-item { color: rgba(180,255,220,0.5); }
+
+  /* 6 · Gradient glow bars (single tone, no stacking — each bar glows) */
+  .opt6 .chart-card {
+    background: #0B0D18;
+    border: 1px solid rgba(89,139,255,0.13);
+    box-shadow: inset 0 0 100px rgba(89,139,255,0.025);
+  }
+  .opt6 .chart-title { color: rgba(200,215,255,0.35); }
+  .opt6 .tab-group { background: rgba(89,139,255,0.08); }
+  .opt6 .tab-btn { background: transparent; color: rgba(200,215,255,0.38); }
+  .opt6 .tab-btn.active { background: rgba(89,139,255,0.18); color: #93B4FF; }
+  .opt6 .grid-line { background: rgba(89,139,255,0.06); }
+  .opt6 .grid-base { background: rgba(89,139,255,0.2); }
+  .opt6 .x-label { color: rgba(200,215,255,0.2); }
+  .opt6 .stats-grid { background: rgba(89,139,255,0.07); }
+  .opt6 .stat-cell { background: #0B0D18; }
+  .opt6 .stat-label { color: rgba(200,215,255,0.35); }
+  .opt6 .stat-value { color: #EEF2FF; }
+  .opt6 .stat-sub { color: rgba(200,215,255,0.25); }
+  .opt6 .legend-item { color: rgba(200,215,255,0.5); }
+</style>
+</head>
+<body>
+
+<h1>Daily Chart — 6 Design Options</h1>
+
+<!-- ────────────────────────────────────────── OPTION 1 ── -->
+<div class="option-row opt1">
+  <div class="option-label">
+    <div class="option-num">1</div>
+    Ocean Depth
+    <span class="option-desc">Cyan / Teal / Blue — cool underwater palette, crisp and clean</span>
+  </div>
+  <div class="chart-card" id="c1"></div>
+</div>
+
+<!-- ────────────────────────────────────────── OPTION 2 ── -->
+<div class="option-row opt2">
+  <div class="option-label">
+    <div class="option-num">2</div>
+    Aurora
+    <span class="option-desc">Purple / Violet / Magenta — night-sky feel, rich and vivid</span>
+  </div>
+  <div class="chart-card" id="c2"></div>
+</div>
+
+<!-- ────────────────────────────────────────── OPTION 3 ── -->
+<div class="option-row opt3">
+  <div class="option-label">
+    <div class="option-num">3</div>
+    Amber Warm
+    <span class="option-desc">Gold / Amber / Orange — warm and bold, feels premium</span>
+  </div>
+  <div class="chart-card" id="c3"></div>
+</div>
+
+<!-- ────────────────────────────────────────── OPTION 4 ── -->
+<div class="option-row opt4">
+  <div class="option-label">
+    <div class="option-num">4</div>
+    Neon Pop
+    <span class="option-desc">Hot pink / Electric cyan / Lime — high contrast, eye-catching</span>
+  </div>
+  <div class="chart-card" id="c4"></div>
+</div>
+
+<!-- ────────────────────────────────────────── OPTION 5 ── -->
+<div class="option-row opt5">
+  <div class="option-label">
+    <div class="option-num">5</div>
+    Emerald
+    <span class="option-desc">Green / Teal / Sage — fresh, growth-oriented, natural</span>
+  </div>
+  <div class="chart-card" id="c5"></div>
+</div>
+
+<!-- ────────────────────────────────────────── OPTION 6 ── -->
+<div class="option-row opt6">
+  <div class="option-label">
+    <div class="option-num">6</div>
+    Cobalt Glow
+    <span class="option-desc">Single gradient bar per day with soft glow — minimalist & focused</span>
+  </div>
+  <div class="chart-card" id="c6"></div>
+</div>
+
+<script>
+// ── Shared data ───────────────────────────────────────────────────────────────
+
+const MONTH = 'March'; const YEAR = 2026; const DAYS = 31
+
+const ARTIST_DAILY_GROSS = [
+  [1200,800,600,300,0],[900,700,500,0,400],[1500,600,0,500,300],
+  [800,900,700,400,0],[2100,1200,800,600,500],[0,0,0,0,0],
+  [1800,900,1100,700,600],[1200,800,600,400,200],[900,600,400,0,300],
+  [2800,1500,1200,800,700],[1100,700,500,300,0],[1300,900,700,400,300],
+  [0,0,0,0,0],[1600,1100,900,600,400],[900,600,400,200,0],
+  [1400,800,700,500,300],[700,500,300,0,200],[2200,1300,1000,700,500],
+  [1000,700,500,300,0],[0,0,0,0,0],[1700,1100,800,500,400],
+  [1300,900,700,400,200],[800,500,400,200,0],[2400,1400,1100,700,600],
+  [1100,700,500,300,200],[1500,1000,800,500,300],[0,0,0,0,0],
+  [1200,800,600,400,200],[900,600,400,200,0],[1800,1100,900,600,400],
+  [1400,900,700,400,300],
+]
+
+const DAILY = ARTIST_DAILY_GROSS.map((a, i) => ({
+  day: i + 1,
+  artists: a.map(g => ({ gross: g, net: Math.round(g * 0.95), orders: Math.round(g / 154) })),
+  gross:  a.reduce((s,v) => s+v, 0),
+  net:    Math.round(a.reduce((s,v) => s+v, 0) * 0.95),
+  orders: Math.round(a.reduce((s,v) => s+v, 0) / 154),
+}))
+
+function fmtTHB(v) {
+  return '฿' + v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+// ── Palette definitions per option ───────────────────────────────────────────
+
+const PALETTES = {
+  1: { // Ocean Depth
+    artists: [
+      { name: 'Miru Hana',  color: '#00D4FF', alpha: 'rgba(0,212,255,0.75)',   bg: 'rgba(0,212,255,0.08)'  },
+      { name: 'Sora Kana',  color: '#0099CC', alpha: 'rgba(0,153,204,0.7)',    bg: 'rgba(0,153,204,0.08)'  },
+      { name: 'Yuki Ren',   color: '#006B99', alpha: 'rgba(0,107,153,0.8)',    bg: 'rgba(0,107,153,0.1)'   },
+      { name: 'Aoi Tsuki',  color: '#38BDF8', alpha: 'rgba(56,189,248,0.65)',  bg: 'rgba(56,189,248,0.07)' },
+      { name: 'Hana Shiro', color: '#22D3EE', alpha: 'rgba(34,211,238,0.6)',   bg: 'rgba(34,211,238,0.07)' },
+    ],
+    barEmpty: 'rgba(0,212,255,0.06)',
+    titleColor: 'rgba(200,240,255,0.35)',
+  },
+  2: { // Aurora
+    artists: [
+      { name: 'Miru Hana',  color: '#C084FC', alpha: 'rgba(192,132,252,0.8)',  bg: 'rgba(192,132,252,0.1)' },
+      { name: 'Sora Kana',  color: '#818CF8', alpha: 'rgba(129,140,248,0.75)', bg: 'rgba(129,140,248,0.09)'},
+      { name: 'Yuki Ren',   color: '#E879F9', alpha: 'rgba(232,121,249,0.7)',  bg: 'rgba(232,121,249,0.08)'},
+      { name: 'Aoi Tsuki',  color: '#A78BFA', alpha: 'rgba(167,139,250,0.65)', bg: 'rgba(167,139,250,0.08)'},
+      { name: 'Hana Shiro', color: '#F472B6', alpha: 'rgba(244,114,182,0.6)',  bg: 'rgba(244,114,182,0.07)'},
+    ],
+    barEmpty: 'rgba(138,30,255,0.07)',
+    titleColor: 'rgba(220,200,255,0.35)',
+  },
+  3: { // Amber Warm
+    artists: [
+      { name: 'Miru Hana',  color: '#FCD34D', alpha: 'rgba(252,211,77,0.8)',   bg: 'rgba(252,211,77,0.09)' },
+      { name: 'Sora Kana',  color: '#F59E0B', alpha: 'rgba(245,158,11,0.75)',  bg: 'rgba(245,158,11,0.09)' },
+      { name: 'Yuki Ren',   color: '#FB923C', alpha: 'rgba(251,146,60,0.75)',  bg: 'rgba(251,146,60,0.09)' },
+      { name: 'Aoi Tsuki',  color: '#FBBF24', alpha: 'rgba(251,191,36,0.65)',  bg: 'rgba(251,191,36,0.08)' },
+      { name: 'Hana Shiro', color: '#F97316', alpha: 'rgba(249,115,22,0.6)',   bg: 'rgba(249,115,22,0.08)' },
+    ],
+    barEmpty: 'rgba(245,158,11,0.06)',
+    titleColor: 'rgba(253,230,180,0.35)',
+  },
+  4: { // Neon Pop
+    artists: [
+      { name: 'Miru Hana',  color: '#FF4DA6', alpha: 'rgba(255,77,166,0.8)',   bg: 'rgba(255,77,166,0.09)' },
+      { name: 'Sora Kana',  color: '#00F5D4', alpha: 'rgba(0,245,212,0.75)',   bg: 'rgba(0,245,212,0.08)'  },
+      { name: 'Yuki Ren',   color: '#CCFF00', alpha: 'rgba(204,255,0,0.7)',    bg: 'rgba(204,255,0,0.07)'  },
+      { name: 'Aoi Tsuki',  color: '#FF6B35', alpha: 'rgba(255,107,53,0.7)',   bg: 'rgba(255,107,53,0.08)' },
+      { name: 'Hana Shiro', color: '#7B61FF', alpha: 'rgba(123,97,255,0.7)',   bg: 'rgba(123,97,255,0.08)' },
+    ],
+    barEmpty: 'rgba(255,255,255,0.05)',
+    titleColor: 'rgba(241,245,249,0.3)',
+  },
+  5: { // Emerald
+    artists: [
+      { name: 'Miru Hana',  color: '#34D399', alpha: 'rgba(52,211,153,0.8)',   bg: 'rgba(52,211,153,0.09)' },
+      { name: 'Sora Kana',  color: '#2DD4BF', alpha: 'rgba(45,212,191,0.75)',  bg: 'rgba(45,212,191,0.08)' },
+      { name: 'Yuki Ren',   color: '#4ADE80', alpha: 'rgba(74,222,128,0.7)',   bg: 'rgba(74,222,128,0.08)' },
+      { name: 'Aoi Tsuki',  color: '#86EFAC', alpha: 'rgba(134,239,172,0.65)', bg: 'rgba(134,239,172,0.07)'},
+      { name: 'Hana Shiro', color: '#6EE7B7', alpha: 'rgba(110,231,183,0.6)',  bg: 'rgba(110,231,183,0.07)'},
+    ],
+    barEmpty: 'rgba(16,185,129,0.06)',
+    titleColor: 'rgba(180,255,220,0.35)',
+  },
+  6: { // Cobalt Glow — single gradient per bar, no stacking
+    artists: [
+      { name: 'Miru Hana',  color: '#93B4FF', alpha: 'rgba(89,139,255,0.9)',   bg: 'rgba(89,139,255,0.1)'  },
+      { name: 'Sora Kana',  color: '#6E9FFF', alpha: 'rgba(60,110,250,0.8)',   bg: 'rgba(60,110,250,0.09)' },
+      { name: 'Yuki Ren',   color: '#5B8DEF', alpha: 'rgba(50,100,240,0.75)',  bg: 'rgba(50,100,240,0.08)' },
+      { name: 'Aoi Tsuki',  color: '#7AAEFF', alpha: 'rgba(75,120,255,0.65)',  bg: 'rgba(75,120,255,0.08)' },
+      { name: 'Hana Shiro', color: '#A8C4FF', alpha: 'rgba(100,145,255,0.6)',  bg: 'rgba(100,145,255,0.07)'},
+    ],
+    barEmpty: 'rgba(89,139,255,0.06)',
+    titleColor: 'rgba(200,215,255,0.35)',
+    gradient: true, // special: use gradient bars instead of stacked
+  },
+}
+
+// ── Render a chart into a container ──────────────────────────────────────────
+
+function buildChart(containerId, optNum) {
+  const pal = PALETTES[optNum]
+  const container = document.getElementById(containerId)
+  const isGradient = pal.gradient === true
+
+  const maxVal = Math.max(...DAILY.map(d => d.gross), 1)
+  const bestIdx = DAILY.reduce((b, d, i) => d.gross > DAILY[b].gross ? i : b, 0)
+
+  // Legend
+  const legendHtml = pal.artists.map(a => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${a.color}"></div>
+      ${a.name}
+    </div>
+  `).join('')
+
+  // Bars
+  let barsHtml = ''
+  DAILY.forEach((d, i) => {
+    const val = d.gross
+    const heightPct = val === 0 ? 0 : Math.max((val / maxVal) * 100, 2)
+    const isBest = i === bestIdx
+
+    if (val === 0) {
+      barsHtml += `<div class="bar-col" style="height:280px"><div class="bar-zero" style="background:${pal.barEmpty}"></div></div>`
+    } else if (isGradient) {
+      // Option 6: single gradient bar — brighter at top
+      const col = pal.artists[0].color
+      barsHtml += `
+        <div class="bar-col" style="height:280px">
+          <div class="bar-stack" style="height:${heightPct}%;
+            background: linear-gradient(to top, rgba(89,139,255,0.2) 0%, rgba(89,139,255,0.85) 100%);
+            box-shadow: 0 0 ${isBest ? '14px' : '0px'} rgba(89,139,255,0.5);
+          ">
+            ${isBest ? '<div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#93B4FF;box-shadow:0 0 8px rgba(89,139,255,0.9)"></div>' : ''}
+          </div>
+        </div>`
+    } else {
+      // Stacked segments
+      const artistVals = d.artists.map(a => a.gross)
+      const sum = artistVals.reduce((a, b) => a + b, 0)
+      const segments = pal.artists.map((a, ai) => {
+        const v = artistVals[ai]
+        if (v <= 0) return ''
+        const pct = (v / sum) * 100
+        return `<div class="bar-segment" style="height:${pct}%;background:${a.alpha}"></div>`
+      }).join('')
+
+      barsHtml += `
+        <div class="bar-col" style="height:280px">
+          <div class="bar-stack" style="height:${heightPct}%">
+            ${segments}
+            ${isBest ? '<div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:'+pal.artists[0].color+';box-shadow:0 0 8px '+pal.artists[0].color+'99"></div>' : ''}
+          </div>
+        </div>`
+    }
+  })
+
+  // X-axis
+  let xHtml = DAILY.map(d => {
+    const show = d.day === 1 || d.day % 5 === 0 || d.day === DAYS
+    return `<div class="x-label${show ? '' : ' hidden'}" style="color:${show ? '' : 'transparent'}">${d.day}</div>`
+  }).join('')
+
+  // Stats
+  const vals = DAILY.map(d => d.gross)
+  const active = vals.filter(v => v > 0)
+  const avg = active.length > 0 ? active.reduce((a,b) => a+b, 0) / active.length : 0
+  const lowestIdx = vals.reduce((b, v, i) => {
+    if (v <= 0) return b
+    return b === -1 || v < vals[b] ? i : b
+  }, -1)
+
+  const statsData = [
+    { label: 'Best Day',           value: fmtTHB(vals[bestIdx]),   sub: `${MONTH} ${DAILY[bestIdx].day}` },
+    { label: 'Lowest Active Day',  value: lowestIdx >= 0 ? fmtTHB(vals[lowestIdx]) : '—', sub: lowestIdx >= 0 ? `${MONTH} ${DAILY[lowestIdx].day}` : 'no activity' },
+    { label: 'Avg / Active Day',   value: fmtTHB(avg),             sub: 'active days only' },
+    { label: 'Active Days',        value: `${active.length}`,      sub: `of ${DAYS} days` },
+  ]
+
+  const statsHtml = statsData.map(s => `
+    <div class="stat-cell">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+      <div class="stat-sub">${s.sub}</div>
+    </div>
+  `).join('')
+
+  container.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${MONTH} ${YEAR} · Daily Trend</div>
+      <div class="tab-group">
+        <button class="tab-btn active">Gross Sales</button>
+        <button class="tab-btn">NET</button>
+        <button class="tab-btn">Orders</button>
+      </div>
+    </div>
+    <div class="artist-legend">${legendHtml}</div>
+    <div class="chart-body">
+      <div class="grid-overlay">
+        <div class="grid-line" style="top:0%"></div>
+        <div class="grid-line" style="top:25%"></div>
+        <div class="grid-line" style="top:50%"></div>
+        <div class="grid-line" style="top:75%"></div>
+        <div class="grid-base"></div>
+      </div>
+      <div class="bars-container" style="height:280px">${barsHtml}</div>
+      <div class="x-axis">${xHtml}</div>
+    </div>
+    <div class="stats-grid">${statsHtml}</div>
+  `
+}
+
+// Render all 6
+[1,2,3,4,5,6].forEach(n => buildChart(`c${n}`, n))
+</script>
+</body>
+</html>

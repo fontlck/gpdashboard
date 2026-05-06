@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artist Avatar Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0D0F1A;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 40px;
+    color: #F0ECE4;
+  }
+  h2 {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(240,236,228,0.4);
+    margin-bottom: 24px;
+  }
+  .row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* Option A — single initial, colour from name hash */
+  .avatar-a {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; letter-spacing: 0;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Option B — two initials, smaller font */
+  .avatar-b {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .name { font-size: 13px; color: #F0ECE4; }
+  .section { margin-bottom: 48px; }
+  .section-label {
+    font-size: 12px; color: rgba(240,236,228,0.35);
+    margin-bottom: 8px; padding: 6px 10px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px; display: inline-block;
+    letter-spacing: 0.05em;
+  }
+  .divider {
+    height: 1px; background: rgba(255,255,255,0.06); margin: 32px 0;
+  }
+</style>
+</head>
+<body>
+
+<h2>Artist Breakdown — Avatar Styles</h2>
+
+<!-- Option A: Single initial -->
+<div class="section">
+  <div class="section-label">Option A — Single initial</div>
+
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(99,102,241,0.18); color: #818CF8;">S</div>
+    <span class="name">Song Eunseok</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(20,184,166,0.15); color: #2DD4BF;">D</div>
+    <span class="name">Dinto</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(245,158,11,0.15); color: #FBBF24;">Q</div>
+    <span class="name">QOTTON</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(236,72,153,0.15); color: #F472B6;">F</div>
+    <span class="name">Flashyourmeme</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(255,255,255,0.05); color: rgba(240,236,228,0.2);">?</div>
+    <span class="name" style="color: rgba(240,236,228,0.3);">—</span>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Option B: Two initials -->
+<div class="section">
+  <div class="section-label">Option B — Two initials</div>
+
+  <div class="row">
+    <div class="avatar-b" style="background: rgba(99,102,241,0.18); color: #818CF8;">SE</div>
+    <span class="name">Song Eunseok</span>
+  </div>
+  <div class="row">
+    <div class="avatar-b" style="background: rgba(20,184,166,0.15); color: #2DD4BF;">DI</div>
+    <span class="name">Dinto</span>
+  </div>
+  <div class="row">
+    <div class="avatar-b" style="background: rgba(245,158,11,0.15); color: #FBBF24;">QO</div>
+    <span class="name">QOTTON</span>
+  </div>
+  <div class="row">
+    <div class="avatar-b" style="background: rgba(236,72,153,0.15); color: #F472B6;">FL</div>
+    <span class="name">Flashyourmeme</span>
+  </div>
+  <div class="row">
+    <div class="avatar-b" style="background: rgba(255,255,255,0.05); color: rgba(240,236,228,0.2);">?</div>
+    <span class="name" style="color: rgba(240,236,228,0.3);">—</span>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Option C: Single initial, all same neutral colour -->
+<div class="section">
+  <div class="section-label">Option C — Single initial, monochrome</div>
+
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(255,255,255,0.07); color: rgba(240,236,228,0.55); border-color: rgba(255,255,255,0.1);">S</div>
+    <span class="name">Song Eunseok</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(255,255,255,0.07); color: rgba(240,236,228,0.55); border-color: rgba(255,255,255,0.1);">D</div>
+    <span class="name">Dinto</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(255,255,255,0.07); color: rgba(240,236,228,0.55); border-color: rgba(255,255,255,0.1);">Q</div>
+    <span class="name">QOTTON</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(255,255,255,0.07); color: rgba(240,236,228,0.55); border-color: rgba(255,255,255,0.1);">F</div>
+    <span class="name">Flashyourmeme</span>
+  </div>
+  <div class="row">
+    <div class="avatar-a" style="background: rgba(255,255,255,0.05); color: rgba(240,236,228,0.2);">?</div>
+    <span class="name" style="color: rgba(240,236,228,0.3);">—</span>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Overview — 5 Design Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #05070d;
+  font-family: 'DM Sans', sans-serif;
+  padding: 40px 20px 60px;
+  color: #fff;
+}
+h1 {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  margin-bottom: 48px;
+}
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.option-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.option-label .num {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+}
+.option-label .tag {
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════
+   OPTION 1 · Command Centre
+══════════════════════════════════════════════ */
+.o1 {
+  background: #07090f;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+}
+.o1 .topbar {
+  background: #0a0d16;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.o1 .topbar .ttl { font-size: 13px; font-weight: 700; color: #f1f5f9; letter-spacing: -.01em; }
+.o1 .topbar .sub { font-size: 11px; color: rgba(241,245,249,.3); margin-top: 1px; }
+.o1 .topbar .ts  { font-family: 'DM Mono', monospace; font-size: 11px; color: rgba(241,245,249,.25); }
+
+.o1 .kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.o1 .kpi {
+  padding: 18px 22px;
+  border-right: 1px solid rgba(255,255,255,.05);
+  position: relative;
+}
+.o1 .kpi:last-child { border-right: none; }
+.o1 .kpi .accent-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.o1 .kpi .k { font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(241,245,249,.3); margin-bottom: 8px; }
+.o1 .kpi .v { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; line-height: 1; }
+.o1 .kpi .s { font-size: 10px; color: rgba(241,245,249,.3); margin-top: 4px; }
+.o1 .kpi .s.warn { color: #f59e0b; }
+.o1 .kpi .s.good { color: #10b981; }
+
+.o1 .body { padding: 20px 24px; }
+.o1 .sec-hd {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.o1 .sec-hd .lbl { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(241,245,249,.3); }
+.o1 .sec-hd .ct  { font-size: 10px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 1px 8px; color: rgba(241,245,249,.4); }
+
+.o1 table { width: 100%; border-collapse: collapse; }
+.o1 thead th {
+  padding: 8px 12px;
+  font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(241,245,249,.25);
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.o1 tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); }
+.o1 tbody tr:last-child { border-bottom: none; }
+.o1 tbody td { padding: 9px 12px; font-size: 12px; color: rgba(241,245,249,.75); }
+.o1 tbody td.mono { font-family: 'DM Mono', monospace; font-size: 12px; color: #f1f5f9; font-weight: 500; }
+.o1 .badge {
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 4px;
+}
+.o1 .badge.paid     { background: rgba(16,185,129,.1); color: #10b981; }
+.o1 .badge.approved { background: rgba(59,130,246,.1); color: #60a5fa; }
+.o1 .badge.pending  { background: rgba(245,158,11,.1); color: #f59e0b; }
+.o1 .badge.draft    { background: rgba(255,255,255,.06); color: rgba(241,245,249,.4); }
+
+/* ══════════════════════════════════════════════
+   OPTION 2 · Executive Clarity
+══════════════════════════════════════════════ */
+.o2 {
+  background: #0d0f1a;
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+}
+.o2 .hero {
+  background: linear-gradient(135deg, #111827 0%, #0d0f1a 100%);
+  padding: 28px 32px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.o2 .hero .left .eyebrow { font-size: 9px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 6px; }
+.o2 .hero .left .title { font-size: 26px; font-weight: 800; letter-spacing: -.03em; color: #fff; line-height: 1; }
+.o2 .hero .right { text-align: right; }
+.o2 .hero .right .big-val { font-size: 28px; font-weight: 800; letter-spacing: -.03em; color: #fff; }
+.o2 .hero .right .big-lbl { font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-top: 2px; }
+
+.o2 .kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.o2 .kpi {
+  padding: 16px 24px;
+  border-right: 1px solid rgba(255,255,255,.05);
+}
+.o2 .kpi:last-child { border-right: none; }
+.o2 .kpi .k { font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.3); }
+.o2 .kpi .v { font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin-top: 4px; color: #fff; }
+.o2 .kpi .pill {
+  display: inline-block; font-size: 9px; font-weight: 600; padding: 2px 8px;
+  border-radius: 20px; margin-top: 4px;
+}
+.o2 .kpi .pill.warn { background: rgba(245,158,11,.15); color: #f59e0b; }
+.o2 .kpi .pill.ok   { background: rgba(16,185,129,.1); color: #10b981; }
+
+.o2 .table-wrap { padding: 0; }
+.o2 .table-hd { padding: 14px 24px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,.05); }
+.o2 .table-hd .lbl { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.3); }
+.o2 .table-hd .link { font-size: 11px; color: rgba(99,102,241,.8); }
+.o2 table { width: 100%; border-collapse: collapse; }
+.o2 thead th { padding: 10px 24px 8px; font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.25); text-align: left; }
+.o2 tbody tr:nth-child(even) { background: rgba(255,255,255,.02); }
+.o2 tbody td { padding: 10px 24px; font-size: 12px; color: rgba(255,255,255,.65); }
+.o2 tbody td.hi { color: #fff; font-weight: 600; }
+.o2 tbody td.payout { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.o2 .badge {
+  display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 20px;
+}
+.o2 .badge.paid     { background: rgba(16,185,129,.12); color: #34d399; }
+.o2 .badge.approved { background: rgba(99,102,241,.12); color: #818cf8; }
+.o2 .badge.pending  { background: rgba(245,158,11,.12); color: #fbbf24; }
+.o2 .badge.draft    { background: rgba(255,255,255,.05); color: rgba(255,255,255,.3); }
+
+/* ══════════════════════════════════════════════
+   OPTION 3 · Neon Pulse
+══════════════════════════════════════════════ */
+.o3 {
+  background: #060810;
+  border: 1px solid rgba(0,212,255,.1);
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+}
+.o3 .topbar {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(0,212,255,.08);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.o3 .topbar .ttl { font-size: 14px; font-weight: 700; color: #f1f5f9; letter-spacing: -.01em; }
+.o3 .topbar .dot { width: 6px; height: 6px; border-radius: 50%; background: #00d4ff; box-shadow: 0 0 8px #00d4ff; display: inline-block; margin-right: 6px; }
+.o3 .topbar .live { font-size: 10px; color: #00d4ff; display: flex; align-items: center; gap: 5px; }
+
+.o3 .kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: rgba(0,212,255,.06);
+  border-bottom: 1px solid rgba(0,212,255,.08);
+}
+.o3 .kpi {
+  background: #060810;
+  padding: 18px 18px;
+}
+.o3 .kpi .k { font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(0,212,255,.5); margin-bottom: 8px; }
+.o3 .kpi .v { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: #f1f5f9; }
+.o3 .kpi .v.cyan { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,.4); }
+.o3 .kpi .v.amber { color: #f59e0b; text-shadow: 0 0 20px rgba(245,158,11,.3); }
+.o3 .kpi .s { font-size: 10px; color: rgba(241,245,249,.25); margin-top: 3px; }
+
+.o3 .body { padding: 18px 22px; }
+.o3 .sec-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.o3 .sec-hd::before { content: ''; display: block; width: 3px; height: 12px; background: #00d4ff; border-radius: 2px; box-shadow: 0 0 8px rgba(0,212,255,.6); }
+.o3 .sec-hd .lbl { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(0,212,255,.6); }
+
+.o3 table { width: 100%; border-collapse: collapse; }
+.o3 thead th { padding: 8px 10px; font-size: 8px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(0,212,255,.35); text-align: left; border-bottom: 1px solid rgba(0,212,255,.08); }
+.o3 tbody tr { border-bottom: 1px solid rgba(0,212,255,.05); }
+.o3 tbody tr:last-child { border-bottom: none; }
+.o3 tbody tr:hover { background: rgba(0,212,255,.03); }
+.o3 tbody td { padding: 8px 10px; font-size: 12px; color: rgba(241,245,249,.6); }
+.o3 tbody td.hi { color: #f1f5f9; font-weight: 500; }
+.o3 tbody td.val { font-family: 'DM Mono', monospace; color: #00d4ff; font-size: 11px; font-weight: 500; }
+.o3 .badge {
+  display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 3px;
+  border: 1px solid;
+}
+.o3 .badge.paid     { border-color: rgba(16,185,129,.3); color: #10b981; background: rgba(16,185,129,.05); }
+.o3 .badge.approved { border-color: rgba(0,212,255,.3); color: #00d4ff; background: rgba(0,212,255,.05); }
+.o3 .badge.pending  { border-color: rgba(245,158,11,.3); color: #f59e0b; background: rgba(245,158,11,.05); }
+.o3 .badge.draft    { border-color: rgba(255,255,255,.1); color: rgba(241,245,249,.3); background: transparent; }
+
+/* ══════════════════════════════════════════════
+   OPTION 4 · Warm Carbon
+══════════════════════════════════════════════ */
+.o4 {
+  background: #100f0d;
+  border: 1px solid rgba(240,236,228,.07);
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+}
+.o4 .topbar {
+  padding: 16px 24px;
+  background: #141210;
+  border-bottom: 1px solid rgba(240,236,228,.07);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.o4 .topbar .ttl { font-size: 14px; font-weight: 700; color: #f0ece4; letter-spacing: -.01em; }
+.o4 .topbar .sub { font-size: 10px; color: rgba(240,236,228,.3); }
+.o4 .topbar .date { font-size: 10px; color: rgba(240,236,228,.25); }
+
+.o4 .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid rgba(240,236,228,.07);
+}
+.o4 .kpi {
+  padding: 20px 22px;
+  border-right: 1px solid rgba(240,236,228,.06);
+}
+.o4 .kpi:last-child { border-right: none; }
+.o4 .kpi .k { font-size: 8.5px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: rgba(240,236,228,.3); margin-bottom: 7px; }
+.o4 .kpi .v { font-size: 24px; font-weight: 800; letter-spacing: -.03em; color: #f0ece4; line-height: 1; }
+.o4 .kpi .v.gold { color: #d4a843; }
+.o4 .kpi .s { font-size: 10px; color: rgba(240,236,228,.3); margin-top: 4px; }
+
+.o4 .content { padding: 20px 24px; }
+.o4 .sec-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.o4 .sec-lbl { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(240,236,228,.3); }
+.o4 .sec-ct  { font-size: 10px; color: rgba(240,236,228,.2); background: rgba(240,236,228,.05); padding: 2px 8px; border-radius: 4px; }
+
+.o4 table { width: 100%; border-collapse: collapse; }
+.o4 thead th { padding: 8px 10px; font-size: 8.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(240,236,228,.2); text-align: left; border-bottom: 1px solid rgba(240,236,228,.07); }
+.o4 tbody tr { border-bottom: 1px solid rgba(240,236,228,.05); }
+.o4 tbody tr:last-child { border-bottom: none; }
+.o4 tbody td { padding: 9px 10px; font-size: 12px; color: rgba(240,236,228,.6); }
+.o4 tbody td.hi { color: #f0ece4; font-weight: 500; }
+.o4 tbody td.val { color: #d4a843; font-weight: 700; font-variant-numeric: tabular-nums; }
+.o4 .badge {
+  display: inline-block; font-size: 9px; font-weight: 600;
+  padding: 2px 8px; border-radius: 3px;
+}
+.o4 .badge.paid     { background: rgba(212,168,67,.15); color: #d4a843; }
+.o4 .badge.approved { background: rgba(240,236,228,.08); color: rgba(240,236,228,.6); }
+.o4 .badge.pending  { background: rgba(239,68,68,.12); color: #f87171; }
+.o4 .badge.draft    { background: rgba(240,236,228,.05); color: rgba(240,236,228,.25); }
+
+/* ══════════════════════════════════════════════
+   OPTION 5 · Structured Light
+══════════════════════════════════════════════ */
+.o5 {
+  background: #10131f;
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'DM Sans', sans-serif;
+}
+.o5 .header {
+  padding: 20px 28px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.o5 .header .ttl { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.02em; }
+.o5 .header .sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 2px; }
+.o5 .header .btn {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,.65);
+  cursor: pointer;
+}
+
+.o5 .kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.o5 .kpi {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.o5 .kpi .k { font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 6px; }
+.o5 .kpi .v { font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: #fff; }
+.o5 .kpi .s { font-size: 10px; color: rgba(255,255,255,.25); margin-top: 3px; }
+.o5 .kpi .s.warn { color: #f59e0b; }
+.o5 .kpi .s.ok   { color: #34d399; }
+.o5 .kpi.hi { border-color: rgba(129,140,248,.25); background: rgba(99,102,241,.06); }
+.o5 .kpi.hi .v { color: #a5b4fc; }
+
+.o5 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: none; }
+.o5 .col-left { padding: 20px 24px; border-right: 1px solid rgba(255,255,255,.06); }
+.o5 .col-right { padding: 20px 24px; }
+.o5 .col-hd { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 14px; }
+
+.o5 table { width: 100%; border-collapse: collapse; }
+.o5 thead th { padding: 6px 8px; font-size: 8.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.2); text-align: left; border-bottom: 1px solid rgba(255,255,255,.06); }
+.o5 tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); }
+.o5 tbody tr:last-child { border-bottom: none; }
+.o5 tbody td { padding: 8px 8px; font-size: 11px; color: rgba(255,255,255,.55); }
+.o5 tbody td.hi { color: #fff; font-weight: 500; }
+.o5 tbody td.val { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; font-size: 12px; }
+.o5 .badge {
+  display: inline-block; font-size: 9px; font-weight: 600;
+  padding: 2px 7px; border-radius: 20px;
+}
+.o5 .badge.paid     { background: rgba(16,185,129,.12); color: #34d399; }
+.o5 .badge.approved { background: rgba(129,140,248,.12); color: #a5b4fc; }
+.o5 .badge.pending  { background: rgba(251,191,36,.12); color: #fbbf24; }
+.o5 .badge.draft    { background: rgba(255,255,255,.05); color: rgba(255,255,255,.3); }
+
+/* Status breakdown (right col) */
+.status-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.status-row:last-child { border-bottom: none; }
+.status-row .s-lbl { display: flex; align-items: center; gap: 7px; font-size: 11px; color: rgba(255,255,255,.55); }
+.status-row .s-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.status-row .s-ct  { font-size: 12px; font-weight: 700; color: #fff; }
+.bar-bg { background: rgba(255,255,255,.06); border-radius: 4px; height: 4px; margin-top: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; }
+
+</style>
+</head>
+<body>
+
+<h1>Admin Overview — 5 Design Options</h1>
+
+<div class="grid">
+
+  <!-- ══ OPTION 1 · Command Centre ══ -->
+  <div class="option">
+    <div class="option-label">
+      <span class="num">1</span>
+      Command Centre
+      <span class="tag" style="background:rgba(0,212,255,.1);color:#00d4ff">Terminal · Data Dense</span>
+    </div>
+    <div class="o1">
+      <div class="topbar">
+        <div>
+          <div class="ttl">Overview</div>
+          <div class="sub">All branches — current reporting snapshot</div>
+        </div>
+        <div class="ts">Wed 08 Apr 2026, 10:29</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="accent-bar" style="background:rgba(255,255,255,.15)"></div>
+          <div class="k">Active Branches</div>
+          <div class="v">12</div>
+          <div class="s good">All locations active</div>
+        </div>
+        <div class="kpi">
+          <div class="accent-bar" style="background:#f59e0b"></div>
+          <div class="k">Pending Approval</div>
+          <div class="v">3</div>
+          <div class="s warn">Needs review</div>
+        </div>
+        <div class="kpi">
+          <div class="accent-bar" style="background:#f59e0b"></div>
+          <div class="k">Payouts Due</div>
+          <div class="v" style="font-size:18px">฿284,400</div>
+          <div class="s warn">Approved, unpaid</div>
+        </div>
+        <div class="kpi">
+          <div class="accent-bar" style="background:rgba(255,255,255,.1)"></div>
+          <div class="k">Total Reports</div>
+          <div class="v">47</div>
+          <div class="s">All time</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="sec-hd">
+          <span class="lbl">Recent Reports</span>
+          <span class="ct">47</span>
+        </div>
+        <table>
+          <thead><tr><th>Period</th><th>Partner</th><th>Final Payout</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="hi">March 2026</td><td>Qottontale</td><td class="mono">฿9,748.67</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Flash Your Meme</td><td class="mono">฿28,560.00</td><td><span class="badge approved">Approved</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Fringe</td><td class="mono">฿15,200.00</td><td><span class="badge pending">Pending</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Qottontale</td><td class="mono">฿8,912.50</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Flash Your Meme</td><td class="mono">฿24,100.00</td><td><span class="badge draft">Draft</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ OPTION 2 · Executive Clarity ══ -->
+  <div class="option">
+    <div class="option-label">
+      <span class="num">2</span>
+      Executive Clarity
+      <span class="tag" style="background:rgba(99,102,241,.15);color:#818cf8">Clean · Spacious</span>
+    </div>
+    <div class="o2">
+      <div class="hero">
+        <div class="left">
+          <div class="eyebrow">GP Dashboard · Admin</div>
+          <div class="title">Overview</div>
+        </div>
+        <div class="right">
+          <div class="big-val">฿284,400</div>
+          <div class="big-lbl">Total Payouts Due</div>
+        </div>
+      </div>
+      <div class="kpi-strip">
+        <div class="kpi">
+          <div class="k">Active Branches</div>
+          <div class="v">12</div>
+          <div><span class="pill ok">All active</span></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Pending Approval</div>
+          <div class="v">3</div>
+          <div><span class="pill warn">Needs review</span></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Total Reports</div>
+          <div class="v">47</div>
+          <div><span class="pill ok">All time</span></div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-hd">
+          <span class="lbl">Recent Reports</span>
+          <span class="link">View all →</span>
+        </div>
+        <table>
+          <thead><tr><th>Period</th><th>Partner</th><th>Payout</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="hi">March 2026</td><td>Qottontale</td><td class="payout">฿9,748.67</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Flash Your Meme</td><td class="payout">฿28,560.00</td><td><span class="badge approved">Approved</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Fringe</td><td class="payout">฿15,200.00</td><td><span class="badge pending">Pending</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Qottontale</td><td class="payout">฿8,912.50</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Flash Your Meme</td><td class="payout">฿24,100.00</td><td><span class="badge draft">Draft</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ OPTION 3 · Neon Pulse ══ -->
+  <div class="option">
+    <div class="option-label">
+      <span class="num">3</span>
+      Neon Pulse
+      <span class="tag" style="background:rgba(0,212,255,.12);color:#00d4ff">Cyber · Accent</span>
+    </div>
+    <div class="o3">
+      <div class="topbar">
+        <div class="ttl">Overview</div>
+        <div class="live"><span class="dot"></span>Live</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="k">Branches</div>
+          <div class="v cyan">12</div>
+          <div class="s">Active locations</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Pending</div>
+          <div class="v amber">3</div>
+          <div class="s">Needs review</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Payouts Due</div>
+          <div class="v" style="font-size:16px;color:#f1f5f9">฿284,400</div>
+          <div class="s">Unpaid</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Reports</div>
+          <div class="v">47</div>
+          <div class="s">All time</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="sec-hd"><span class="lbl">Recent Reports</span></div>
+        <table>
+          <thead><tr><th>Period</th><th>Partner</th><th>Payout</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="hi">March 2026</td><td>Qottontale</td><td class="val">฿9,748.67</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Flash Your Meme</td><td class="val">฿28,560.00</td><td><span class="badge approved">Approved</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Fringe</td><td class="val">฿15,200.00</td><td><span class="badge pending">Pending</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Qottontale</td><td class="val">฿8,912.50</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Flash Your Meme</td><td class="val">฿24,100.00</td><td><span class="badge draft">Draft</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ OPTION 4 · Warm Carbon ══ -->
+  <div class="option">
+    <div class="option-label">
+      <span class="num">4</span>
+      Warm Carbon
+      <span class="tag" style="background:rgba(212,168,67,.15);color:#d4a843">Premium · Gold</span>
+    </div>
+    <div class="o4">
+      <div class="topbar">
+        <div>
+          <div class="ttl">Overview</div>
+          <div class="sub">All branches · reporting snapshot</div>
+        </div>
+        <div class="date">08 April 2026</div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="k">Active Branches</div>
+          <div class="v">12</div>
+          <div class="s">All locations active</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Pending Approval</div>
+          <div class="v">3</div>
+          <div class="s" style="color:#f87171">Needs review</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Payouts Due</div>
+          <div class="v gold" style="font-size:20px">฿284,400</div>
+          <div class="s">Approved, unpaid</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Total Reports</div>
+          <div class="v">47</div>
+          <div class="s">All time</div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="sec-row">
+          <span class="sec-lbl">Recent Reports</span>
+          <span class="sec-ct">47 total</span>
+        </div>
+        <table>
+          <thead><tr><th>Period</th><th>Partner</th><th>Payout</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="hi">March 2026</td><td>Qottontale</td><td class="val">฿9,748.67</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Flash Your Meme</td><td class="val">฿28,560.00</td><td><span class="badge approved">Approved</span></td></tr>
+            <tr><td class="hi">March 2026</td><td>Fringe</td><td class="val">฿15,200.00</td><td><span class="badge pending">Pending</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Qottontale</td><td class="val">฿8,912.50</td><td><span class="badge paid">Paid</span></td></tr>
+            <tr><td class="hi">February 2026</td><td>Flash Your Meme</td><td class="val">฿24,100.00</td><td><span class="badge draft">Draft</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ OPTION 5 · Structured Light ══ -->
+  <div class="option">
+    <div class="option-label">
+      <span class="num">5</span>
+      Structured Light
+      <span class="tag" style="background:rgba(165,180,252,.12);color:#a5b4fc">Modern · Split layout</span>
+    </div>
+    <div class="o5">
+      <div class="header">
+        <div>
+          <div class="ttl">Overview</div>
+          <div class="sub">All branches · current snapshot</div>
+        </div>
+        <div class="btn">+ Upload CSV</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi hi">
+          <div class="k">Payouts Due</div>
+          <div class="v">฿284,400</div>
+          <div class="s warn">Approved, unpaid</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Active Branches</div>
+          <div class="v">12</div>
+          <div class="s ok">All active</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Pending Approval</div>
+          <div class="v">3</div>
+          <div class="s warn">Needs review</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Total Reports</div>
+          <div class="v">47</div>
+          <div class="s">All time</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="col-left">
+          <div class="col-hd">Recent Reports</div>
+          <table>
+            <thead><tr><th>Period</th><th>Partner</th><th>Payout</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="hi">March 2026</td><td>Qottontale</td><td class="val">฿9,748</td><td><span class="badge paid">Paid</span></td></tr>
+              <tr><td class="hi">March 2026</td><td>Flash Your Meme</td><td class="val">฿28,560</td><td><span class="badge approved">Approved</span></td></tr>
+              <tr><td class="hi">March 2026</td><td>Fringe</td><td class="val">฿15,200</td><td><span class="badge pending">Pending</span></td></tr>
+              <tr><td class="hi">Feb 2026</td><td>Qottontale</td><td class="val">฿8,912</td><td><span class="badge paid">Paid</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col-right">
+          <div class="col-hd">Status Breakdown</div>
+          <div class="status-row">
+            <div class="s-lbl"><span class="s-dot" style="background:#34d399"></span>Paid</div>
+            <span class="s-ct">18</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:38%;background:#34d399"></div></div>
+          <br>
+          <div class="status-row">
+            <div class="s-lbl"><span class="s-dot" style="background:#a5b4fc"></span>Approved</div>
+            <span class="s-ct">12</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:25%;background:#a5b4fc"></div></div>
+          <br>
+          <div class="status-row">
+            <div class="s-lbl"><span class="s-dot" style="background:#fbbf24"></span>Pending Review</div>
+            <span class="s-ct">3</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:6%;background:#fbbf24"></div></div>
+          <br>
+          <div class="status-row">
+            <div class="s-lbl"><span class="s-dot" style="background:rgba(255,255,255,.2)"></span>Draft</div>
+            <span class="s-ct">14</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:30%;background:rgba(255,255,255,.2)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:44px;font-size:11px;color:rgba(255,255,255,.18);font-family:'DM Sans',sans-serif;">
+  Pick a number — or mix: "1 but with the status breakdown from 5"
+</p>
+
+</body>
+</html>

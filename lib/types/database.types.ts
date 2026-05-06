@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      organizations: {
+        Row: {
+          id:         string
+          name:       string
+          slug:       string
+          is_vat:     boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?:         string
+          name:        string
+          slug:        string
+          is_vat?:     boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?:         string
+          name?:       string
+          slug?:       string
+          is_vat?:     boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      org_memberships: {
+        Row: {
+          id:              string
+          user_id:         string
+          organization_id: string
+          role:            string
+          partner_id:      string | null
+          is_active:       boolean
+          created_at:      string
+          updated_at:      string
+        }
+        Insert: {
+          id?:              string
+          user_id:          string
+          organization_id:  string
+          role?:            string
+          partner_id?:      string | null
+          is_active?:       boolean
+          created_at?:      string
+          updated_at?:      string
+        }
+        Update: {
+          id?:              string
+          user_id?:         string
+          organization_id?: string
+          role?:            string
+          partner_id?:      string | null
+          is_active?:       boolean
+          created_at?:      string
+          updated_at?:      string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_summaries: {
         Row: {
           artist_name: string
@@ -173,6 +241,7 @@ export type Database = {
           is_active: boolean
           location: string | null
           name: string
+          organization_id: string
           partner_id: string
           partnership_start_date: string | null
           partnership_start_date_source: string | null
@@ -191,6 +260,7 @@ export type Database = {
           is_active?: boolean
           location?: string | null
           name: string
+          organization_id: string
           partner_id: string
           partnership_start_date?: string | null
           partnership_start_date_source?: string | null
@@ -209,6 +279,7 @@ export type Database = {
           is_active?: boolean
           location?: string | null
           name?: string
+          organization_id?: string
           partner_id?: string
           partnership_start_date?: string | null
           partnership_start_date_source?: string | null
@@ -436,6 +507,7 @@ export type Database = {
           is_vat_registered: boolean
           name: string
           notes: string | null
+          organization_id: string
           updated_at: string
           vat_number: string | null
         }
@@ -448,6 +520,7 @@ export type Database = {
           is_vat_registered?: boolean
           name: string
           notes?: string | null
+          organization_id: string
           updated_at?: string
           vat_number?: string | null
         }
@@ -460,6 +533,7 @@ export type Database = {
           is_vat_registered?: boolean
           name?: string
           notes?: string | null
+          organization_id?: string
           updated_at?: string
           vat_number?: string | null
         }
