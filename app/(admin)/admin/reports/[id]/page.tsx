@@ -208,7 +208,14 @@ export default async function AdminReportDetailPage({
   const extSvcWht  = report.service_fee_wht ? extSvc * 0.03 : 0
   const extFee     = Number(report.fee_deduction_amount ?? 0)
   const extAdj     = extComp + extSvc - extSvcWht - extFee
-  const basePayout = Number(report.final_payout) - extAdj
+  // Compute from first-principles so it is always correct even if final_payout
+  // in the DB is stale (e.g. extras were set before the column was being updated).
+  const basePayout = Math.round((
+    Number(report.partner_share_base        ?? 0) +
+    Number(report.vat_amount                ?? 0) +
+    Number(report.referred_artist_uplift    ?? 0) +
+    Number(report.referred_artist_uplift_vat ?? 0)
+  ) * 100) / 100
 
   // ── Shared row component ────────────────────────────────────────────────────
 

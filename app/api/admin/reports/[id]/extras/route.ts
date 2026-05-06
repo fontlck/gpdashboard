@@ -40,7 +40,9 @@ export async function PATCH(
   const { data: report, error: fetchErr } = await admin
     .from('monthly_reports')
     .select(`
-      id, status, final_payout,
+      id, status,
+      partner_share_base, vat_amount,
+      referred_artist_uplift, referred_artist_uplift_vat,
       compensation_amount, service_fee_amount, service_fee_wht, fee_deduction_amount
     `)
     .eq('id', id)
@@ -52,23 +54,22 @@ export async function PATCH(
   if (report.status === 'paid')
     return NextResponse.json({ error: 'Cannot edit a paid report' }, { status: 400 })
 
-  // Compute current extras adjustment (to back out before re-applying)
-  const oldComp    = Number(report.compensation_amount  ?? 0)
-  const oldSvc     = Number(report.service_fee_amount   ?? 0)
-  const oldSvcWht  = report.service_fee_wht ? oldSvc * 0.03 : 0
-  const oldFee     = Number(report.fee_deduction_amount ?? 0)
-  const oldAdj     = oldComp + oldSvc - oldSvcWht - oldFee
-
-  // New values from body
+  // New extra values from body
   const newComp   = body.compensation_amount  != null ? Number(body.compensation_amount)  : 0
   const newSvc    = body.service_fee_amount   != null ? Number(body.service_fee_amount)   : 0
   const newSvcWht = (body.service_fee_wht ?? false) ? newSvc * 0.03 : 0
   const newFee    = body.fee_deduction_amount != null ? Number(body.fee_deduction_amount) : 0
   const newAdj    = newComp + newSvc - newSvcWht - newFee
 
-  // Recalculate final_payout: strip old extras, apply new ones
-  const basePayout    = Number(report.final_payout) - oldAdj
-  const newFinalPayout = basePayout + newAdj
+  // Compute final_payout from first-principles so it is always correct,
+  // regardless of whether final_payout was previously stale.
+  const basePayoutClean = Math.round((
+    Number(report.partner_share_base       ?? 0) +
+    Number(report.vat_amount               ?? 0) +
+    Number(report.referred_artist_uplift   ?? 0) +
+    Number(report.referred_artist_uplift_vat ?? 0)
+  ) * 100) / 100
+  const newFinalPayout = Math.round((basePayoutClean + newAdj) * 100) / 100
 
   const { error: updateErr } = await admin
     .from('monthly_reports')

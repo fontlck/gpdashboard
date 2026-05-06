@@ -205,10 +205,14 @@ export function ExtraLineItems({
           </div>
         )}
 
-        {/* Final Payout */}
+        {/* Final Payout — computed from basePayout + displayed extras so it is
+            always consistent with the line items shown, even if the stored
+            final_payout column is momentarily stale. */}
         <div style={{ ...ROW_STYLE, borderBottom: 'none', paddingTop: '16px' }}>
           <span style={{ fontSize: '13px', color: 'rgba(240,236,228,0.5)' }}>Final Payout</span>
-          <span style={ACCENT_STYLE}>{formatTHB(currentFinalPayout)}</span>
+          <span style={ACCENT_STYLE}>
+            {formatTHB(basePayout + calcAdj(dispComp, dispSvc, initialSvcWht, dispFee))}
+          </span>
         </div>
       </>
     )
