@@ -142,7 +142,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
           <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.4)', margin: '0 0 2px', letterSpacing: '0.01em' }}>
             Hello,
           </p>
-          <p style={{ fontSize: '42px', fontWeight: 500, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+          <p style={{ fontSize: '56px', fontWeight: 700, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
             {partnerName}
           </p>
           {startDate && (
