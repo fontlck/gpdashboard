@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
-import { formatFullDate, formatDuration } from '@/lib/utils/date'
+import { formatFullDate, calculatePartnershipDuration } from '@/lib/utils/date'
+import React from 'react'
 import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 
@@ -147,19 +148,45 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
               {partnerName}
             </p>
           </div>
-          {startDate && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-              <span style={{ width: '3px', height: '28px', background: '#3B82F6', borderRadius: '2px', flexShrink: 0, display: 'block' }} />
-              <div>
-                <p style={{ color: '#F1F5F9', fontSize: '15px', fontWeight: 700, margin: 0 }}>
-                  Partner since {formatFullDate(parseLocalDate(startDate))}
+          {startDate && (() => {
+            const { years, months, days } = calculatePartnershipDuration(startDate)
+            const pad = (n: number) => String(n).padStart(2, '0')
+            const tileStyle: React.CSSProperties = {
+              background: '#1a1c24', borderRadius: '7px', minWidth: '52px',
+              padding: '9px 7px 5px', position: 'relative', textAlign: 'center',
+            }
+            const numStyle: React.CSSProperties = {
+              color: '#fff', fontSize: '28px', fontWeight: 700,
+              fontFamily: 'monospace, sans-serif', lineHeight: 1, display: 'block',
+            }
+            const lineStyle: React.CSSProperties = {
+              position: 'absolute', left: 0, right: 0, top: '50%',
+              height: '1px', background: 'rgba(0,0,0,0.5)',
+            }
+            const lblStyle: React.CSSProperties = {
+              fontSize: '9px', color: 'rgba(241,245,249,0.3)',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              margin: '4px 0 0', textAlign: 'center',
+            }
+            return (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                <p style={{ color: 'rgba(241,245,249,0.5)', fontSize: '13px', margin: 0 }}>
+                  Partner since <strong style={{ color: '#F1F5F9', fontWeight: 700 }}>{formatFullDate(parseLocalDate(startDate))}</strong>
                 </p>
-                <p style={{ color: 'rgba(241,245,249,0.4)', fontSize: '12px', margin: '1px 0 0' }}>
-                  {formatDuration(startDate)}
-                </p>
+                <div style={{ display: 'flex', gap: '5px', alignItems: 'flex-start' }}>
+                  {[{ val: pad(years), lbl: 'Years' }, { val: pad(months), lbl: 'Months' }, { val: pad(days), lbl: 'Days' }].map(({ val, lbl }) => (
+                    <div key={lbl} style={{ textAlign: 'center' }}>
+                      <div style={tileStyle}>
+                        <div style={lineStyle} />
+                        <span style={numStyle}>{val}</span>
+                      </div>
+                      <p style={lblStyle}>{lbl}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         {/* Page content */}
