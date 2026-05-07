@@ -148,9 +148,17 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
             </p>
           </div>
           {startDate && (
-            <p style={{ fontSize: '12px', color: 'rgba(241,245,249,0.25)', margin: '10px 0 0', letterSpacing: '0.01em' }}>
-              Partner since {formatFullDate(parseLocalDate(startDate))} · {formatDuration(startDate)}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+              <span style={{ width: '3px', height: '28px', background: '#3B82F6', borderRadius: '2px', flexShrink: 0, display: 'block' }} />
+              <div>
+                <p style={{ color: '#F1F5F9', fontSize: '15px', fontWeight: 700, margin: 0 }}>
+                  Partner since {formatFullDate(parseLocalDate(startDate))}
+                </p>
+                <p style={{ color: 'rgba(241,245,249,0.4)', fontSize: '12px', margin: '1px 0 0' }}>
+                  {formatDuration(startDate)}
+                </p>
+              </div>
+            </div>
           )}
         </div>
 
