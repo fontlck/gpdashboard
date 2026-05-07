@@ -29,13 +29,17 @@ export async function PATCH(
   const { id } = await params
   const admin   = createAdminClient()
 
-  let body: { pct: number | null }
+  let body: { pct: number | null; amount?: number }
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
   // Validate: pct must be null (clear WHT) or 3 or 5
   if (body.pct !== null && body.pct !== 3 && body.pct !== 5)
     return NextResponse.json({ error: 'pct must be 3, 5, or null' }, { status: 400 })
+
+  // Validate manual amount override if provided
+  if (body.amount !== undefined && (typeof body.amount !== 'number' || body.amount < 0 || !isFinite(body.amount)))
+    return NextResponse.json({ error: 'amount must be a non-negative number' }, { status: 400 })
 
   // Fetch report
   const { data: report, error: repErr } = await admin
@@ -51,12 +55,16 @@ export async function PATCH(
     return NextResponse.json({ error: 'Cannot modify a paid report' }, { status: 409 })
 
   // Calculate WHT
-  // Base = final_payout ÷ (1 + vat_rate) — matches Thai tax document method
+  // If manual amount provided use it; otherwise derive from final_payout ÷ (1+vat_rate)
   let whtAmount: number | null = null
   if (body.pct !== null) {
-    const vatRate = Number(report.vat_rate_snapshot ?? 0.07)
-    const base    = Math.round((Number(report.final_payout ?? 0) / (1 + vatRate)) * 100) / 100
-    whtAmount     = Math.round(base * (body.pct / 100) * 100) / 100
+    if (body.amount !== undefined) {
+      whtAmount = Math.round(body.amount * 100) / 100
+    } else {
+      const vatRate = Number(report.vat_rate_snapshot ?? 0.07)
+      const base    = Math.round((Number(report.final_payout ?? 0) / (1 + vatRate)) * 100) / 100
+      whtAmount     = Math.round(base * (body.pct / 100) * 100) / 100
+    }
   }
 
   const { error: updateErr } = await admin

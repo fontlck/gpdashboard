@@ -414,6 +414,7 @@ export default async function AdminReportDetailPage({
             finalPayout={Number(report.final_payout ?? 0)}
             vatRate={Number(report.vat_rate_snapshot ?? 0.07)}
             initialPct={report.withholding_tax_pct as 3 | 5 | null}
+            initialAmount={report.withholding_tax_amount != null ? Number(report.withholding_tax_amount) : null}
             locked={locked}
           />
         </div>
