@@ -139,12 +139,14 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
       }}>
         {/* Greeting header */}
         <div style={{ padding: '32px 32px 0' }}>
-          <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.4)', margin: '0 0 2px', letterSpacing: '0.01em' }}>
-            Hello,
-          </p>
-          <p style={{ fontSize: '56px', fontWeight: 700, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
-            {partnerName}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px' }}>
+            <p style={{ fontSize: '56px', fontWeight: 700, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
+              Hello,
+            </p>
+            <p style={{ fontSize: '56px', fontWeight: 700, color: '#3B82F6', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
+              {partnerName}
+            </p>
+          </div>
           {startDate && (
             <p style={{ fontSize: '12px', color: 'rgba(241,245,249,0.25)', margin: '10px 0 0', letterSpacing: '0.01em' }}>
               Partner since {formatFullDate(parseLocalDate(startDate))} · {formatDuration(startDate)}
