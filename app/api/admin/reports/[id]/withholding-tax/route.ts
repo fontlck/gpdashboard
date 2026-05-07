@@ -14,7 +14,7 @@ async function requireAdmin() {
 
 // ── PATCH /api/admin/reports/[id]/withholding-tax ─────────────────────────────
 // Set or clear withholding tax on a report.
-// WHT base = partner_share_base + referred_artist_uplift (both ex-VAT).
+// WHT base = final_payout ÷ (1 + vat_rate_snapshot) — matches Thai tax document method.
 // WHT amount is deducted from final_payout to give the net partner payout.
 // The stored final_payout is NOT changed — WHT is a separate field so the
 // gross payout remains auditable.
@@ -40,7 +40,7 @@ export async function PATCH(
   // Fetch report
   const { data: report, error: repErr } = await admin
     .from('monthly_reports')
-    .select('id, status, partner_share_base, referred_artist_uplift')
+    .select('id, status, final_payout, vat_rate_snapshot')
     .eq('id', id)
     .single()
 
@@ -51,11 +51,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Cannot modify a paid report' }, { status: 409 })
 
   // Calculate WHT
-  // Base = partner_share_base + referred_artist_uplift (both already ex-VAT)
+  // Base = final_payout ÷ (1 + vat_rate) — matches Thai tax document method
   let whtAmount: number | null = null
   if (body.pct !== null) {
-    const base = Number(report.partner_share_base ?? 0) + Number(report.referred_artist_uplift ?? 0)
-    whtAmount  = Math.round(base * (body.pct / 100) * 100) / 100
+    const vatRate = Number(report.vat_rate_snapshot ?? 0.07)
+    const base    = Math.round((Number(report.final_payout ?? 0) / (1 + vatRate)) * 100) / 100
+    whtAmount     = Math.round(base * (body.pct / 100) * 100) / 100
   }
 
   const { error: updateErr } = await admin

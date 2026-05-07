@@ -3,12 +3,11 @@
 import React, { useState } from 'react'
 
 type Props = {
-  reportId:         string
-  finalPayout:      number   // gross payout (before WHT)
-  partnerShareBase: number   // ex-VAT partner share
-  upliftBase:       number   // ex-VAT referred artist uplift
-  initialPct:       number | null   // existing WHT pct from DB (3, 5, or null)
-  locked:           boolean  // approved or paid
+  reportId:    string
+  finalPayout: number        // gross payout (before WHT)
+  vatRate:     number        // e.g. 0.07 — from vat_rate_snapshot
+  initialPct:  number | null // existing WHT pct from DB (3, 5, or null)
+  locked:      boolean       // approved or paid
 }
 
 function fmt(n: number) {
@@ -18,8 +17,7 @@ function fmt(n: number) {
 export function WithholdingTaxControl({
   reportId,
   finalPayout,
-  partnerShareBase,
-  upliftBase,
+  vatRate,
   initialPct,
   locked,
 }: Props) {
@@ -28,8 +26,8 @@ export function WithholdingTaxControl({
   const [saving,   setSaving]   = useState(false)
   const [saveMsg,  setSaveMsg]  = useState<{ text: string; ok: boolean } | null>(null)
 
-  // WHT base = ex-VAT partner share + ex-VAT uplift
-  const whtBase   = partnerShareBase + upliftBase
+  // WHT base = final_payout ÷ (1 + vat_rate) — mirrors Thai tax document method
+  const whtBase   = Math.round((finalPayout / (1 + vatRate)) * 100) / 100
   const whtAmount = enabled ? Math.round(whtBase * (pct / 100) * 100) / 100 : 0
   const netPayout = finalPayout - whtAmount
 
@@ -124,7 +122,7 @@ export function WithholdingTaxControl({
             padding: '8px 0 4px', fontSize: '13px',
           }}>
             <span style={{ color: 'rgba(240,236,228,0.5)', fontSize: '12px' }}>
-              WHT {pct}% of {fmt(whtBase)} (ex-VAT base)
+              WHT {pct}% of {fmt(whtBase)} (ex-VAT)
             </span>
             <span style={{ color: '#EF4444', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
               − {fmt(whtAmount)}

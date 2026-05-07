@@ -412,8 +412,7 @@ export default async function AdminReportDetailPage({
           <WithholdingTaxControl
             reportId={id}
             finalPayout={Number(report.final_payout ?? 0)}
-            partnerShareBase={Number(report.partner_share_base ?? 0)}
-            upliftBase={Number(report.referred_artist_uplift ?? 0)}
+            vatRate={Number(report.vat_rate_snapshot ?? 0.07)}
             initialPct={report.withholding_tax_pct as 3 | 5 | null}
             locked={locked}
           />
