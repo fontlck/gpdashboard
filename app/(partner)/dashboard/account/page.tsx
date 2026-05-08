@@ -32,7 +32,7 @@ export default async function PartnerAccountPage() {
     .single()
 
   type BranchJoin = {
-    name: string; code: string | null; revenue_share_pct: number
+    id: string; name: string; code: string | null; revenue_share_pct: number
     location: string | null; is_active: boolean
     partnership_start_date: string | null
   }
@@ -70,7 +70,7 @@ export default async function PartnerAccountPage() {
         doc_pp20_name, doc_pp20_path,
         doc_id_card_name, doc_id_card_path,
         doc_bookbank_name, doc_bookbank_path,
-        branches ( name, code, revenue_share_pct, location, is_active, partnership_start_date )
+        branches ( id, name, code, revenue_share_pct, location, is_active, partnership_start_date )
       `)
       .eq('id', profile.partner_id)
       .single()
@@ -88,6 +88,30 @@ export default async function PartnerAccountPage() {
         .filter(b => b.partnership_start_date)
         .sort((a, b) => (a.partnership_start_date! < b.partnership_start_date! ? -1 : 1))
       partnerSince = withDate[0]?.partnership_start_date ?? null
+
+      // Fallback: derive from earliest transaction in report_rows (same as layout)
+      if (!partnerSince && activeBranches.length > 0) {
+        const branchIds = activeBranches.map(b => b.id)
+        const { data: branchReports } = await supabase
+          .from('monthly_reports')
+          .select('id')
+          .in('branch_id', branchIds)
+        const reportIds = (branchReports ?? []).map((r: { id: string }) => r.id)
+        if (reportIds.length > 0) {
+          const { data: earliest } = await supabase
+            .from('report_rows')
+            .select('transaction_date')
+            .in('monthly_report_id', reportIds)
+            .order('transaction_date', { ascending: true })
+            .limit(1)
+            .maybeSingle()
+          if (earliest?.transaction_date) {
+            const ms  = new Date(earliest.transaction_date).getTime() + 7 * 60 * 60 * 1000
+            const d   = new Date(ms)
+            partnerSince = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`
+          }
+        }
+      }
 
       // Generate signed URLs for existing docs
       const admin = createAdminClient()
