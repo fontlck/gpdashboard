@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { formatFullDate } from '@/lib/utils/date'
+import { AccountClient, type AccountInitialData } from '@/components/partner/AccountClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Account' }
+
+const BUCKET = 'partner-documents'
 
 const FIELD = ({ label, value }: { label: string; value: ReactNode }) => (
   <div style={{
@@ -27,28 +31,90 @@ export default async function PartnerAccountPage() {
     .eq('id', user.id)
     .single()
 
-  type BranchAccountJoin = { name: string; code: string | null; revenue_share_pct: number; location: string | null; is_active: boolean }
-  type PartnerInfo = { name: string; is_vat_registered: boolean; vat_number: string | null; contact_email: string | null; contact_phone: string | null }
-  type PartnerAccountRow = PartnerInfo & { branches: BranchAccountJoin | BranchAccountJoin[] | null }
+  type BranchJoin = {
+    name: string; code: string | null; revenue_share_pct: number
+    location: string | null; is_active: boolean
+    partnership_start_date: string | null
+  }
+  type PartnerRow = {
+    name: string; is_vat_registered: boolean; vat_number: string | null
+    contact_email: string | null; contact_phone: string | null
+    bank_name: string | null; bank_account_name: string | null; bank_account_number: string | null
+    doc_pp20_name: string | null; doc_pp20_path: string | null
+    doc_id_card_name: string | null; doc_id_card_path: string | null
+    doc_bookbank_name: string | null; doc_bookbank_path: string | null
+    branches: BranchJoin | BranchJoin[] | null
+  }
 
-  let partner: PartnerInfo | null = null
-  let branches: BranchAccountJoin[] = []
+  let partnerName     = profile?.full_name ?? 'Partner'
+  let isVatRegistered = false
+  let branches:  BranchJoin[] = []
+  let partnerSince: string | null = null
+  let accountInitial: AccountInitialData = {
+    contact_email: null, contact_phone: null,
+    bank_name: null, bank_account_name: null, bank_account_number: null,
+    docs: {
+      pp20:     { name: null, signedUrl: null },
+      id_card:  { name: null, signedUrl: null },
+      bookbank: { name: null, signedUrl: null },
+    },
+  }
 
   if (profile?.partner_id) {
     const { data: rawP } = await supabase
       .from('partners')
       .select(`
-        name, is_vat_registered, vat_number, contact_email, contact_phone,
-        branches ( name, code, revenue_share_pct, location, is_active )
+        name, is_vat_registered, vat_number,
+        contact_email, contact_phone,
+        bank_name, bank_account_name, bank_account_number,
+        doc_pp20_name, doc_pp20_path,
+        doc_id_card_name, doc_id_card_path,
+        doc_bookbank_name, doc_bookbank_path,
+        branches ( name, code, revenue_share_pct, location, is_active, partnership_start_date )
       `)
       .eq('id', profile.partner_id)
       .single()
 
-    const p = rawP as unknown as PartnerAccountRow | null
+    const p = rawP as unknown as PartnerRow | null
     if (p) {
-      partner   = { name: p.name, is_vat_registered: !!p.is_vat_registered, vat_number: p.vat_number, contact_email: p.contact_email, contact_phone: p.contact_phone }
-      const raw = Array.isArray(p.branches) ? p.branches : (p.branches ? [p.branches] : [])
-      branches  = raw as BranchAccountJoin[]
+      partnerName     = p.name
+      isVatRegistered = !!p.is_vat_registered
+      const raw       = Array.isArray(p.branches) ? p.branches : (p.branches ? [p.branches] : [])
+      branches        = raw
+
+      // Partner since = earliest partnership_start_date across active branches
+      const activeBranches = branches.filter(b => b.is_active)
+      const withDate = activeBranches
+        .filter(b => b.partnership_start_date)
+        .sort((a, b) => (a.partnership_start_date! < b.partnership_start_date! ? -1 : 1))
+      partnerSince = withDate[0]?.partnership_start_date ?? null
+
+      // Generate signed URLs for existing docs
+      const admin = createAdminClient()
+      async function signedUrl(path: string | null): Promise<string | null> {
+        if (!path) return null
+        const { data } = await admin.storage.from(BUCKET).createSignedUrl(path, 3600)
+        return data?.signedUrl ?? null
+      }
+
+      const [pp20Url, idCardUrl, bookbankUrl] = await Promise.all([
+        signedUrl(p.doc_pp20_path),
+        signedUrl(p.doc_id_card_path),
+        signedUrl(p.doc_bookbank_path),
+      ])
+
+      accountInitial = {
+        contact_email:       p.contact_email,
+        contact_phone:       p.contact_phone,
+        bank_name:           p.bank_name,
+        bank_account_name:   p.bank_account_name,
+        bank_account_number: p.bank_account_number,
+        docs: {
+          pp20:     { name: p.doc_pp20_name,     signedUrl: pp20Url },
+          id_card:  { name: p.doc_id_card_name,  signedUrl: idCardUrl },
+          bookbank: { name: p.doc_bookbank_name,  signedUrl: bookbankUrl },
+        },
+      }
     }
   }
 
@@ -64,70 +130,62 @@ export default async function PartnerAccountPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {/* Profile */}
-        <div style={{
-          background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '16px', padding: '24px',
-        }}>
-          <h2 style={{
-            fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
+        {/* ── Top row: Profile + Partner Details ────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
+          {/* Profile */}
+          <div style={{
+            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '16px', padding: '24px',
           }}>
-            Profile
-          </h2>
-          <FIELD label="Name"        value={profile?.full_name} />
-          <FIELD label="Email"       value={user.email} />
-          <FIELD label="Role"        value="Partner" />
-          <FIELD label="Member since" value={profile?.created_at ? formatFullDate(profile.created_at) : '—'} />
+            <h2 style={{
+              fontSize: '11px', fontWeight: 600, color: 'rgba(240,236,228,0.4)',
+              letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px',
+            }}>
+              Profile
+            </h2>
+            <FIELD label="Name"          value={profile?.full_name} />
+            <FIELD label="Role"          value="Partner" />
+            <FIELD label="Partner since" value={partnerSince ? formatFullDate(partnerSince) : '—'} />
+          </div>
+
+          {/* Partner Details */}
+          <div style={{
+            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '16px', padding: '24px',
+          }}>
+            <h2 style={{
+              fontSize: '11px', fontWeight: 600, color: 'rgba(240,236,228,0.4)',
+              letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px',
+            }}>
+              Partner Details
+            </h2>
+            <FIELD label="Business name"  value={partnerName} />
+            <FIELD label="VAT registered" value={isVatRegistered ? 'Yes' : 'No'} />
+          </div>
         </div>
 
-        {/* Partner details */}
-        <div style={{
-          background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '16px', padding: '24px',
-        }}>
-          <h2 style={{
-            fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
-          }}>
-            Partner Details
-          </h2>
-          {partner ? (
-            <>
-              <FIELD label="Business Name"   value={partner.name} />
-              <FIELD label="VAT Registered"  value={partner.is_vat_registered ? 'Yes' : 'No'} />
-              {partner.vat_number && <FIELD label="VAT Number" value={partner.vat_number} />}
-              <FIELD label="Contact Email"   value={partner.contact_email} />
-              <FIELD label="Contact Phone"   value={partner.contact_phone} />
-            </>
-          ) : (
-            <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.3)', fontStyle: 'italic' }}>
-              Not linked to a partner account yet.
-            </p>
-          )}
-        </div>
-
-        {/* Branches */}
+        {/* ── Branches ──────────────────────────────────────────────────── */}
         {branches.length > 0 && (
           <div style={{
             background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
+            borderRadius: '16px', padding: '24px',
           }}>
             <h2 style={{
-              fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
-              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px',
+              fontSize: '11px', fontWeight: 600, color: 'rgba(240,236,228,0.4)',
+              letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px',
             }}>
               Your Branches
             </h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Branch Name', 'Code', 'Location', 'Revenue Share', 'Status'].map(h => (
+                  {['Branch name', 'Code', 'Location', 'Revenue share', 'Status'].map(h => (
                     <th key={h} style={{
                       padding: '8px 0', textAlign: 'left',
-                      fontSize: '11px', fontWeight: '600', letterSpacing: '0.08em',
+                      fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
                       textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)',
                     }}>{h}</th>
                   ))}
@@ -136,13 +194,13 @@ export default async function PartnerAccountPage() {
               <tbody>
                 {branches.map((b, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <td style={{ padding: '10px 0', color: '#F0ECE4', fontWeight: '500' }}>{b.name}</td>
+                    <td style={{ padding: '10px 0', color: '#F0ECE4', fontWeight: 500 }}>{b.name}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.4)', fontFamily: 'monospace', fontSize: '12px' }}>{b.code ?? '—'}</td>
                     <td style={{ padding: '10px 0', color: 'rgba(240,236,228,0.5)' }}>{b.location ?? '—'}</td>
-                    <td style={{ padding: '10px 0', color: '#F1F5F9', fontWeight: '600' }}>{b.revenue_share_pct}%</td>
+                    <td style={{ padding: '10px 0', color: '#F1F5F9', fontWeight: 600 }}>{b.revenue_share_pct}%</td>
                     <td style={{ padding: '10px 0' }}>
                       <span style={{
-                        fontSize: '11px', fontWeight: '600', letterSpacing: '0.06em',
+                        fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em',
                         padding: '3px 8px', borderRadius: '6px',
                         background: b.is_active ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
                         color: b.is_active ? '#22C55E' : 'rgba(240,236,228,0.25)',
@@ -157,14 +215,8 @@ export default async function PartnerAccountPage() {
           </div>
         )}
 
-        {/* Info note */}
-        <div style={{
-          gridColumn: '1 / -1', padding: '14px 20px', borderRadius: '10px',
-          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-          fontSize: '12px', color: 'rgba(240,236,228,0.3)',
-        }}>
-          To update your business name, contact details, or VAT registration, please contact the GP team. Account self-editing is planned for Sprint 3.
-        </div>
+        {/* ── Contact / Bank / Documents (client) ───────────────────────── */}
+        <AccountClient initial={accountInitial} />
 
       </div>
     </div>
