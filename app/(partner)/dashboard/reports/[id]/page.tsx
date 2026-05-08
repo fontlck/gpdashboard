@@ -11,6 +11,8 @@ import type { DayData, ArtistDayEntry } from '@/components/partner/DailyTrendCha
 import { ArtistAvatar } from '@/components/shared/ArtistAvatar'
 import { ReportDocumentView } from '@/components/shared/ReportDocumentView'
 import { ReportOrdersSection } from '@/components/shared/ReportOrdersSection'
+import { PartnerReceiptUpload } from '@/components/partner/PartnerReceiptUpload'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = { title: 'Report Detail' }
 export const dynamic = 'force-dynamic'
@@ -59,6 +61,9 @@ type ReportRow = {
   wht_cert_path:            string | null
   wht_cert_name:            string | null
   wht_cert_uploaded_at:     string | null
+  receipt_name:             string | null
+  receipt_path:             string | null
+  receipt_uploaded_at:      string | null
   // Counts
   total_transaction_count: number
   // Timestamps
@@ -225,6 +230,7 @@ export default async function PartnerReportDetailPage({
       referred_artist_uplift, referred_artist_uplift_vat, referred_artist_uplift_snapshot,
       payment_slip_path, payment_slip_name, payment_slip_uploaded_at,
       wht_cert_path, wht_cert_name, wht_cert_uploaded_at,
+      receipt_name, receipt_path, receipt_uploaded_at,
       total_transaction_count,
       approved_at, paid_at,
       branches (
@@ -322,6 +328,16 @@ export default async function PartnerReportDetailPage({
     }))
     return { day, gross: agg.gross, net: agg.net, orders: agg.orders, artists: artistEntries }
   })
+
+  // ── Generate signed URL for existing receipt (server-side, 1 hr) ────────
+  let receiptSignedUrl: string | null = null
+  if (report.receipt_path) {
+    const adminSb = createAdminClient()
+    const { data: receiptSigned } = await adminSb.storage
+      .from('report-documents')
+      .createSignedUrl(report.receipt_path, 3600)
+    receiptSignedUrl = receiptSigned?.signedUrl ?? null
+  }
 
   // ── Derived values ────────────────────────────────────────────────────────
   const period      = formatReportingPeriod(report.reporting_month, report.reporting_year)
@@ -869,6 +885,17 @@ export default async function PartnerReportDetailPage({
           slipUploadedAt={report.payment_slip_uploaded_at ?? null}
           whtName={report.wht_cert_name ?? null}
           whtUploadedAt={report.wht_cert_uploaded_at ?? null}
+        />
+      </div>
+
+      {/* Receipt / Tax Invoice — partner uploads */}
+      <div style={{ marginBottom: '14px' }}>
+        <PartnerReceiptUpload
+          reportId={report.id}
+          period={period}
+          initName={report.receipt_name ?? null}
+          initAt={report.receipt_uploaded_at ?? null}
+          initSignedUrl={receiptSignedUrl}
         />
       </div>
 

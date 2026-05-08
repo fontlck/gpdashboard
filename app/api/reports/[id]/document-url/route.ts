@@ -13,8 +13,8 @@ export async function GET(
 ) {
   const { id } = await params
   const type = new URL(req.url).searchParams.get('type')
-  if (!['slip', 'wht'].includes(type ?? '')) {
-    return NextResponse.json({ error: 'Invalid type. Use slip or wht' }, { status: 400 })
+  if (!['slip', 'wht', 'receipt'].includes(type ?? '')) {
+    return NextResponse.json({ error: 'Invalid type. Use slip, wht, or receipt' }, { status: 400 })
   }
 
   const supabase = await createClient()
@@ -45,10 +45,13 @@ export async function GET(
   }
 
   // ── Fetch the stored path ──────────────────────────────────────────────────
-  const col = type === 'slip' ? 'payment_slip_path' : 'wht_cert_path'
+  const col = type === 'slip'    ? 'payment_slip_path'
+            : type === 'wht'     ? 'wht_cert_path'
+            :                      'receipt_path'
+
   const { data: row } = await supabase
     .from('monthly_reports')
-    .select(`${col}, payment_slip_name, wht_cert_name`)
+    .select(`${col}, payment_slip_name, wht_cert_name, receipt_name`)
     .eq('id', id)
     .single()
 
@@ -66,7 +69,9 @@ export async function GET(
 
   const fileName = type === 'slip'
     ? ((row as Record<string, unknown>)?.payment_slip_name as string ?? 'payment-slip')
-    : ((row as Record<string, unknown>)?.wht_cert_name     as string ?? 'wht-certificate')
+    : type === 'wht'
+    ? ((row as Record<string, unknown>)?.wht_cert_name     as string ?? 'wht-certificate')
+    : ((row as Record<string, unknown>)?.receipt_name      as string ?? 'receipt')
 
   return NextResponse.json({ url: signed.signedUrl, name: fileName })
 }
