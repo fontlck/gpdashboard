@@ -3,6 +3,7 @@ import { requireOrgId } from '@/lib/org'
 import { formatTHB } from '@/lib/utils/currency'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatReportingPeriod } from '@/lib/utils/date'
+import { BranchDropdown } from '@/components/admin/BranchDropdown'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
@@ -13,32 +14,39 @@ function monthName(m: number) {
   return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1] ?? ''
 }
 
-export default async function AdminOverviewPage() {
-  const supabase = await createClient()
-  const orgId = await requireOrgId()
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string }>
+}) {
+  const supabase   = await createClient()
+  const orgId      = await requireOrgId()
+  const { branch: branchParam } = await searchParams
+
+  // ── Fetch all active branches for the dropdown ──
+  const { data: allBranches } = await supabase
+    .from('branches')
+    .select('id, name')
+    .eq('organization_id', orgId)
+    .eq('is_active', true)
+    .order('name', { ascending: true })
+
+  const branchList = allBranches ?? []
+
+  // Validate branchParam — ignore if not in list
+  const selectedBranchId = branchList.some(b => b.id === branchParam) ? (branchParam ?? null) : null
+  const selectedBranch   = branchList.find(b => b.id === selectedBranchId) ?? null
+
+  // Build report queries — optionally scoped to a single branch
+  const rBase   = supabase.from('monthly_reports').select('id, status, final_payout, total_net, reporting_month, reporting_year').eq('organization_id', orgId)
+  const pBase   = supabase.from('monthly_reports').select('id', { count: 'exact' }).eq('organization_id', orgId).eq('status', 'pending_review')
+  const recBase = supabase.from('monthly_reports').select('id, status, final_payout, reporting_month, reporting_year, branches(name, partners(name))').eq('organization_id', orgId).order('reporting_year', { ascending: false }).order('reporting_month', { ascending: false }).limit(6)
 
   const [reportsRes, branchesRes, pendingRes, recentRes] = await Promise.all([
-    supabase
-      .from('monthly_reports')
-      .select('id, status, final_payout, total_net, reporting_month, reporting_year')
-      .eq('organization_id', orgId),
-    supabase
-      .from('branches')
-      .select('id', { count: 'exact' })
-      .eq('organization_id', orgId)
-      .eq('is_active', true),
-    supabase
-      .from('monthly_reports')
-      .select('id', { count: 'exact' })
-      .eq('organization_id', orgId)
-      .eq('status', 'pending_review'),
-    supabase
-      .from('monthly_reports')
-      .select('id, status, final_payout, reporting_month, reporting_year, branches(name, partners(name))')
-      .eq('organization_id', orgId)
-      .order('reporting_year',  { ascending: false })
-      .order('reporting_month', { ascending: false })
-      .limit(6),
+    selectedBranchId ? rBase.eq('branch_id', selectedBranchId) : rBase,
+    supabase.from('branches').select('id', { count: 'exact' }).eq('organization_id', orgId).eq('is_active', true),
+    selectedBranchId ? pBase.eq('branch_id', selectedBranchId) : pBase,
+    selectedBranchId ? recBase.eq('branch_id', selectedBranchId) : recBase,
   ])
 
   const reports  = reportsRes.data  ?? []
@@ -192,9 +200,12 @@ export default async function AdminOverviewPage() {
         <div className="ov-topbar">
           <div>
             <div className="t">Overview</div>
-            <div className="s">All branches · current reporting snapshot</div>
+            <div className="s">
+              {selectedBranch ? selectedBranch.name : 'All branches'} · current reporting snapshot
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <BranchDropdown branches={branchList} selectedId={selectedBranchId} />
             <div className="date-pill">
               {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
             </div>
