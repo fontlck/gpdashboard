@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { AdminBottomNav } from '@/components/admin/AdminBottomNav'
+import { AdminBottomNavServer } from '@/components/admin/AdminBottomNavServer'
 import { SidebarProvider } from '@/components/admin/SidebarContext'
 import { OrgSwitcher } from '@/components/admin/OrgSwitcher'
 import { getCurrentOrgId, getUserOrgs } from '@/lib/org'
@@ -49,7 +49,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           {children}
         </main>
       </div>
-      <AdminBottomNav />
+      <AdminBottomNavServer />
     </SidebarProvider>
   )
 }

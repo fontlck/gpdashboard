@@ -84,7 +84,7 @@ const TABS: Tab[] = [
   },
 ]
 
-export function AdminBottomNav() {
+export function AdminBottomNav({ pendingCount = 0 }: { pendingCount?: number }) {
   const pathname = usePathname()
   const { toggle } = useSidebar()
 
@@ -96,7 +96,21 @@ export function AdminBottomNav() {
         if (tab.action === 'menu') {
           return (
             <button key="menu" onClick={toggle} className={`bottom-nav-item${active ? ' bottom-nav-item--active' : ''}`}>
-              <span className="bottom-nav-icon">{tab.icon}</span>
+              <span className="bottom-nav-icon" style={{ position: 'relative' }}>
+                {tab.icon}
+                {pendingCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-3px', right: '-4px',
+                    minWidth: '16px', height: '16px', borderRadius: '8px',
+                    background: '#EF4444', color: '#fff',
+                    fontSize: '9px', fontWeight: 700, lineHeight: '16px',
+                    textAlign: 'center', padding: '0 3px',
+                    boxShadow: '0 0 0 2px #06080F',
+                  }}>
+                    {pendingCount > 99 ? '99+' : pendingCount}
+                  </span>
+                )}
+              </span>
               <span className="bottom-nav-label">{tab.label}</span>
             </button>
           )
