@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { AdminBottomNav } from '@/components/admin/AdminBottomNav'
+import { SidebarProvider } from '@/components/admin/SidebarContext'
 import { OrgSwitcher } from '@/components/admin/OrgSwitcher'
 import { getCurrentOrgId, getUserOrgs } from '@/lib/org'
 import type { ReactNode } from 'react'
@@ -33,19 +35,21 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const currentOrg = orgs.find(o => o.id === currentOrgId)
 
   return (
-    <div className="app-shell" style={{ background: '#06080F' }}>
-      <AdminSidebar />
-      <main className="admin-main">
-        {/* Show org switcher only if user belongs to multiple orgs */}
-        {orgs.length > 1 && (
-          <OrgSwitcher
-            orgs={orgs}
-            currentOrgId={currentOrgId ?? ''}
-            currentOrgName={currentOrg?.name ?? 'Unknown'}
-          />
-        )}
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="app-shell" style={{ background: '#06080F' }}>
+        <AdminSidebar />
+        <main className="admin-main">
+          {orgs.length > 1 && (
+            <OrgSwitcher
+              orgs={orgs}
+              currentOrgId={currentOrgId ?? ''}
+              currentOrgName={currentOrg?.name ?? 'Unknown'}
+            />
+          )}
+          {children}
+        </main>
+      </div>
+      <AdminBottomNav />
+    </SidebarProvider>
   )
 }

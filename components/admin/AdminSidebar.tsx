@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useSidebar } from './SidebarContext'
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -34,7 +34,7 @@ const NAV: NavItem[] = [
 export function AdminSidebar() {
   const pathname    = usePathname()
   const router      = useRouter()
-  const [open, setOpen] = useState(false)
+  const { open, toggle, close } = useSidebar()
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -43,14 +43,12 @@ export function AdminSidebar() {
     router.refresh()
   }
 
-  function close() { setOpen(false) }
-
   return (
     <>
       {/* ── Mobile top bar ───────────────────────────────────────── */}
       <div className="mobile-topbar">
         <button
-          onClick={() => setOpen(o => !o)}
+          onClick={toggle}
           aria-label="Open menu"
           style={{
             display: 'flex', flexDirection: 'column', gap: '5px',

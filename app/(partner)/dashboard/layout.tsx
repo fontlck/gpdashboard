@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
+import { PartnerBottomNav } from '@/components/partner/PartnerBottomNav'
 import { formatFullDate, calculatePartnershipDuration } from '@/lib/utils/date'
 import React from 'react'
 import type { ReactNode } from 'react'
@@ -130,6 +131,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
   return (
     <div className="app-shell" style={{ background: '#06080F' }}>
       <PartnerSidebar />
+      <PartnerBottomNav />
 
       <main className="partner-main">
         {/* Greeting header */}
