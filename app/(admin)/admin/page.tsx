@@ -434,28 +434,57 @@ export default async function AdminOverviewPage({
         .ytd-progress-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #6366f1, #38bdf8); }
         @media (max-width: 767px) { .ytd-strip { grid-template-columns: 1fr 1fr; } }
 
+        /* ── Controls row (top bar right side) ── */
+        .ov-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+        /* ── Table scroll wrapper ── */
+        .ov-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
         @media (max-width: 1023px) and (min-width: 768px) {
           .hero-row { grid-template-columns: 1fr 1fr; }
           .hero-card { grid-column: 1 / -1; min-height: 120px; }
           .mid-row { grid-template-columns: 1fr; }
           .ov-topbar .date-pill { display: none; }
+          .ov-controls { gap: 8px; }
         }
 
         @media (max-width: 767px) {
           .ov { gap: 10px; }
-          .ov-topbar { flex-wrap: wrap; gap: 10px; }
+
+          /* Top bar: stack title above controls */
+          .ov-topbar { flex-direction: column; align-items: stretch; gap: 8px; }
           .ov-topbar .date-pill { display: none; }
-          .ov-topbar .upload-btn { padding: 7px 14px; font-size: 11px; }
+          .ov-topbar .upload-btn { display: none; } /* desktop-only task */
+          .ov-controls { gap: 6px; width: 100%; }
+          .ov-controls > * { flex: 1; min-width: 0; }
+
+          /* KPI cards */
           .hero-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-          .hero-card { grid-column: 1 / -1; min-height: 110px; padding: 18px 18px; }
-          .hero-card .amt { font-size: 24px; }
-          .kpi-card { padding: 14px 16px; min-height: 110px; }
-          .kpi-card .v { font-size: 20px; }
-          .kpi-card .v.sm { font-size: 16px; }
+          .hero-card { grid-column: 1 / -1; min-height: 110px; padding: 16px; }
+          .hero-card .amt { font-size: 22px; }
+          .hero-card .foot .bdg { font-size: 8px; }
+          .kpi-card { padding: 14px 16px; min-height: 100px; }
+          .kpi-card .v { font-size: 18px; }
+          .kpi-card .v.sm { font-size: 15px; }
+          .mom-badge { font-size: 9px; }
+          .mom-prev { font-size: 8px; }
+
+          /* Trend chart */
           .mid-row { grid-template-columns: 1fr; }
-          .table-card { overflow-x: auto; }
-          .ov-table { min-width: 520px; }
-          .ov-table thead th, .ov-table tbody td { padding-left: 14px; padding-right: 14px; }
+
+          /* Tables: horizontal scroll, min-width keeps columns readable */
+          .table-card { border-radius: 14px; }
+          .ov-table-wrap { border-radius: 0; }
+          .ov-table { min-width: 560px; }
+          .ov-table thead th { padding: 8px 14px 6px; }
+          .ov-table tbody td { padding: 10px 14px; }
+
+          /* Branch table: wider for 6 cols */
+          .branch-table { min-width: 620px; }
+
+          /* YTD: 2 col already set above */
+          .ytd-cell { padding: 12px 14px; }
+          .ytd-cell .ytd-val { font-size: 15px; }
         }
       `}</style>
 
@@ -469,7 +498,7 @@ export default async function AdminOverviewPage({
               {selectedBranch ? selectedBranch.name : 'All branches'} · {currCount > 0 ? `${currCount} reports` : 'no reports this month'}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="ov-controls">
             <MonthPicker selectedMonth={sel.value} />
             <BranchDropdown branches={branchList} selectedId={selectedBranchId} />
             <div className="date-pill">
@@ -847,7 +876,8 @@ export default async function AdminOverviewPage({
               No reports for this month
             </div>
           ) : (
-            <table className="ov-table">
+            <div className="ov-table-wrap">
+            <table className="ov-table branch-table">
               <thead>
                 <tr>
                   <th>Branch</th>
@@ -907,6 +937,7 @@ export default async function AdminOverviewPage({
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
@@ -919,6 +950,7 @@ export default async function AdminOverviewPage({
             </div>
             <Link href="/admin/reports" className="t-link">View all →</Link>
           </div>
+          <div className="ov-table-wrap">
           <table className="ov-table">
             <thead>
               <tr>
@@ -957,6 +989,7 @@ export default async function AdminOverviewPage({
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
       </div>
