@@ -49,11 +49,14 @@ function deltaBadge(current: number, prev: number): { pct: number | null; label:
 export default async function AdminOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ branch?: string; month?: string }>
+  searchParams: Promise<{ branch?: string; month?: string; page?: string }>
 }) {
   const supabase = await createClient()
   const orgId    = await requireOrgId()
-  const { branch: branchParam, month: monthParam } = await searchParams
+  const { branch: branchParam, month: monthParam, page: pageParam } = await searchParams
+
+  const PAGE_SIZE   = 10
+  const currentPage = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
 
   // ── Month parsing ──
   const sel  = parseMonthParam(monthParam)
@@ -119,14 +122,15 @@ export default async function AdminOverviewPage({
       return q
     })(),
 
-    // Recent 6 reports (all-time, for the bottom table)
+    // Recent reports (paginated)
     (() => {
+      const offset = (currentPage - 1) * PAGE_SIZE
       let q = supabase.from('monthly_reports')
-        .select('id, status, final_payout, reporting_month, reporting_year, branches(name, partners(name))')
+        .select('id, status, final_payout, reporting_month, reporting_year, branches(name, partners(name))', { count: 'exact' })
         .eq('organization_id', orgId)
         .order('reporting_year', { ascending: false })
         .order('reporting_month', { ascending: false })
-        .limit(6)
+        .range(offset, offset + PAGE_SIZE - 1)
       if (selectedBranchId) q = q.eq('branch_id', selectedBranchId)
       return q
     })(),
@@ -172,6 +176,8 @@ export default async function AdminOverviewPage({
   const pending     = pendingRes.count  ?? 0
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recent            = (recentRes.data    ?? []) as any[]
+  const recentTotal       = recentRes.count ?? 0
+  const totalPages        = Math.ceil(recentTotal / PAGE_SIZE)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const branchCurrRows    = (branchCurrRes.data ?? []) as any[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -943,12 +949,16 @@ export default async function AdminOverviewPage({
           )}
         </div>
 
-        {/* ── Recent reports table (all-time, latest 6) ── */}
+        {/* ── Recent reports table (paginated) ── */}
         <div className="table-card">
           <div className="t-hd">
             <div>
               <div className="t-ttl">Recent Reports</div>
-              <div className="t-sub">Latest {recent.length} entries across all months</div>
+              <div className="t-sub">
+                {recentTotal > 0
+                  ? `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, recentTotal)} of ${recentTotal} reports`
+                  : 'No reports yet'}
+              </div>
             </div>
             <Link href="/admin/reports" className="t-link">View all →</Link>
           </div>
@@ -992,6 +1002,40 @@ export default async function AdminOverviewPage({
             </tbody>
           </table>
           </div>
+          {/* Pagination controls */}
+          {totalPages > 1 && (() => {
+            const buildHref = (p: number) => {
+              const params = new URLSearchParams()
+              if (sel.value)        params.set('month',  sel.value)
+              if (selectedBranchId) params.set('branch', selectedBranchId)
+              if (p > 1)            params.set('page',   String(p))
+              const qs = params.toString()
+              return `/admin${qs ? '?' + qs : ''}`
+            }
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,.05)' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,.3)' }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {currentPage > 1 && (
+                    <Link href={buildHref(currentPage - 1)} style={{
+                      padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                      background: 'rgba(255,255,255,.06)', color: 'rgba(255,255,255,.6)',
+                      textDecoration: 'none', border: '1px solid rgba(255,255,255,.08)',
+                    }}>← Prev</Link>
+                  )}
+                  {currentPage < totalPages && (
+                    <Link href={buildHref(currentPage + 1)} style={{
+                      padding: '5px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                      background: 'rgba(59,130,246,.12)', color: '#60a5fa',
+                      textDecoration: 'none', border: '1px solid rgba(59,130,246,.2)',
+                    }}>Next →</Link>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
       </div>
