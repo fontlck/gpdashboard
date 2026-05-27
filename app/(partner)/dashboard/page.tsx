@@ -4,6 +4,8 @@ import { formatTHB } from '@/lib/utils/currency'
 import { formatFullDate, formatDuration, formatReportingPeriod } from '@/lib/utils/date'
 import { PartnerReportsFilter } from '@/components/partner/PartnerReportsFilter'
 import { MonthlyTrendChart } from '@/components/partner/MonthlyTrendChart'
+import { MonthPicker } from '@/components/admin/MonthPicker'
+import { SwipeMonthWrapper } from '@/components/admin/SwipeMonthWrapper'
 import type { FilterableReport } from '@/components/partner/PartnerReportsFilter'
 import type { MonthPoint } from '@/components/partner/MonthlyTrendChart'
 import type { Metadata } from 'next'
@@ -17,6 +19,36 @@ export const dynamic = 'force-dynamic'
 function parseLocalDate(ymd: string): Date {
   const [y, m, d] = ymd.split('-').map(Number)
   return new Date(y, m - 1, d)
+}
+
+function parseMonthParam(raw: string | undefined): { year: number; month: number; value: string } {
+  const now = new Date()
+  const dy = now.getFullYear(), dm = now.getMonth() + 1
+  if (!raw || !/^\d{4}-\d{2}$/.test(raw)) return { year: dy, month: dm, value: `${dy}-${String(dm).padStart(2,'0')}` }
+  const [y, m] = raw.split('-').map(Number)
+  if (!y || !m || m < 1 || m > 12) return { year: dy, month: dm, value: `${dy}-${String(dm).padStart(2,'0')}` }
+  return { year: y, month: m, value: raw }
+}
+
+function prevMonth(year: number, month: number) {
+  return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
+}
+
+function deltaBadge(current: number, prev: number): { label: string; color: string; bg: string } {
+  if (prev === 0) return { label: 'No prev data', color: 'rgba(255,255,255,.3)', bg: 'rgba(255,255,255,.06)' }
+  const pct = ((current - prev) / prev) * 100
+  if (Math.abs(pct) < 0.5) return { label: 'Same as last month', color: 'rgba(255,255,255,.35)', bg: 'rgba(255,255,255,.06)' }
+  const up = pct > 0
+  return {
+    label: `${up ? '+' : ''}${pct.toFixed(1)}% vs last month`,
+    color: up ? '#34d399' : '#f87171',
+    bg:    up ? 'rgba(16,185,129,.12)' : 'rgba(239,68,68,.12)',
+  }
+}
+
+function monthLabel(year: number, month: number) {
+  const d = new Date(year, month - 1, 1)
+  return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -73,10 +105,18 @@ const TOP_SHIMMER: React.CSSProperties = {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function PartnerOverviewPage() {
+export default async function PartnerOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { month: monthParam } = await searchParams
+  const sel  = parseMonthParam(monthParam)
+  const prev = prevMonth(sel.year, sel.month)
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -140,6 +180,14 @@ export default async function PartnerOverviewPage() {
     paid_at:              r.paid_at,
     branch_name:          branchNames[r.branch_id] ?? '—',
   }))
+
+  // ── Monthly-filtered KPIs (selected month + prev month MoM) ─────────────────
+  const currMonthReports = reports.filter(r => r.reporting_year === sel.year && r.reporting_month === sel.month)
+  const prevMonthReports = reports.filter(r => r.reporting_year === prev.year && r.reporting_month === prev.month)
+
+  const currMonthPayout = currMonthReports.reduce((s, r) => s + Number(r.final_payout ?? 0), 0)
+  const prevMonthPayout = prevMonthReports.reduce((s, r) => s + Number(r.final_payout ?? 0), 0)
+  const momDelta = deltaBadge(currMonthPayout, prevMonthPayout)
 
   // ── KPI aggregates ───────────────────────────────────────────────────────────
   const paidReports     = reports.filter(r => r.status === 'paid')
@@ -205,7 +253,48 @@ export default async function PartnerOverviewPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
+    <SwipeMonthWrapper currentMonth={sel.value}>
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+      {/* ── Monthly Selector + MoM Card ──────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <MonthPicker selectedMonth={sel.value} />
+        <div style={{
+          marginLeft: 'auto', fontSize: '11px', color: 'rgba(241,245,249,0.25)',
+          letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+        }}>
+          Swipe ← → to change month
+        </div>
+      </div>
+
+      {/* Monthly payout card */}
+      <div style={{ ...CARD, padding: '20px 24px' }}>
+        <div style={GRID_BG} />
+        <div style={GLOW_SPREAD} />
+        <div style={GLOW_LINE} />
+        <div style={TOP_SHIMMER} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(241,245,249,0.35)', marginBottom: '4px', fontWeight: 600 }}>
+            {monthLabel(sel.year, sel.month)}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '36px', fontWeight: 800, color: currMonthPayout > 0 ? '#F1F5F9' : 'rgba(241,245,249,0.2)', letterSpacing: '-0.03em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {currMonthPayout > 0 ? formatTHB(currMonthPayout) : 'No data'}
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px', background: momDelta.bg, color: momDelta.color, whiteSpace: 'nowrap' }}>
+              {momDelta.label}
+            </span>
+          </div>
+          <div style={{ marginTop: '6px', fontSize: '12px', color: 'rgba(241,245,249,0.3)' }}>
+            {currMonthReports.length} {currMonthReports.length === 1 ? 'report' : 'reports'} this month
+            {prevMonthPayout > 0 && (
+              <span style={{ marginLeft: '12px', color: 'rgba(241,245,249,0.18)' }}>
+                Prev: {formatTHB(prevMonthPayout)}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ── Layer 2: Unified Hero + KPI Card ────────────────────────────────── */}
       <div style={CARD}>
@@ -340,5 +429,6 @@ export default async function PartnerOverviewPage() {
       )}
 
     </div>
+    </SwipeMonthWrapper>
   )
 }
