@@ -215,7 +215,7 @@ export default async function PartnerOverviewPage() {
         <div style={TOP_SHIMMER} />
 
         {/* Hero section */}
-        <div style={{ padding: '24px 28px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+        <div className="hero-section" style={{ padding: '24px 28px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
 
           {/* Left — primary earnings figure */}
           <div>
@@ -229,7 +229,7 @@ export default async function PartnerOverviewPage() {
             }}>
               Total Lifetime Earnings
             </div>
-            <div style={{
+            <div className="hero-amount" style={{
               fontSize:           '44px',
               fontWeight:         '800',
               color:              '#F1F5F9',
@@ -245,7 +245,7 @@ export default async function PartnerOverviewPage() {
           </div>
 
           {/* Right — secondary stats */}
-          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', paddingTop: '4px' }}>
+          <div className="hero-right-stats" style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', paddingTop: '4px' }}>
 
             {awaitingPayment > 0 && (
               <div>
@@ -280,7 +280,7 @@ export default async function PartnerOverviewPage() {
         {/* ── KPI metric row — inside the card, separated by hairline ── */}
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '0', position: 'relative', zIndex: 1 }} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', position: 'relative', zIndex: 1 }}>
+        <div className="kpi-mini-row" style={{ position: 'relative', zIndex: 1 }}>
           {kpis.map(({ label, value, sub, color }, idx) => (
             <div key={label} style={{
               padding:     '16px 24px',

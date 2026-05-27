@@ -200,7 +200,7 @@ export function ReportDocumentView({
         Payment Slip and Withholding Tax Certificate from GP Dashboard
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="doc-grid">
         <DocCard
           reportId={reportId} docType="slip" label="Payment Slip"
           name={slipName} uploadedAt={slipUploadedAt}

@@ -33,14 +33,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const currentOrg = orgs.find(o => o.id === currentOrgId)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: '#06080F' }}>
+    <div className="app-shell" style={{ background: '#06080F' }}>
       <AdminSidebar />
-      <main style={{
-        flex:      1,
-        padding:   '32px 32px',
-        overflowY: 'auto',
-        minWidth:  0,
-      }}>
+      <main className="admin-main">
         {/* Show org switcher only if user belongs to multiple orgs */}
         {orgs.length > 1 && (
           <OrgSwitcher

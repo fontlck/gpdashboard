@@ -99,3 +99,234 @@ body {
 .badge-pending_review { background: rgba(245,158,11,0.12);  color: #F59E0B; }
 .badge-approved       { background: rgba(34,197,94,0.12);   color: #22C55E; }
 .badge-paid           { background: rgba(196,163,94,0.15);  color: #C4A35E; }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT SYSTEM
+   Breakpoints: mobile < 768px | tablet 768–1023px | desktop ≥ 1024px
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── App shell ─────────────────────────────────────────────── */
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+/* ── Sidebar aside ─────────────────────────────────────────── */
+.sidebar-aside {
+  width: 200px;
+  min-width: 200px;
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 40;
+}
+
+/* ── Mobile top bar (hidden on desktop/tablet) ─────────────── */
+.mobile-topbar {
+  display: none;
+}
+
+/* ── Mobile backdrop overlay ───────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 98;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Admin main content ────────────────────────────────────── */
+.admin-main {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* ── Partner main content ──────────────────────────────────── */
+.partner-main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Table horizontal scroll wrapper ──────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Responsive 2-col doc grid ─────────────────────────────── */
+.doc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Partner KPI mini-row (4-col in card) ──────────────────── */
+.kpi-mini-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TABLET  768px – 1023px
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .sidebar-aside {
+    width: 160px;
+    min-width: 160px;
+  }
+
+  .admin-main {
+    padding: 24px;
+  }
+
+  .kpi-mini-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kpi-mini-row > *:nth-child(2) {
+    border-right: none !important;
+  }
+
+  .kpi-mini-row > *:nth-child(3) {
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255,255,255,0.05) !important;
+  }
+
+  .kpi-mini-row > *:nth-child(4) {
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-right: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE  < 768px
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* App shell becomes column on mobile (sidebar is fixed/out-of-flow) */
+  .app-shell {
+    flex-direction: column;
+  }
+
+  /* Mobile top bar becomes visible */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 52px;
+    background: #06080F;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-shrink: 0;
+  }
+
+  /* Sidebar becomes slide-in drawer */
+  .sidebar-aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100dvh;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 6px 0 32px rgba(0,0,0,0.6);
+  }
+
+  .sidebar-aside.sidebar--open {
+    transform: translateX(0);
+  }
+
+  /* Show overlay when drawer open */
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* Compact padding on mobile */
+  .admin-main {
+    padding: 16px;
+  }
+
+  /* Partner layout greeting */
+  .partner-greeting {
+    padding: 16px 16px 0 !important;
+  }
+
+  .partner-content {
+    padding: 16px 16px 24px !important;
+  }
+
+  /* Greeting text size */
+  .partner-hello {
+    font-size: 36px !important;
+  }
+
+  .partner-name {
+    font-size: 36px !important;
+  }
+
+  /* Duration row stacks on mobile */
+  .partner-duration-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  /* KPI 4-col becomes 2-col on mobile */
+  .kpi-mini-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kpi-mini-row > *:nth-child(2) {
+    border-right: none !important;
+  }
+
+  .kpi-mini-row > *:nth-child(3) {
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255,255,255,0.05) !important;
+  }
+
+  .kpi-mini-row > *:nth-child(4) {
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-right: none !important;
+  }
+
+  /* Doc grid stacks */
+  .doc-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hero text shrinks */
+  .hero-amount {
+    font-size: 32px !important;
+  }
+
+  .hero-section {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .hero-right-stats {
+    gap: 20px !important;
+  }
+
+  /* Show close button inside sidebar on mobile */
+  .sidebar-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+}

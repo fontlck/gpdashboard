@@ -115,6 +115,7 @@ export function PartnerReportsFilter({ reports, totalCount }: Props) {
         justifyContent: 'space-between',
         alignItems:     'center',
         gap:            '12px',
+        flexWrap:       'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{

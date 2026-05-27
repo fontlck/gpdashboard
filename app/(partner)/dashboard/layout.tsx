@@ -128,24 +128,16 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', background: '#06080F' }}>
+    <div className="app-shell" style={{ background: '#06080F' }}>
       <PartnerSidebar />
 
-      <main style={{
-        flex:          1,
-        overflowY:     'auto',
-        minWidth:      0,
-        display:       'flex',
-        flexDirection: 'column',
-      }}>
+      <main className="partner-main">
         {/* Greeting header */}
-        <div style={{ padding: '32px 32px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '24px' }}>
-            <p style={{ fontSize: '56px', fontWeight: 700, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
-              Hello,
-            </p>
-            <p style={{ fontSize: '56px', fontWeight: 700, color: '#3B82F6', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
-              {partnerName}
+        <div className="partner-greeting" style={{ padding: '32px 32px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+            <p className="partner-hello" style={{ fontSize: '56px', fontWeight: 700, color: '#F1F5F9', margin: 0, lineHeight: 1.1, letterSpacing: '-0.03em' }}>
+              Hello,&nbsp;
+              <span className="partner-name" style={{ color: '#3B82F6' }}>{partnerName}</span>
             </p>
           </div>
           {startDate && (() => {
@@ -169,7 +161,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
               margin: '4px 0 0', textAlign: 'center',
             }
             return (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+              <div className="partner-duration-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                 <p style={{ color: 'rgba(241,245,249,0.5)', fontSize: '13px', margin: 0 }}>
                   Partner since <strong style={{ color: '#F1F5F9', fontWeight: 700 }}>{formatFullDate(parseLocalDate(startDate))}</strong>
                 </p>
@@ -190,7 +182,7 @@ export default async function PartnerLayout({ children }: { children: ReactNode 
         </div>
 
         {/* Page content */}
-        <div style={{ padding: '20px 32px 32px' }}>
+        <div className="partner-content" style={{ padding: '20px 32px 32px' }}>
           {children}
         </div>
       </main>
