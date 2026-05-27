@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatReportingPeriod } from '@/lib/utils/date'
 import { BranchDropdown } from '@/components/admin/BranchDropdown'
 import { MonthPicker } from '@/components/admin/MonthPicker'
+import { SwipeMonthWrapper } from '@/components/admin/SwipeMonthWrapper'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
@@ -488,6 +489,7 @@ export default async function AdminOverviewPage({
         }
       `}</style>
 
+      <SwipeMonthWrapper currentMonth={sel.value} branchId={selectedBranchId}>
       <div className="ov">
 
         {/* ── Top bar ── */}
@@ -993,6 +995,7 @@ export default async function AdminOverviewPage({
         </div>
 
       </div>
+      </SwipeMonthWrapper>
     </>
   )
 }
