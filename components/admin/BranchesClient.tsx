@@ -17,6 +17,8 @@ type BranchRow = {
   is_active: boolean
   partner_id: string
   partners: Partner | Partner[] | null
+  notification_email: string | null
+  line_notify_token: string | null
 }
 
 // ── small helpers ────────────────────────────────────────────────────────────
@@ -69,9 +71,15 @@ function EditForm({
   const [rentAmount, setRentAmount]       = useState(String(branch.fixed_rent_amount ?? ''))
   const [vatMode, setVatMode]             = useState<VatMode>(branch.fixed_rent_vat_mode ?? 'exclusive')
   const [partnerVat, setPartnerVat]       = useState<boolean>(p?.is_vat_registered ?? false)
+  const [notifEmail, setNotifEmail]       = useState(branch.notification_email ?? '')
+  const [lineToken, setLineToken]         = useState(branch.line_notify_token ?? '')
   const [saving, setSaving]               = useState(false)
   const [err, setErr]                     = useState('')
   const [saved, setSaved]                 = useState(false)
+  const [testEmailState, setTestEmailState] = useState<'idle'|'sending'|'ok'|'err'>('idle')
+  const [testLineState,  setTestLineState]  = useState<'idle'|'sending'|'ok'|'err'>('idle')
+  const [testEmailTo,    setTestEmailTo]    = useState('')
+  const [showTestEmailInput, setShowTestEmailInput] = useState(false)
 
   async function save() {
     setErr(''); setSaved(false)
@@ -90,6 +98,8 @@ function EditForm({
       const body: Record<string, unknown> = {
         payout_type: payoutType,
         partner_is_vat_registered: partnerVat,
+        notification_email: notifEmail.trim() || null,
+        line_notify_token:  lineToken.trim()  || null,
       }
       if (payoutType === 'revenue_share') {
         body.revenue_share_pct = parseFloat(revShare)
@@ -117,6 +127,34 @@ function EditForm({
       setErr(e instanceof Error ? e.message : 'Network error')
       setSaving(false)
     }
+  }
+
+  async function sendTestEmail() {
+    if (!testEmailTo.trim()) return
+    setTestEmailState('sending')
+    try {
+      const res = await fetch('/api/admin/test-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'email', to: testEmailTo.trim() }),
+      })
+      setTestEmailState(res.ok ? 'ok' : 'err')
+      setTimeout(() => { setTestEmailState('idle'); setShowTestEmailInput(false) }, 3000)
+    } catch { setTestEmailState('err'); setTimeout(() => setTestEmailState('idle'), 3000) }
+  }
+
+  async function sendTestLine() {
+    if (!lineToken.trim()) return
+    setTestLineState('sending')
+    try {
+      const res = await fetch('/api/admin/test-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'line', token: lineToken.trim() }),
+      })
+      setTestLineState(res.ok ? 'ok' : 'err')
+      setTimeout(() => setTestLineState('idle'), 3000)
+    } catch { setTestLineState('err'); setTimeout(() => setTestLineState('idle'), 3000) }
   }
 
   const toggleStyle = (active: boolean): React.CSSProperties => ({
@@ -208,11 +246,84 @@ function EditForm({
             </div>
           </div>
 
+          {/* ── Notifications section ── */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '8px', paddingTop: '16px' }}>
+            <span style={{ ...LABEL, color: 'rgba(240,236,228,0.25)', marginBottom: '12px' }}>Notifications</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+
+              {/* Email */}
+              <div>
+                <label style={LABEL}>Notification Email</label>
+                <input
+                  type="email"
+                  placeholder="partner@email.com"
+                  style={INPUT}
+                  value={notifEmail}
+                  onChange={e => setNotifEmail(e.target.value)}
+                />
+                <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {!showTestEmailInput ? (
+                    <button
+                      style={{ ...GHOST_BTN, fontSize: '11px', padding: '4px 10px', opacity: notifEmail.trim() ? 1 : 0.4 }}
+                      disabled={!notifEmail.trim()}
+                      onClick={() => setShowTestEmailInput(true)}
+                    >
+                      Send test email
+                    </button>
+                  ) : (
+                    <>
+                      <input
+                        type="email"
+                        placeholder="your@email.com"
+                        style={{ ...INPUT, width: 'auto', flex: 1, fontSize: '12px', padding: '5px 10px' }}
+                        value={testEmailTo}
+                        onChange={e => setTestEmailTo(e.target.value)}
+                        autoFocus
+                      />
+                      <button
+                        style={{ ...GHOST_BTN, fontSize: '11px', padding: '4px 10px', opacity: testEmailState === 'sending' ? 0.5 : 1 }}
+                        onClick={sendTestEmail}
+                        disabled={testEmailState === 'sending' || !testEmailTo.trim()}
+                      >
+                        {testEmailState === 'sending' ? 'Sending…' : testEmailState === 'ok' ? 'Sent!' : testEmailState === 'err' ? 'Failed' : 'Send'}
+                      </button>
+                      <button style={{ ...GHOST_BTN, fontSize: '11px', padding: '4px 8px' }} onClick={() => setShowTestEmailInput(false)}>✕</button>
+                    </>
+                  )}
+                  {testEmailState === 'ok'  && !showTestEmailInput && <span style={{ fontSize: '11px', color: '#22C55E' }}>Sent!</span>}
+                  {testEmailState === 'err' && !showTestEmailInput && <span style={{ fontSize: '11px', color: '#F87171' }}>Failed</span>}
+                </div>
+              </div>
+
+              {/* Line Notify */}
+              <div>
+                <label style={LABEL}>Line Notify Token</label>
+                <input
+                  type="text"
+                  placeholder="Paste token here"
+                  style={INPUT}
+                  value={lineToken}
+                  onChange={e => setLineToken(e.target.value)}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <button
+                    style={{ ...GHOST_BTN, fontSize: '11px', padding: '4px 10px', opacity: lineToken.trim() ? 1 : 0.4 }}
+                    disabled={!lineToken.trim() || testLineState === 'sending'}
+                    onClick={sendTestLine}
+                  >
+                    {testLineState === 'sending' ? 'Sending…' : testLineState === 'ok' ? 'Sent!' : testLineState === 'err' ? 'Failed' : 'Send test Line'}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           {err && (
-            <p style={{ color: '#F87171', fontSize: '12px', margin: '0 0 12px' }}>{err}</p>
+            <p style={{ color: '#F87171', fontSize: '12px', margin: '12px 0 0' }}>{err}</p>
           )}
           {saved && (
-            <p style={{ color: '#22C55E', fontSize: '12px', margin: '0 0 12px' }}>✓ Saved</p>
+            <p style={{ color: '#22C55E', fontSize: '12px', margin: '12px 0 0' }}>Saved</p>
           )}
 
           <div style={{ display: 'flex', gap: '8px' }}>

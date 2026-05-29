@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Report Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e8e8e8;
+    font-family: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+    padding: 40px 20px;
+  }
+
+  /* Page wrapper — simulates A4 */
+  .page {
+    background: #fff;
+    width: 794px;
+    min-height: 1123px;
+    margin: 0 auto 40px;
+    padding: 40px 52px 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    position: relative;
+    font-size: 10pt;
+    color: #111;
+  }
+  .page-label {
+    text-align: center;
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 12px;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: .04em;
+  }
+
+  /* ── Header ── */
+  .hd { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 14px; margin-bottom: 20px; }
+  .hd-left .eyebrow { font-size: 7pt; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #aaa; margin-bottom: 5px; }
+  .hd-left .period  { font-size: 22pt; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+  .hd-right { text-align: right; }
+  .hd-right .partner-name { font-size: 13pt; font-weight: 700; letter-spacing: -.01em; }
+  .hd-right .detail { font-size: 8.5pt; color: #666; margin-top: 2px; }
+  .hd-right .meta   { font-size: 8pt; color: #aaa; margin-top: 2px; }
+  .admin-badge { display: inline-block; background: #111; color: #fff; font-size: 6.5pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 7px; margin-bottom: 4px; }
+
+  /* ── KPI Strip ── */
+  .kpi-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  .kpi { flex: 1; background: #f6f6f6; border-left: 2.5px solid #111; padding: 9px 10px 8px; }
+  .kpi .k { font-size: 6.5pt; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #999; }
+  .kpi .v { font-size: 14pt; font-weight: 800; letter-spacing: -.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+  /* ── Section label ── */
+  .sec { font-size: 7pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #aaa; margin: 0 0 8px; }
+
+  /* ── Daily chart ── */
+  .chart-wrap { margin-bottom: 20px; }
+
+  /* ── Summary table ── */
+  .sum-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+  .sum-table td { font-size: 9.5pt; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  .sum-table .lbl { color: #555; width: 58%; }
+  .sum-table .lbl.indent { padding-left: 14px; color: #888; }
+  .sum-table .lbl.muted  { color: #888; }
+  .sum-table .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+  .sum-table .val.muted { color: #888; }
+  .sum-table .divider td { border-bottom: none; padding: 4px 0 0; }
+  .sum-table tfoot td { padding-top: 12px; border-top: 2px solid #111; border-bottom: none; }
+  .sum-table tfoot .lbl { font-size: 11pt; font-weight: 700; color: #111; }
+  .sum-table tfoot .val { font-size: 14pt; font-weight: 800; }
+
+  /* ── Extra adjustments block ── */
+  .extra-section { margin: 0 0 4px; }
+  .extra-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; padding-top: 4px; }
+  .extra-header span { font-size: 7pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #aaa; }
+
+  /* ── Data table ── */
+  .dt { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9pt; }
+  .dt thead tr { background: #f6f6f6; }
+  .dt thead th { padding: 7px 10px; font-size: 7pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #888; border-bottom: 1.5px solid #e0e0e0; text-align: left; }
+  .dt thead th.r { text-align: right; }
+  .dt tbody td { padding: 6px 10px; border-bottom: 1px solid #f2f2f2; color: #333; font-size: 8.5pt; }
+  .dt tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+  .dt tbody td.bold { font-weight: 600; }
+  .dt tbody td.dim  { color: #aaa; }
+  .dt tbody td.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 7.5pt; }
+
+  /* ── Footer ── */
+  .ft { position: absolute; bottom: 28px; left: 52px; right: 52px; border-top: 1px solid #e8e8e8; padding-top: 10px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #bbb; }
+
+  /* page 2 header (continuation) */
+  .page2-hd { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #111; padding-bottom: 8px; margin-bottom: 16px; }
+  .page2-hd .title { font-size: 16pt; font-weight: 800; letter-spacing: -.02em; }
+  .page2-hd .sub   { font-size: 8pt; color: #888; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ PAGE 1 — SUMMARY ═══════════════════════ -->
+<div class="page-label">หน้า 1 — Summary</div>
+<div class="page">
+
+  <!-- Header -->
+  <div class="hd">
+    <div class="hd-left">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:40px;height:34px;overflow:hidden;position:relative;flex-shrink:0;">
+        <img src="LOGO_FYM-01.svg" style="position:absolute;width:67px;top:-5px;left:-13px;">
+      </div>
+        <div>
+          <div style="font-size:7.5pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#111;line-height:1.2;">FLASHYOURMEME CO., LTD.</div>
+        </div>
+      </div>
+      <div class="eyebrow">Partner Earnings Report</div>
+      <div class="period">April 2026</div>
+    </div>
+    <div class="hd-right">
+      <div><span class="admin-badge">Admin Copy</span></div>
+      <div class="partner-name">Casa Tropika</div>
+      <div class="detail">Casa Tropika (Branch)</div>
+      <div class="meta">Printed 6 May 2026</div>
+      <div class="meta">Draft</div>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="k">Gross Sales</div>
+      <div class="v">฿23,280</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Net Revenue</div>
+      <div class="v">฿22,858</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Final Payout</div>
+      <div class="v">฿6,908</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Orders</div>
+      <div class="v">194</div>
+    </div>
+  </div>
+
+  <!-- Daily Chart -->
+  <div class="chart-wrap">
+    <div class="sec">Daily Revenue</div>
+    <svg viewBox="0 0 690 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible">
+      <line x1="0" y1="52" x2="690" y2="52" stroke="#e8e8e8" stroke-width="1"/>
+      <!-- Simulated bars for April (30 days) -->
+      <rect x="0" y="30" width="20" height="22" fill="#111" rx="1"/>
+      <rect x="23" y="20" width="20" height="32" fill="#111" rx="1"/>
+      <rect x="46" y="35" width="20" height="17" fill="#111" rx="1"/>
+      <rect x="69" y="15" width="20" height="37" fill="#111" rx="1"/>
+      <rect x="92" y="38" width="20" height="14" fill="#111" rx="1"/>
+      <rect x="115" y="28" width="20" height="24" fill="#111" rx="1"/>
+      <rect x="138" y="10" width="20" height="42" fill="#111" rx="1"/>
+      <rect x="161" y="22" width="20" height="30" fill="#111" rx="1"/>
+      <rect x="184" y="32" width="20" height="20" fill="#111" rx="1"/>
+      <rect x="207" y="18" width="20" height="34" fill="#111" rx="1"/>
+      <rect x="230" y="40" width="20" height="12" fill="#111" rx="1"/>
+      <rect x="253" y="25" width="20" height="27" fill="#111" rx="1"/>
+      <rect x="276" y="12" width="20" height="40" fill="#111" rx="1"/>
+      <rect x="299" y="30" width="20" height="22" fill="#111" rx="1"/>
+      <rect x="322" y="45" width="20" height="7" fill="#111" rx="1"/>
+      <rect x="345" y="20" width="20" height="32" fill="#111" rx="1"/>
+      <rect x="368" y="14" width="20" height="38" fill="#111" rx="1"/>
+      <rect x="391" y="35" width="20" height="17" fill="#111" rx="1"/>
+      <rect x="414" y="26" width="20" height="26" fill="#111" rx="1"/>
+      <rect x="437" y="5" width="20" height="47" fill="#111" rx="1"/>
+      <rect x="460" y="30" width="20" height="22" fill="#111" rx="1"/>
+      <rect x="483" y="18" width="20" height="34" fill="#111" rx="1"/>
+      <rect x="506" y="42" width="20" height="10" fill="#111" rx="1"/>
+      <rect x="529" y="28" width="20" height="24" fill="#111" rx="1"/>
+      <rect x="552" y="16" width="20" height="36" fill="#111" rx="1"/>
+      <rect x="575" y="33" width="20" height="19" fill="#111" rx="1"/>
+      <rect x="598" y="22" width="20" height="30" fill="#111" rx="1"/>
+      <rect x="621" y="38" width="20" height="14" fill="#111" rx="1"/>
+      <rect x="644" y="12" width="20" height="40" fill="#111" rx="1"/>
+      <rect x="667" y="48" width="20" height="4" fill="#111" rx="1"/>
+      <!-- Day labels -->
+      <text x="10" y="62" text-anchor="middle" font-size="6" fill="#bbb" font-family="DM Sans,Arial,sans-serif">1</text>
+      <text x="122" y="62" text-anchor="middle" font-size="6" fill="#bbb" font-family="DM Sans,Arial,sans-serif">5</text>
+      <text x="253" y="62" text-anchor="middle" font-size="6" fill="#bbb" font-family="DM Sans,Arial,sans-serif">10</text>
+      <text x="391" y="62" text-anchor="middle" font-size="6" fill="#bbb" font-family="DM Sans,Arial,sans-serif">16</text>
+      <text x="529" y="62" text-anchor="middle" font-size="6" fill="#bbb" font-family="DM Sans,Arial,sans-serif">24</text>
+      <text x="667" y="62" text-anchor="middle" font-size="6" fill="#bbb" font-family="DM Sans,Arial,sans-serif">30</text>
+    </svg>
+  </div>
+
+  <!-- Payout Summary (with Extra Adjustments) -->
+  <div class="sec">Payout Summary</div>
+  <table class="sum-table">
+    <tbody>
+      <tr><td class="lbl">Payout Model</td>        <td class="val">Revenue Share · 30%</td></tr>
+      <tr><td class="lbl">Total Orders</td>         <td class="val">194</td></tr>
+      <tr><td class="lbl">Gross Sales</td>          <td class="val">฿23,280.00</td></tr>
+      <tr><td class="lbl muted">Platform Fee</td>   <td class="val muted">– ฿393.72</td></tr>
+      <tr><td class="lbl">NET from OPN (VAT-incl.)</td><td class="val">฿22,858.48</td></tr>
+      <tr><td class="lbl muted">Business Refunds</td><td class="val muted">—</td></tr>
+      <tr><td class="lbl muted">÷ (1 + 7%) → ex-VAT</td><td class="val muted">฿21,363.07</td></tr>
+      <tr><td class="lbl">Revenue Share (30%)</td>  <td class="val">฿6,408.92</td></tr>
+      <tr><td class="lbl muted indent">VAT 7% (not registered)</td><td class="val muted">—</td></tr>
+
+      <!-- ── Extra Adjustments separator ── -->
+      <tr class="divider"><td colspan="2" style="padding-top:12px;padding-bottom:4px;">
+        <span style="font-size:7pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#aaa;">Extra Adjustments</span>
+      </td></tr>
+
+      <!-- compensation -->
+      <tr>
+        <td class="lbl">Compensation</td>
+        <td class="val">+ ฿500.00</td>
+      </tr>
+      <!-- service fee -->
+      <tr>
+        <td class="lbl">Service Fee</td>
+        <td class="val">+ ฿300.00</td>
+      </tr>
+      <tr>
+        <td class="lbl muted indent">WHT 3%</td>
+        <td class="val muted">– ฿9.00</td>
+      </tr>
+      <!-- fee -->
+      <tr>
+        <td class="lbl">Fee — Equipment rental</td>
+        <td class="val">– ฿300.00</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="lbl">Final Payout</td>
+        <td class="val">฿6,899.92</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Artist Performance -->
+  <div class="sec">Artist Performance</div>
+  <table class="dt">
+    <thead>
+      <tr>
+        <th style="width:28px">#</th>
+        <th>Artist</th>
+        <th class="r">Orders</th>
+        <th class="r">Gross Sales</th>
+        <th class="r">Net</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="dim">1</td><td>Mona Lisa</td>       <td class="r">62</td><td class="r">฿8,120.00</td><td class="r bold">฿7,430.10</td></tr>
+      <tr><td class="dim">2</td><td>Picasso Jr.</td>     <td class="r">48</td><td class="r">฿6,880.00</td><td class="r bold">฿6,220.40</td></tr>
+      <tr><td class="dim">3</td><td>Van Gogh Vibes</td>  <td class="r">41</td><td class="r">฿5,340.00</td><td class="r bold">฿4,980.50</td></tr>
+      <tr><td class="dim">4</td><td>(Unknown)</td>       <td class="r">43</td><td class="r">฿2,940.00</td><td class="r bold">฿2,720.00</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ft">
+    <span>FLASHYOURMEME CO., LTD. · Casa Tropika · April 2026</span>
+    <span>Admin Copy · Confidential · Page 1</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PAGE 2 — ALL ORDERS ═══════════════════════ -->
+<div class="page-label">หน้า 2+ — All Orders (ทุก transaction)</div>
+<div class="page">
+
+  <!-- Continuation header -->
+  <div class="page2-hd">
+    <div>
+      <div class="title">Transaction Detail — April 2026</div>
+      <div class="sub" style="margin-top:3px">Casa Tropika · All 194 orders</div>
+    </div>
+    <div style="text-align:right;font-size:8pt;color:#aaa;">
+      Admin Copy · Continued
+    </div>
+  </div>
+
+  <!-- Orders table -->
+  <table class="dt">
+    <thead>
+      <tr>
+        <th style="width:28px">#</th>
+        <th>Charge ID</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Artist</th>
+        <th class="r">Amount</th>
+        <th class="r">Net</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="dim">1</td>  <td class="mono">chrg_test_001</td><td>01/04/26</td><td class="dim">09:14</td><td>Mona Lisa</td>      <td class="r">฿120.00</td><td class="r bold">฿109.80</td></tr>
+      <tr><td class="dim">2</td>  <td class="mono">chrg_test_002</td><td>01/04/26</td><td class="dim">10:32</td><td>Picasso Jr.</td>    <td class="r">฿150.00</td><td class="r bold">฿137.25</td></tr>
+      <tr><td class="dim">3</td>  <td class="mono">chrg_test_003</td><td>01/04/26</td><td class="dim">11:05</td><td>Van Gogh Vibes</td> <td class="r">฿80.00</td> <td class="r bold">฿73.20</td></tr>
+      <tr><td class="dim">4</td>  <td class="mono">chrg_test_004</td><td>02/04/26</td><td class="dim">10:18</td><td>Mona Lisa</td>      <td class="r">฿200.00</td><td class="r bold">฿183.00</td></tr>
+      <tr><td class="dim">5</td>  <td class="mono">chrg_test_005</td><td>02/04/26</td><td class="dim">13:44</td><td>Picasso Jr.</td>    <td class="r">฿95.00</td> <td class="r bold">฿86.93</td></tr>
+      <tr><td class="dim">6</td>  <td class="mono">chrg_test_006</td><td>02/04/26</td><td class="dim">15:21</td><td>Mona Lisa</td>      <td class="r">฿180.00</td><td class="r bold">฿164.70</td></tr>
+      <tr><td class="dim">7</td>  <td class="mono">chrg_test_007</td><td>03/04/26</td><td class="dim">09:03</td><td>—</td>              <td class="r">฿60.00</td> <td class="r bold">฿54.90</td></tr>
+      <tr><td class="dim">8</td>  <td class="mono">chrg_test_008</td><td>03/04/26</td><td class="dim">11:58</td><td>Van Gogh Vibes</td> <td class="r">฿140.00</td><td class="r bold">฿128.10</td></tr>
+      <tr><td class="dim">9</td>  <td class="mono">chrg_test_009</td><td>03/04/26</td><td class="dim">14:30</td><td>Picasso Jr.</td>    <td class="r">฿220.00</td><td class="r bold">฿201.30</td></tr>
+      <tr><td class="dim">10</td> <td class="mono">chrg_test_010</td><td>04/04/26</td><td class="dim">10:47</td><td>Mona Lisa</td>      <td class="r">฿175.00</td><td class="r bold">฿160.08</td></tr>
+      <tr><td class="dim">11</td> <td class="mono">chrg_test_011</td><td>04/04/26</td><td class="dim">12:15</td><td>Van Gogh Vibes</td> <td class="r">฿90.00</td> <td class="r bold">฿82.35</td></tr>
+      <tr><td class="dim">12</td> <td class="mono">chrg_test_012</td><td>04/04/26</td><td class="dim">16:09</td><td>Mona Lisa</td>      <td class="r">฿130.00</td><td class="r bold">฿118.95</td></tr>
+      <tr><td class="dim">13</td> <td class="mono">chrg_test_013</td><td>05/04/26</td><td class="dim">09:52</td><td>Picasso Jr.</td>    <td class="r">฿260.00</td><td class="r bold">฿237.90</td></tr>
+      <tr><td class="dim">14</td> <td class="mono">chrg_test_014</td><td>05/04/26</td><td class="dim">11:33</td><td>—</td>              <td class="r">฿70.00</td> <td class="r bold">฿64.05</td></tr>
+      <tr><td class="dim">15</td> <td class="mono">chrg_test_015</td><td>05/04/26</td><td class="dim">14:07</td><td>Van Gogh Vibes</td> <td class="r">฿110.00</td><td class="r bold">฿100.65</td></tr>
+      <tr><td class="dim">16</td> <td class="mono">chrg_test_016</td><td>06/04/26</td><td class="dim">10:22</td><td>Mona Lisa</td>      <td class="r">฿155.00</td><td class="r bold">฿141.83</td></tr>
+      <tr><td class="dim">17</td> <td class="mono">chrg_test_017</td><td>06/04/26</td><td class="dim">13:01</td><td>Picasso Jr.</td>    <td class="r">฿190.00</td><td class="r bold">฿173.85</td></tr>
+      <tr><td class="dim">18</td> <td class="mono">chrg_test_018</td><td>06/04/26</td><td class="dim">15:48</td><td>Mona Lisa</td>      <td class="r">฿85.00</td> <td class="r bold">฿77.78</td></tr>
+      <tr><td class="dim">19</td> <td class="mono">chrg_test_019</td><td>07/04/26</td><td class="dim">10:11</td><td>Van Gogh Vibes</td> <td class="r">฿240.00</td><td class="r bold">฿219.60</td></tr>
+      <tr><td class="dim">20</td> <td class="mono">chrg_test_020</td><td>07/04/26</td><td class="dim">12:39</td><td>—</td>              <td class="r">฿100.00</td><td class="r bold">฿91.50</td></tr>
+      <tr style="opacity:.35"><td class="dim">21</td><td class="mono">chrg_test_021</td><td>07/04/26</td><td class="dim">14:55</td><td>Picasso Jr.</td><td class="r">฿165.00</td><td class="r bold">฿150.98</td></tr>
+      <tr style="opacity:.2"><td class="dim">22</td><td class="mono">chrg_test_022</td><td>08/04/26</td><td class="dim">09:28</td><td>Mona Lisa</td><td class="r">฿200.00</td><td class="r bold">฿183.00</td></tr>
+      <tr style="opacity:.1"><td class="dim">…</td><td colspan="6" style="color:#ccc;text-align:center;font-style:italic">ต่อไปอีก 172 รายการ (auto page break)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ft">
+    <span>FLASHYOURMEME CO., LTD. · Casa Tropika · April 2026</span>
+    <span>Admin Copy · Confidential · Page 2</span>
+  </div>
+</div>
+
+<!-- Note -->
+<div style="max-width:794px;margin:0 auto;padding:16px 0 40px;text-align:center;font-family:DM Sans,sans-serif;font-size:12px;color:#888;line-height:1.8;">
+  <strong style="color:#555">สิ่งที่จะเปลี่ยน:</strong><br>
+  • Extra Adjustments (ค่าชดเชย / ค่าบริการ+WHT / ค่าธรรมเนียม) โชว์ใน Summary ก่อน Final Payout<br>
+  • หน้า 2+ แสดงทุก transaction (auto page break ตาม @page CSS หรือ server-side PDF)<br>
+  • ปุ่ม ↓ Download PDF จะ generate ตรงๆ ไม่เปิด print dialog
+</div>
+
+</body>
+</html>

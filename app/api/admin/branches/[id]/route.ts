@@ -31,6 +31,8 @@ export async function PATCH(
     fixed_rent_vat_mode?: 'exclusive' | 'inclusive'
     is_active?: boolean
     partner_is_vat_registered?: boolean
+    notification_email?: string | null
+    line_notify_token?: string | null
   }
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -63,6 +65,10 @@ export async function PATCH(
 
   // Build branch update payload
   const branchUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
+
+  // Notification fields
+  if ('notification_email' in body) branchUpdate.notification_email = body.notification_email ?? null
+  if ('line_notify_token'  in body) branchUpdate.line_notify_token  = body.line_notify_token  ?? null
 
   if (body.payout_type !== undefined) {
     branchUpdate.payout_type = body.payout_type
