@@ -44,7 +44,12 @@ export async function PATCH(
   // Fetch report
   const { data: report, error: repErr } = await admin
     .from('monthly_reports')
-    .select('id, status, final_payout, vat_rate_snapshot')
+    .select(`
+      id, status,
+      partner_share_base, vat_amount, is_vat_registered_snapshot, vat_rate_snapshot,
+      referred_artist_uplift, referred_artist_uplift_vat,
+      service_fee_amount, service_fee_wht
+    `)
     .eq('id', id)
     .single()
 
@@ -55,15 +60,25 @@ export async function PATCH(
     return NextResponse.json({ error: 'Cannot modify a paid report' }, { status: 409 })
 
   // Calculate WHT
-  // If manual amount provided use it; otherwise derive from final_payout ÷ (1+vat_rate)
+  // If manual amount provided use it; otherwise calculate from taxable base only.
+  //
+  // Taxable base = partner_share_base (already ex-VAT for non-VAT-registered)
+  //   + vat_amount (for VAT-registered, payout includes VAT — but WHT is on ex-VAT)
+  //   + service_fee_amount if service_fee_wht = true
+  //   + referred_artist_uplift (always ex-VAT)
+  //
+  // For VAT-registered partners: partner_share_base is ex-VAT already (vat_amount added on top)
+  // so WHT base = partner_share_base + uplift + (service_fee if wht=true)
   let whtAmount: number | null = null
   if (body.pct !== null) {
     if (body.amount !== undefined) {
       whtAmount = Math.round(body.amount * 100) / 100
     } else {
-      const vatRate = Number(report.vat_rate_snapshot ?? 0.07)
-      const base    = Math.round((Number(report.final_payout ?? 0) / (1 + vatRate)) * 100) / 100
-      whtAmount     = Math.round(base * (body.pct / 100) * 100) / 100
+      const partnerBase  = Number(report.partner_share_base ?? 0)
+      const uplift       = Number(report.referred_artist_uplift ?? 0)
+      const serviceFee   = report.service_fee_wht ? Number(report.service_fee_amount ?? 0) : 0
+      const taxableBase  = partnerBase + uplift + serviceFee
+      whtAmount          = Math.round(taxableBase * (body.pct / 100) * 100) / 100
     }
   }
 
