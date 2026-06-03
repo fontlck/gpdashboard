@@ -175,19 +175,23 @@ export async function PATCH(
       const reference = `#RPT-${report.reporting_year}-${String(report.reporting_month).padStart(2,'0')}-${reportId.slice(0,6).toUpperCase()}`
       const date      = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
-      // Fire-and-forget — don't await, don't block response
-      notifyReport(
-        body.action === 'approve' ? 'approved' : 'paid',
-        { email: branch.notification_email, lineToken: branch.line_notify_token },
-        { partnerName, branchName: branch.name, period, amount, date, reportUrl, reference },
-      ).then(results => {
+      // Await notification — fire-and-forget doesn't work in Vercel serverless
+      try {
+        const results = await notifyReport(
+          body.action === 'approve' ? 'approved' : 'paid',
+          { email: branch.notification_email, lineToken: branch.line_notify_token },
+          { partnerName, branchName: branch.name, period, amount, date, reportUrl, reference },
+        )
         if (results.emailResult && !results.emailResult.ok) {
           console.error('[notify] email failed:', results.emailResult.error)
         }
         if (results.lineResult && !results.lineResult.ok) {
           console.error('[notify] line failed:', results.lineResult.error)
         }
-      }).catch(err => console.error('[notify] unexpected error:', err))
+        console.log('[notify] done — email:', results.emailResult?.ok, 'line:', results.lineResult?.ok)
+      } catch (err) {
+        console.error('[notify] unexpected error:', err)
+      }
     }
   }
 
