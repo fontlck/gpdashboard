@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing email address' }, { status: 400 })
 
     const result = await sendTestEmail(body.to.trim(), appUrl)
+    console.log('[test-notification] email result:', JSON.stringify(result))
     if (!result.ok)
       return NextResponse.json({ error: result.error }, { status: 500 })
 
