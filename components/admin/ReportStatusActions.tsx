@@ -170,6 +170,7 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
   const [showConfirm,    setShowConfirm]    = useState(false)
   const [showMarkPaid,   setShowMarkPaid]   = useState(false)
   const [showEditPaidAt, setShowEditPaidAt] = useState(false)
+  const [notifState,     setNotifState]     = useState<'idle' | 'sending' | 'ok' | 'err'>('idle')
 
   async function transition(action: 'approve' | 'mark_paid' | 'revert_to_draft' | 'update_paid_date', paidAtDate?: string) {
     setLoading(action)
@@ -209,6 +210,26 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
       setError('Network error — please try again.')
     } finally {
       setLoading(null)
+    }
+  }
+
+  async function sendNotification() {
+    setNotifState('sending')
+    try {
+      const res = await fetch(`/api/admin/reports/${reportId}/send-notification`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        setNotifState('err')
+        setToast({ message: data.error ?? 'Failed to send notification', ok: false })
+      } else {
+        setNotifState('ok')
+        setToast({ message: 'Notification sent successfully', ok: true })
+      }
+    } catch {
+      setNotifState('err')
+      setToast({ message: 'Network error — could not send notification', ok: false })
+    } finally {
+      setTimeout(() => { setNotifState('idle'); setToast(null) }, 5000)
     }
   }
 
@@ -338,6 +359,19 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
               {loading === 'mark_paid' ? 'Saving…' : '฿ Mark as Paid'}
             </button>
             <button
+              onClick={sendNotification}
+              disabled={notifState === 'sending' || !!loading}
+              style={{
+                padding: '10px 20px', borderRadius: '8px',
+                border: '1px solid rgba(59,130,246,0.3)',
+                background: 'rgba(59,130,246,0.08)', color: '#60A5FA',
+                fontSize: '13px', fontWeight: '600', cursor: notifState === 'sending' ? 'default' : 'pointer',
+                opacity: notifState === 'sending' ? 0.6 : 1,
+              }}
+            >
+              {notifState === 'sending' ? 'Sending…' : notifState === 'ok' ? '✓ Sent' : '✉ Send Email'}
+            </button>
+            <button
               onClick={() => setShowConfirm(true)}
               disabled={!!loading}
               style={{
@@ -377,12 +411,27 @@ export function ReportStatusActions({ reportId, status, approvedAt, paidAt }: Pr
               </button>
             </div>
           )}
-          <div style={{
-            marginTop: '14px', padding: '10px 14px', borderRadius: '8px',
-            background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.12)',
-            fontSize: '12px', color: 'rgba(74,222,128,0.7)',
-          }}>
-            This report is fully paid. No further actions available.
+          <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{
+              padding: '10px 14px', borderRadius: '8px', flex: 1,
+              background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.12)',
+              fontSize: '12px', color: 'rgba(74,222,128,0.7)',
+            }}>
+              This report is fully paid.
+            </div>
+            <button
+              onClick={sendNotification}
+              disabled={notifState === 'sending'}
+              style={{
+                padding: '10px 20px', borderRadius: '8px', whiteSpace: 'nowrap',
+                border: '1px solid rgba(59,130,246,0.3)',
+                background: 'rgba(59,130,246,0.08)', color: '#60A5FA',
+                fontSize: '13px', fontWeight: '600', cursor: notifState === 'sending' ? 'default' : 'pointer',
+                opacity: notifState === 'sending' ? 0.6 : 1,
+              }}
+            >
+              {notifState === 'sending' ? 'Sending…' : notifState === 'ok' ? '✓ Sent' : '✉ Send Email'}
+            </button>
           </div>
         </div>
       )}

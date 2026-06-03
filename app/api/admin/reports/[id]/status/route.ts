@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { notifyReport } from '@/lib/notify'
-import { formatTHB } from '@/lib/utils/currency'
 
 // ── PATCH /api/admin/reports/:id/status ──────────────────────────────────────
 // Manages monthly_report status transitions:
@@ -145,55 +143,6 @@ export async function PATCH(
       reporting_year:  report.reporting_year,
     },
   })
-
-  // ── Notifications (fire-and-forget on approve / mark_paid) ────────────────
-  if (body.action === 'approve' || body.action === 'mark_paid') {
-    // Fetch branch + partner info for notification
-    const { data: branch } = await admin
-      .from('branches')
-      .select('name, notification_email, line_notify_token, partners(name)')
-      .eq('id', report.branch_id)
-      .single()
-
-    if (branch) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const partnerRaw = branch.partners as any
-      const partnerName = (Array.isArray(partnerRaw) ? partnerRaw[0]?.name : partnerRaw?.name) ?? branch.name
-
-      // Fetch final_payout for display
-      const { data: fullReport } = await admin
-        .from('monthly_reports')
-        .select('final_payout')
-        .eq('id', reportId)
-        .single()
-
-      const amount    = formatTHB(Number(fullReport?.final_payout ?? 0))
-      const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][report.reporting_month - 1] ?? ''
-      const period    = `${monthName} ${report.reporting_year}`
-      const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gpdashboard.flashyourmeme.com'
-      const reportUrl = `${appUrl}/admin/reports/${reportId}`
-      const reference = `#RPT-${report.reporting_year}-${String(report.reporting_month).padStart(2,'0')}-${reportId.slice(0,6).toUpperCase()}`
-      const date      = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-
-      // Await notification — fire-and-forget doesn't work in Vercel serverless
-      try {
-        const results = await notifyReport(
-          body.action === 'approve' ? 'approved' : 'paid',
-          { email: branch.notification_email, lineToken: branch.line_notify_token },
-          { partnerName, branchName: branch.name, period, amount, date, reportUrl, reference },
-        )
-        if (results.emailResult && !results.emailResult.ok) {
-          console.error('[notify] email failed:', results.emailResult.error)
-        }
-        if (results.lineResult && !results.lineResult.ok) {
-          console.error('[notify] line failed:', results.lineResult.error)
-        }
-        console.log('[notify] done — email:', results.emailResult?.ok, 'line:', results.lineResult?.ok)
-      } catch (err) {
-        console.error('[notify] unexpected error:', err)
-      }
-    }
-  }
 
   return NextResponse.json({
     success:    true,
