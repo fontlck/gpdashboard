@@ -3,7 +3,7 @@ import {
   Text, Link, Hr, Row, Column, Font, Img,
 } from '@react-email/components'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gpdashboard.flashyourmeme.com'
+import { LOGO_BASE64 } from '@/lib/email-logo'
 
 export type ReportApprovedEmailProps = {
   partnerName:  string
@@ -44,7 +44,7 @@ export function ReportApprovedEmail({
             <Row>
               <Column style={{ verticalAlign: 'middle', width: '44px', paddingRight: '12px' }}>
                 <Img
-                  src={`${APP_URL}/logo-fym-email.png`}
+                  src={LOGO_BASE64}
                   alt="FLASHYOURMEME"
                   width="44"
                   height="30"
