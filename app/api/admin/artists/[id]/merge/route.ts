@@ -79,6 +79,39 @@ export async function POST(
     if (rowsErr) {
       return NextResponse.json({ error: `Failed to update report rows: ${rowsErr.message}` }, { status: 500 })
     }
+
+    // ── Sync artist_summaries (table — not auto-updated) ───────────────────
+    const { data: sourceSummaries } = await admin
+      .from('artist_summaries')
+      .select('id, monthly_report_id, order_count, gross_sales, total_net')
+      .eq('artist_name', source.artist_name)
+      .in('monthly_report_id', reportIds)
+
+    for (const src of sourceSummaries ?? []) {
+      const { data: tgt } = await admin
+        .from('artist_summaries')
+        .select('id, order_count, gross_sales, total_net')
+        .eq('monthly_report_id', src.monthly_report_id)
+        .eq('artist_name', target.artist_name)
+        .maybeSingle()
+
+      const now = new Date().toISOString()
+      if (tgt) {
+        await Promise.all([
+          admin.from('artist_summaries').update({
+            order_count: tgt.order_count + src.order_count,
+            gross_sales: Number(tgt.gross_sales) + Number(src.gross_sales),
+            total_net:   Number(tgt.total_net)   + Number(src.total_net),
+            updated_at:  now,
+          }).eq('id', tgt.id),
+          admin.from('artist_summaries').delete().eq('id', src.id),
+        ])
+      } else {
+        await admin.from('artist_summaries')
+          .update({ artist_name: target.artist_name, updated_at: now })
+          .eq('id', src.id)
+      }
+    }
   }
 
   // Delete the source artist record

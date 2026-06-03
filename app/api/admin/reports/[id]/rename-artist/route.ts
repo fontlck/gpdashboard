@@ -68,5 +68,37 @@ export async function POST(
     return NextResponse.json({ error: updateErr.message }, { status: 500 })
   }
 
+  // ── Sync artist_summaries (it's a table, not a view) ─────────────────────
+  const [sourceRes, targetRes] = await Promise.all([
+    admin.from('artist_summaries')
+      .select('id, order_count, gross_sales, total_net')
+      .eq('monthly_report_id', reportId).eq('artist_name', oldName).maybeSingle(),
+    admin.from('artist_summaries')
+      .select('id, order_count, gross_sales, total_net')
+      .eq('monthly_report_id', reportId).eq('artist_name', newName).maybeSingle(),
+  ])
+
+  const src = sourceRes.data
+  const tgt = targetRes.data
+  const now = new Date().toISOString()
+
+  if (src && tgt) {
+    // Merge: add source totals into target, then delete source row
+    await Promise.all([
+      admin.from('artist_summaries').update({
+        order_count: tgt.order_count + src.order_count,
+        gross_sales: Number(tgt.gross_sales) + Number(src.gross_sales),
+        total_net:   Number(tgt.total_net)   + Number(src.total_net),
+        updated_at:  now,
+      }).eq('id', tgt.id),
+      admin.from('artist_summaries').delete().eq('id', src.id),
+    ])
+  } else if (src) {
+    // Pure rename: just update the name
+    await admin.from('artist_summaries')
+      .update({ artist_name: newName, updated_at: now })
+      .eq('id', src.id)
+  }
+
   return NextResponse.json({ renamed: updated?.length ?? 0 })
 }

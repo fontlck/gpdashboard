@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gmail Preview Comparison</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f0f0f0; font-family: 'Google Sans', sans-serif; padding: 24px 16px 60px; }
+
+    .page-title { text-align: center; font-size: 13px; color: #666; margin-bottom: 20px; letter-spacing: .06em; text-transform: uppercase; }
+
+    .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+    .tab { padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+           border: 1px solid #ddd; color: #666; background: #fff; font-family: 'Google Sans', sans-serif; }
+    .tab.active { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+
+    .col-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
+    .col-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+                 color: #999; text-align: center; margin-bottom: 10px; }
+    .col-label span { background: #fff; padding: 3px 10px; border-radius: 20px; border: 1px solid #e0e0e0; }
+
+    /* ── Designed template ── */
+    .frame-designed { border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,.15); }
+
+    /* ── Gmail window simulation ── */
+    .gmail-window { background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.15); overflow: hidden; }
+    .gmail-chrome { background: #404040; padding: 8px 12px; display: flex; align-items: center; gap: 6px; }
+    .gmail-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .gmail-compose-bar { background: #f1f3f4; padding: 10px 16px; border-bottom: 1px solid #e0e0e0; font-family: 'Roboto', sans-serif; font-size: 22px; color: #202124; font-weight: 400; }
+    .gmail-fields { padding: 0 16px; border-bottom: 1px solid #e0e0e0; }
+    .gmail-field { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-family: 'Roboto', sans-serif; font-size: 13px; }
+    .gmail-field:last-child { border-bottom: none; }
+    .gmail-field-label { color: #5f6368; width: 50px; flex-shrink: 0; }
+    .gmail-field-value { color: #202124; }
+    .gmail-body { padding: 12px 16px 20px; font-family: Arial, sans-serif; font-size: 13.3px; color: #000; min-height: 200px; }
+
+    /* Gmail render: strips most CSS, keeps only basic inline styles */
+    .gmail-email-render { font-family: Arial, sans-serif; font-size: 13.3px; color: #000; }
+    .gmail-email-render table { width: 100%; border-collapse: collapse; }
+    .gmail-email-render .hdr { background: #06080F; padding: 14px 20px; }
+    .gmail-email-render .hdr-logo { color: #fff; font-size: 14px; font-weight: bold; }
+    .gmail-email-render .hdr-tag { color: #3B82F6; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+    .gmail-email-render .body-pad { padding: 20px 20px 12px; }
+    .gmail-email-render h1 { font-size: 18px; font-weight: bold; color: #000; margin: 8px 0; }
+    .gmail-email-render p { font-size: 13px; color: #444; line-height: 1.5; margin: 6px 0; }
+    .gmail-email-render .amount-box { background: #f8f8f8; border: 1px solid #ddd; padding: 14px 18px; margin: 0 20px 14px; }
+    .gmail-email-render .amount-lbl { font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px; }
+    .gmail-email-render .amount-val { font-size: 28px; font-weight: bold; color: #000; }
+    .gmail-email-render .amount-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .gmail-email-render .detail-table { margin: 0 20px 14px; border: 1px solid #ddd; width: calc(100% - 40px); }
+    .gmail-email-render .detail-table td { padding: 10px 12px; border: 1px solid #ddd; font-size: 12px; vertical-align: top; }
+    .gmail-email-render .detail-table .dk { font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 3px; }
+    .gmail-email-render .detail-table .dv { color: #000; font-weight: bold; font-size: 13px; }
+    .gmail-email-render .cta { margin: 4px 20px 16px; }
+    .gmail-email-render .cta a { background: #2563eb; color: #fff; padding: 10px 22px; font-size: 13px; font-weight: bold; text-decoration: none; display: inline-block; }
+    .gmail-email-render .note { padding: 0 20px 16px; font-size: 12px; color: #888; line-height: 1.7; border-top: 1px solid #eee; margin-top: 4px; padding-top: 14px; }
+    .gmail-email-render .footer { background: #f8f8f8; border-top: 1px solid #eee; padding: 12px 20px; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ── Designed email (full fidelity) ── */
+    .designed-email { font-family: 'Google Sans', 'Helvetica Neue', Arial, sans-serif; }
+    .designed-email .hdr { background: #06080F; padding: 22px 32px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .designed-email .hdr-logo { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -.01em; }
+    .designed-email .hdr-tag { font-size: 10px; font-weight: 500; color: #3B82F6; letter-spacing: .08em; text-transform: uppercase; opacity: .85; margin-top: 2px; }
+    .designed-email .hero { padding: 32px 32px 20px; background: #fff; }
+    .designed-email .icon-wrap { width: 44px; height: 44px; border-radius: 12px; background: #dcfce7; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+    .designed-email h1 { font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: -.02em; margin-bottom: 8px; }
+    .designed-email .hero p { font-size: 14px; color: #64748b; line-height: 1.65; }
+    .designed-email .amount-box { margin: 0 32px 24px; background: #f8fafc; border-radius: 12px; padding: 20px 24px; border: 1px solid #e2e8f0; }
+    .designed-email .amount-lbl { font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; }
+    .designed-email .amount-val { font-size: 34px; font-weight: 700; color: #0f172a; letter-spacing: -.03em; }
+    .designed-email .amount-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .designed-email .detail-grid { margin: 0 32px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #e2e8f0; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .designed-email .dc { background: #fff; padding: 14px 16px; }
+    .designed-email .dk { font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+    .designed-email .dv { font-size: 14px; font-weight: 500; color: #1e293b; }
+    .designed-email .pill-green { display: inline-block; padding: 3px 10px; border-radius: 20px; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .designed-email .cta { padding: 4px 32px 24px; background: #fff; }
+    .designed-email .cta a { display: inline-block; padding: 13px 28px; border-radius: 10px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
+    .designed-email .divider { margin: 0 32px 20px; height: 1px; background: #f1f5f9; }
+    .designed-email .note { padding: 0 32px 28px; font-size: 13px; color: #94a3b8; line-height: 1.75; background: #fff; }
+    .designed-email .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 16px 32px; font-size: 11px; font-weight: 600; color: #94a3b8; letter-spacing: .05em; text-transform: uppercase; }
+
+    .template { display: none; }
+    .template.show { display: block; }
+
+    @media (max-width: 768px) {
+      .col-wrap { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <p class="page-title">เปรียบเทียบ — Designed Template vs Copy-Paste ใน Gmail</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="show('approved', this)">Approved</button>
+    <button class="tab" onclick="show('paid', this)">Paid</button>
+  </div>
+
+  <!-- ════ APPROVED ════ -->
+  <div id="tpl-approved" class="template show">
+    <div class="col-wrap">
+
+      <!-- LEFT: Designed -->
+      <div>
+        <p class="col-label"><span>Automated (Resend / Gmail SMTP)</span></p>
+        <div class="frame-designed">
+          <div class="designed-email">
+            <div class="hdr">
+              <div class="hdr-logo">FlashYourMeme</div>
+              <div class="hdr-tag">GP Dashboard</div>
+            </div>
+            <div class="hero" style="background:#fff">
+              <div class="icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="#16a34a"/>
+                  <polyline points="7 12.5 10.5 16 17 9" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h1>รายงานได้รับการอนุมัติแล้ว</h1>
+              <p>สวัสดีคุณ <strong style="color:#334155">Bangkok Ink Studio</strong> — รายงานประจำเดือนของคุณได้รับการตรวจสอบและอนุมัติเรียบร้อยแล้ว</p>
+            </div>
+            <div class="amount-box" style="background:#fff">
+              <div class="amount-lbl" style="margin:0 32px 0">ยอดที่ได้รับ</div>
+              <div class="amount-val" style="margin:6px 32px 0">฿45,000.00</div>
+              <div class="amount-sub" style="margin:4px 32px 24px">Net payout หลังหักค่าธรรมเนียม</div>
+              <div class="detail-grid">
+                <div class="dc"><div class="dk">รายงานเดือน</div><div class="dv">เมษายน 2025</div></div>
+                <div class="dc" style="border-left:1px solid #e2e8f0"><div class="dk">สาขา</div><div class="dv">Sukhumvit Branch</div></div>
+                <div class="dc" style="border-top:1px solid #e2e8f0"><div class="dk">สถานะ</div><div class="dv"><span class="pill-green">Approved</span></div></div>
+                <div class="dc" style="border-top:1px solid #e2e8f0;border-left:1px solid #e2e8f0"><div class="dk">วันที่อนุมัติ</div><div class="dv">29 May 2025</div></div>
+              </div>
+            </div>
+            <div class="cta"><a href="#">ดูรายงานฉบับเต็ม &rarr;</a></div>
+            <div class="divider" style="background:#fff"></div>
+            <div class="note">ระบบจะดำเนินการโอนเงินภายใน <strong style="color:#64748b">3&ndash;5 วันทำการ</strong> นับจากวันที่อนุมัติ</div>
+            <div class="footer">FlashYourMeme &middot; GP Dashboard</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Gmail paste -->
+      <div>
+        <p class="col-label"><span>Copy HTML → Paste ใน Gmail</span></p>
+        <div class="gmail-window">
+          <div class="gmail-chrome">
+            <div class="gmail-dot" style="background:#ff5f57"></div>
+            <div class="gmail-dot" style="background:#febc2e"></div>
+            <div class="gmail-dot" style="background:#28c840"></div>
+            <span style="color:#aaa;font-size:11px;margin-left:8px;font-family:Roboto,sans-serif">Gmail — New Message</span>
+          </div>
+          <div class="gmail-compose-bar">New Message</div>
+          <div class="gmail-fields">
+            <div class="gmail-field"><span class="gmail-field-label">From</span><span class="gmail-field-value">flashyourmeme@gmail.com</span></div>
+            <div class="gmail-field"><span class="gmail-field-label">To</span><span class="gmail-field-value">partner@email.com</span></div>
+            <div class="gmail-field"><span class="gmail-field-label">Subject</span><span class="gmail-field-value">รายงานได้รับการอนุมัติแล้ว — ฿45,000.00</span></div>
+          </div>
+          <div class="gmail-body">
+            <!-- Gmail render simulation: stripped CSS, basic inline styles only -->
+            <div class="gmail-email-render">
+              <div class="hdr">
+                <div class="hdr-logo">FlashYourMeme</div>
+                <div class="hdr-tag">GP Dashboard</div>
+              </div>
+              <div class="body-pad">
+                <p style="font-size:13px;color:#555;margin-bottom:4px">&#10003; รายงานได้รับการอนุมัติแล้ว</p>
+                <h1>รายงานได้รับการอนุมัติแล้ว</h1>
+                <p>สวัสดีคุณ <strong>Bangkok Ink Studio</strong> — รายงานประจำเดือนได้รับการอนุมัติเรียบร้อยแล้ว</p>
+              </div>
+              <div class="amount-box">
+                <div class="amount-lbl">ยอดที่ได้รับ</div>
+                <div class="amount-val">฿45,000.00</div>
+                <div class="amount-sub">Net payout หลังหักค่าธรรมเนียม</div>
+              </div>
+              <table class="detail-table">
+                <tr>
+                  <td><div class="dk">รายงานเดือน</div><div class="dv">เมษายน 2025</div></td>
+                  <td><div class="dk">สาขา</div><div class="dv">Sukhumvit Branch</div></td>
+                </tr>
+                <tr>
+                  <td><div class="dk">สถานะ</div><div class="dv">Approved</div></td>
+                  <td><div class="dk">วันที่อนุมัติ</div><div class="dv">29 May 2025</div></td>
+                </tr>
+              </table>
+              <div class="cta"><a href="#">ดูรายงานฉบับเต็ม →</a></div>
+              <div class="note">ระบบจะดำเนินการโอนเงินภายใน <strong>3&ndash;5 วันทำการ</strong> นับจากวันที่อนุมัติ</div>
+              <div class="footer">FlashYourMeme · GP Dashboard</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function show(id, btn) {
+      document.querySelectorAll('.template').forEach(el => el.classList.remove('show'))
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'))
+      document.getElementById('tpl-' + id).classList.add('show')
+      btn.classList.add('active')
+    }
+  </script>
+</body>
+</html>

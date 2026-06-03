@@ -99,11 +99,18 @@ export async function PATCH(
     const reportIds = (reports ?? []).map((r: { id: string }) => r.id)
 
     if (reportIds.length > 0) {
-      await admin
-        .from('report_rows')
-        .update({ artist_name_raw: newName })
-        .eq('artist_name_raw', oldName)
-        .in('monthly_report_id', reportIds)
+      await Promise.all([
+        // Rename in report_rows
+        admin.from('report_rows')
+          .update({ artist_name_raw: newName })
+          .eq('artist_name_raw', oldName)
+          .in('monthly_report_id', reportIds),
+        // Rename in artist_summaries (table — not auto-updated)
+        admin.from('artist_summaries')
+          .update({ artist_name: newName, updated_at: new Date().toISOString() })
+          .eq('artist_name', oldName)
+          .in('monthly_report_id', reportIds),
+      ])
     }
   }
 
