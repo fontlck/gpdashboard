@@ -1,7 +1,9 @@
 import {
   Html, Head, Body, Container, Section,
-  Text, Link, Hr, Row, Column, Font,
+  Text, Link, Hr, Row, Column, Font, Img,
 } from '@react-email/components'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gpdashboard.flashyourmeme.com'
 
 export type ReportPaidEmailProps = {
   partnerName: string
@@ -41,8 +43,21 @@ export function ReportPaidEmail({
 
           {/* Header */}
           <Section style={header}>
-            <Text style={headerLogo}>FlashYourMeme</Text>
-            <Text style={headerTag}>GP Dashboard</Text>
+            <Row>
+              <Column style={{ verticalAlign: 'middle', width: '44px', paddingRight: '12px' }}>
+                <Img
+                  src={`${APP_URL}/logo-fym-white.svg`}
+                  alt="FLASHYOURMEME"
+                  width="44"
+                  height="30"
+                  style={{ display: 'block' }}
+                />
+              </Column>
+              <Column style={{ verticalAlign: 'middle' }}>
+                <Text style={headerLogo}>FLASHYOURMEME CO., LTD.</Text>
+                <Text style={headerTag}>GP Dashboard</Text>
+              </Column>
+            </Row>
           </Section>
 
           {/* Hero */}
@@ -105,7 +120,7 @@ export function ReportPaidEmail({
 
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footerText}>FlashYourMeme &middot; GP Dashboard</Text>
+            <Text style={footerText}>FLASHYOURMEME CO., LTD. &middot; GP Dashboard</Text>
           </Section>
 
         </Container>
@@ -140,11 +155,11 @@ const headerTag: React.CSSProperties = {
 const hero: React.CSSProperties = { padding: '32px 32px 20px' }
 const iconWrapGold: React.CSSProperties = {
   width: '44px', height: '44px', borderRadius: '12px',
-  backgroundColor: '#fef3c7', textAlign: 'center', marginBottom: '16px',
+  backgroundColor: '#dbeafe', textAlign: 'center', marginBottom: '16px',
 }
 const iconText: React.CSSProperties = {
   margin: 0, fontSize: '20px', fontWeight: 700,
-  color: '#b45309', lineHeight: '44px',
+  color: '#0f172a', lineHeight: '44px',
 }
 const h1: React.CSSProperties = {
   margin: '0 0 8px', fontSize: '22px', fontWeight: 700,
@@ -182,13 +197,13 @@ const detailVal: React.CSSProperties = {
 }
 const pillGold: React.CSSProperties = {
   display: 'inline-block', padding: '2px 10px', borderRadius: '20px',
-  backgroundColor: '#fef3c7', color: '#b45309',
+  backgroundColor: '#dbeafe', color: '#1d4ed8',
   fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
 }
 const ctaSection: React.CSSProperties = { padding: '4px 32px 24px' }
 const ctaGold: React.CSSProperties = {
   display: 'inline-block', padding: '13px 28px', borderRadius: '10px',
-  backgroundColor: '#C4A35E', color: '#ffffff',
+  backgroundColor: '#2563eb', color: '#ffffff',
   fontSize: '14px', fontWeight: 600, textDecoration: 'none', letterSpacing: '0.01em',
 }
 const divider: React.CSSProperties = { margin: '0 32px 20px', borderColor: '#f1f5f9' }

@@ -1,7 +1,9 @@
 import {
   Html, Head, Body, Container, Section,
-  Text, Link, Hr, Row, Column, Font,
+  Text, Link, Hr, Row, Column, Font, Img,
 } from '@react-email/components'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gpdashboard.flashyourmeme.com'
 
 export type ReportApprovedEmailProps = {
   partnerName:  string
@@ -39,8 +41,21 @@ export function ReportApprovedEmail({
 
           {/* Header */}
           <Section style={header}>
-            <Text style={headerLogo}>FlashYourMeme</Text>
-            <Text style={headerTag}>GP Dashboard</Text>
+            <Row>
+              <Column style={{ verticalAlign: 'middle', width: '44px', paddingRight: '12px' }}>
+                <Img
+                  src={`${APP_URL}/logo-fym-white.svg`}
+                  alt="FLASHYOURMEME"
+                  width="44"
+                  height="30"
+                  style={{ display: 'block' }}
+                />
+              </Column>
+              <Column style={{ verticalAlign: 'middle' }}>
+                <Text style={headerLogo}>FLASHYOURMEME CO., LTD.</Text>
+                <Text style={headerTag}>GP Dashboard</Text>
+              </Column>
+            </Row>
           </Section>
 
           {/* Hero */}
@@ -102,7 +117,7 @@ export function ReportApprovedEmail({
 
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footerText}>FlashYourMeme &middot; GP Dashboard</Text>
+            <Text style={footerText}>FLASHYOURMEME CO., LTD. &middot; GP Dashboard</Text>
           </Section>
 
         </Container>
