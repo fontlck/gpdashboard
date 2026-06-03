@@ -65,7 +65,7 @@ export async function sendApprovedEmail(
     await transporter.sendMail({
       from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
       to:      to.trim(),
-      subject: `รายงาน ${props.period} ได้รับการอนุมัติแล้ว — ${props.amount}`,
+      subject: `Sale Report ${props.period} ได้รับการอนุมัติแล้ว`,
       html,
     })
     return { ok: true }
@@ -87,7 +87,7 @@ export async function sendPaidEmail(
     await transporter.sendMail({
       from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
       to:      to.trim(),
-      subject: `โอนเงิน ${props.period} เรียบร้อยแล้ว — ${props.amount}`,
+      subject: `Sale Report ${props.period} โอนเงินเรียบร้อยแล้ว`,
       html,
     })
     return { ok: true }
