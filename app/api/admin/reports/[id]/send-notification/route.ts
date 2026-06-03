@@ -57,7 +57,7 @@ export async function POST(
   const monthName   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][report.reporting_month - 1] ?? ''
   const period      = `${monthName} ${report.reporting_year}`
   const appUrl      = process.env.NEXT_PUBLIC_APP_URL ?? 'https://gpdashboard.flashyourmeme.com'
-  const reportUrl   = `${appUrl}/admin/reports/${reportId}`
+  const reportUrl   = `${appUrl}/dashboard/reports/${reportId}`
   const reference   = `#RPT-${report.reporting_year}-${String(report.reporting_month).padStart(2,'0')}-${reportId.slice(0,6).toUpperCase()}`
   const date        = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
