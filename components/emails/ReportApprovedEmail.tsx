@@ -44,7 +44,7 @@ export function ReportApprovedEmail({
             <Row>
               <Column style={{ verticalAlign: 'middle', width: '44px', paddingRight: '12px' }}>
                 <Img
-                  src={`${APP_URL}/logo-fym-white.svg`}
+                  src={`${APP_URL}/logo-fym-email.png`}
                   alt="FLASHYOURMEME"
                   width="44"
                   height="30"
