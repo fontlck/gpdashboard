@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient }        from '@/lib/supabase/admin'
 import { createClient }             from '@/lib/supabase/server'
+import { recalcReport }             from '@/lib/report-recalc'
 
 // ── DELETE /api/admin/report-rows ─────────────────────────────────────────────
-// Bulk-delete report_rows by id array, then rebuilds artist_summaries.
+// Bulk-delete report_rows by id array, then recalculates all financials and
+// rebuilds artist_summaries for each affected monthly_report.
 // Body: { ids: string[] }
 
 export async function DELETE(request: NextRequest) {
@@ -34,13 +36,12 @@ export async function DELETE(request: NextRequest) {
   if (!existingRows || existingRows.length === 0)
     return NextResponse.json({ error: 'No rows found' }, { status: 404 })
 
-  // Group by monthly_report_id
   const reportIds = [...new Set(existingRows.map(r => r.monthly_report_id))]
 
   // Verify reports are not approved/paid
   const { data: reports } = await admin
     .from('monthly_reports')
-    .select('id, status, branch_id, reporting_month, reporting_year')
+    .select('id, status')
     .in('id', reportIds)
 
   for (const rep of reports ?? []) {
@@ -61,42 +62,11 @@ export async function DELETE(request: NextRequest) {
   if (deleteErr)
     return NextResponse.json({ error: deleteErr.message }, { status: 500 })
 
-  // Rebuild artist_summaries for each affected report
-  const reportsMap = Object.fromEntries((reports ?? []).map(r => [r.id, r]))
-
+  // Recalculate financials + rebuild summaries for each affected report
   for (const reportId of reportIds) {
-    const rep = reportsMap[reportId]
-    if (!rep) continue
-
-    const { data: allRows } = await admin
-      .from('report_rows')
-      .select('artist_name_raw, artist_image_url, amount, net, opn_refunded')
-      .eq('monthly_report_id', reportId)
-
-    type ArtistStats = { order_count: number; gross_sales: number; total_net: number; artist_image_url: string | null }
-    const artistMap: Record<string, ArtistStats> = {}
-
-    for (const r of allRows ?? []) {
-      const name  = r.artist_name_raw?.trim() || '(Unknown)'
-      const entry = artistMap[name] ?? { order_count: 0, gross_sales: 0, total_net: 0, artist_image_url: null }
-      if (!r.opn_refunded) { entry.order_count++; entry.gross_sales += Number(r.amount) }
-      entry.total_net += Number(r.net)
-      if (!entry.artist_image_url && r.artist_image_url) entry.artist_image_url = r.artist_image_url
-      artistMap[name] = entry
-    }
-
-    const artistRows = Object.entries(artistMap).map(([artist_name, stats]) => ({
-      monthly_report_id: reportId,
-      branch_id:         rep.branch_id,
-      reporting_month:   rep.reporting_month,
-      reporting_year:    rep.reporting_year,
-      artist_name,
-      ...stats,
-    }))
-
-    await admin.from('artist_summaries').delete().eq('monthly_report_id', reportId)
-    if (artistRows.length > 0) {
-      await admin.from('artist_summaries').insert(artistRows)
+    const result = await recalcReport(admin, reportId)
+    if (!result.ok) {
+      console.error(`[report-rows DELETE] recalc failed for ${reportId}:`, result.error)
     }
   }
 
