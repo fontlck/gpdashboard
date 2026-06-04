@@ -21,13 +21,21 @@ function parseLocalDate(ymd: string): Date {
   return new Date(y, m - 1, d)
 }
 
-function parseMonthParam(raw: string | undefined): { year: number; month: number; value: string } {
-  const now = new Date()
-  const dy = now.getFullYear(), dm = now.getMonth() + 1
-  if (!raw || !/^\d{4}-\d{2}$/.test(raw)) return { year: dy, month: dm, value: `${dy}-${String(dm).padStart(2,'0')}` }
+/** Parse ?month=YYYY-MM. Returns null if missing/invalid so a fallback can be chosen. */
+function parseMonthParam(raw: string | undefined): { year: number; month: number; value: string } | null {
+  if (!raw || !/^\d{4}-\d{2}$/.test(raw)) return null
   const [y, m] = raw.split('-').map(Number)
-  if (!y || !m || m < 1 || m > 12) return { year: dy, month: dm, value: `${dy}-${String(dm).padStart(2,'0')}` }
+  if (!y || !m || m < 1 || m > 12) return null
   return { year: y, month: m, value: raw }
+}
+
+function makeMonth(year: number, month: number) {
+  return { year, month, value: `${year}-${String(month).padStart(2, '0')}` }
+}
+
+function currentMonth() {
+  const now = new Date()
+  return makeMonth(now.getFullYear(), now.getMonth() + 1)
 }
 
 function prevMonth(year: number, month: number) {
@@ -115,8 +123,7 @@ export default async function PartnerOverviewPage({
   if (!user) redirect('/login')
 
   const { month: monthParam } = await searchParams
-  const sel  = parseMonthParam(monthParam)
-  const prev = prevMonth(sel.year, sel.month)
+  const monthFromUrl = parseMonthParam(monthParam)
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -180,6 +187,13 @@ export default async function PartnerOverviewPage({
     paid_at:              r.paid_at,
     branch_name:          branchNames[r.branch_id] ?? '—',
   }))
+
+  // ── Default month selection ─────────────────────────────────────────────────
+  // Priority: URL param > latest month with an approved/paid report > current month
+  const latestReport = rawReports?.[0]
+  const sel  = monthFromUrl
+    ?? (latestReport ? makeMonth(latestReport.reporting_year, latestReport.reporting_month) : currentMonth())
+  const prev = prevMonth(sel.year, sel.month)
 
   // ── Monthly-filtered KPIs (selected month + prev month MoM) ─────────────────
   const currMonthReports = reports.filter(r => r.reporting_year === sel.year && r.reporting_month === sel.month)
