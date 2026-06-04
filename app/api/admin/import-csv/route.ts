@@ -345,14 +345,8 @@ export async function POST(request: NextRequest) {
       //
       // If adjusted_net < 0 (refunds exceed NET), clamp to 0 so partner
       // share and payout are never negative.
-      // For VAT-registered partners: customer payment includes embedded VAT — strip
-      // before applying the share, then add VAT back on partner's portion.
-      // For non-VAT-registered partners: customer payment has no embedded VAT —
-      // apply the share directly to the full net amount.
-      const baseForShare = adjusted_net < 0
-        ? 0
-        : (isVatRegistered ? adjusted_net / (1 + vatRate) : adjusted_net)
-      partner_share = baseForShare * (revenueSharePct / 100)
+      const adjustedNetExVat = adjusted_net < 0 ? 0 : adjusted_net / (1 + vatRate)
+      partner_share = adjustedNetExVat * (revenueSharePct / 100)
       vat_amount    = isVatRegistered ? partner_share * vatRate : 0
       final_payout  = partner_share + vat_amount
     }
@@ -401,12 +395,9 @@ export async function POST(request: NextRequest) {
         const stats = artistMap[ea.artist_name]
         if (!stats || !ea.referral_uplift_pct) continue
         const upliftPct      = Number(ea.referral_uplift_pct)
-        // Same VAT-stripping rule as partner share — only strip if registered.
-        const artistBase = stats.total_net < 0
-          ? 0
-          : (isVatRegistered ? stats.total_net / (1 + vatRate) : stats.total_net)
-        const upliftBase = artistBase * (upliftPct / 100)
-        const upliftVat  = isVatRegistered ? upliftBase * vatRate : 0
+        const artistNetExVat = stats.total_net < 0 ? 0 : stats.total_net / (1 + vatRate)
+        const upliftBase     = artistNetExVat * (upliftPct / 100)
+        const upliftVat      = isVatRegistered ? upliftBase * vatRate : 0
         referred_artist_uplift     += upliftBase
         referred_artist_uplift_vat += upliftVat
         upliftSnapshot.push({

@@ -79,14 +79,8 @@ export async function recalcReport(admin: SB, reportId: string): Promise<{ ok: t
       final_payout  = fixedRent + vat_amount
     }
   } else {
-    // For VAT-registered partners: customer payment includes embedded VAT —
-    //   strip it before applying the share, then add VAT back to partner's portion.
-    // For non-VAT-registered partners: customer payment has no embedded VAT —
-    //   apply the share directly to the full net amount.
-    const baseForShare = adjusted_net < 0
-      ? 0
-      : (isVatRegistered ? adjusted_net / (1 + vatRate) : adjusted_net)
-    partner_share = baseForShare * (revenueSharePct / 100)
+    const adjustedNetExVat = adjusted_net < 0 ? 0 : adjusted_net / (1 + vatRate)
+    partner_share = adjustedNetExVat * (revenueSharePct / 100)
     vat_amount    = isVatRegistered ? partner_share * vatRate : 0
     final_payout  = partner_share + vat_amount
   }
@@ -119,11 +113,8 @@ export async function recalcReport(admin: SB, reportId: string): Promise<{ ok: t
     if (pct <= 0) continue
     const stats = artistMap[entry.artist_name]
     if (!stats) continue   // artist no longer has any orders — skip
-    // Same VAT-stripping rule as partner share — only strip if registered.
-    const artistBase = stats.total_net < 0
-      ? 0
-      : (isVatRegistered ? stats.total_net / (1 + vatRate) : stats.total_net)
-    const upliftBase = artistBase * (pct / 100)
+    const netExVat   = stats.total_net < 0 ? 0 : stats.total_net / (1 + vatRate)
+    const upliftBase = netExVat * (pct / 100)
     const upliftVat  = isVatRegistered ? upliftBase * vatRate : 0
     referred_artist_uplift     += upliftBase
     referred_artist_uplift_vat += upliftVat
