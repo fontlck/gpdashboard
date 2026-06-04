@@ -69,6 +69,9 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
   const [edit,       setEdit]       = useState<EditState | null>(null)
   const [toast,      setToast]      = useState<Toast | null>(null)
   const [localRows,  setLocalRows]  = useState<OrderRow[]>(rows)
+  const [selected,   setSelected]   = useState<Set<string>>(new Set())
+  const [deleting,   setDeleting]   = useState(false)
+  const [confirmDel, setConfirmDel] = useState(false)
 
   const unknownCount = useMemo(() => localRows.filter(r => isUnknown(r.artist_name_raw)).length, [localRows])
   const displayed    = useMemo(
@@ -124,6 +127,57 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll(visibleIds: string[]) {
+    const allSelected = visibleIds.every(id => selected.has(id))
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (allSelected) visibleIds.forEach(id => next.delete(id))
+      else             visibleIds.forEach(id => next.add(id))
+      return next
+    })
+  }
+
+  async function bulkDelete() {
+    if (selected.size === 0) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/admin/report-rows', {
+        method:  'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ids: [...selected] }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setToast({ message: json.error ?? 'Delete failed', ok: false })
+        setDeleting(false)
+        setConfirmDel(false)
+        setTimeout(() => setToast(null), 5000)
+        return
+      }
+      // Remove deleted rows locally
+      const deletedIds = selected
+      setLocalRows(prev => prev.filter(r => !deletedIds.has(r.id)))
+      setSelected(new Set())
+      setToast({ message: `Deleted ${json.deleted} row${json.deleted !== 1 ? 's' : ''} — summaries rebuilt.`, ok: true })
+      setTimeout(() => setToast(null), 4000)
+      router.refresh()
+    } catch {
+      setToast({ message: 'Network error — please try again.', ok: false })
+      setTimeout(() => setToast(null), 4000)
+    } finally {
+      setDeleting(false)
+      setConfirmDel(false)
+    }
+  }
+
   if (localRows.length === 0) return null
 
   const cell: React.CSSProperties = {
@@ -164,20 +218,79 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
             </p>
           )}
         </div>
-        <button
-          onClick={() => setShowAll(v => !v)}
-          style={{
-            padding: '6px 14px', borderRadius: '8px',
-            border: '1px solid rgba(255,255,255,0.12)',
-            background: 'transparent', color: 'rgba(240,236,228,0.7)',
-            fontSize: '12px', cursor: 'pointer',
-          }}
-        >
-          {showAll
-            ? `Show unknown only (${unknownCount})`
-            : `Show all rows (${localRows.length})`}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {selected.size > 0 && !locked && (
+            <button
+              onClick={() => setConfirmDel(true)}
+              disabled={deleting}
+              style={{
+                padding: '6px 14px', borderRadius: '8px',
+                border: '1px solid rgba(239,68,68,0.4)',
+                background: 'rgba(239,68,68,0.1)', color: '#F87171',
+                fontSize: '12px', fontWeight: 600, cursor: deleting ? 'default' : 'pointer',
+                opacity: deleting ? 0.6 : 1,
+              }}
+            >
+              {deleting ? 'Deleting…' : `Delete ${selected.size} row${selected.size !== 1 ? 's' : ''}`}
+            </button>
+          )}
+          <button
+            onClick={() => setShowAll(v => !v)}
+            style={{
+              padding: '6px 14px', borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'transparent', color: 'rgba(240,236,228,0.7)',
+              fontSize: '12px', cursor: 'pointer',
+            }}
+          >
+            {showAll
+              ? `Show unknown only (${unknownCount})`
+              : `Show all rows (${localRows.length})`}
+          </button>
+        </div>
       </div>
+
+      {/* Confirm delete modal */}
+      {confirmDel && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#0C1018', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '14px', padding: '24px 28px', maxWidth: '380px', width: '90%',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+          }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#F1F5F9', margin: '0 0 8px' }}>
+              Delete {selected.size} row{selected.size !== 1 ? 's' : ''}?
+            </h3>
+            <p style={{ fontSize: '13px', color: 'rgba(241,245,249,0.55)', lineHeight: 1.55, margin: '0 0 20px' }}>
+              The selected orders will be permanently removed and artist summaries will be rebuilt. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmDel(false)}
+                disabled={deleting}
+                style={{
+                  padding: '8px 16px', borderRadius: 8, fontSize: 13,
+                  border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                  color: 'rgba(241,245,249,0.6)', cursor: deleting ? 'default' : 'pointer',
+                }}
+              >Cancel</button>
+              <button
+                onClick={bulkDelete}
+                disabled={deleting}
+                style={{
+                  padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                  border: 'none', background: '#EF4444', color: '#fff',
+                  cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.6 : 1,
+                }}
+              >{deleting ? 'Deleting…' : 'Delete'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
@@ -200,6 +313,23 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr>
+                {!locked && (
+                  <th style={{ ...hdrCell, width: 32, textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={displayed.length > 0 && displayed.every(r => selected.has(r.id))}
+                      ref={el => {
+                        if (el) {
+                          const someSel = displayed.some(r => selected.has(r.id))
+                          const allSel  = displayed.length > 0 && displayed.every(r => selected.has(r.id))
+                          el.indeterminate = someSel && !allSel
+                        }
+                      }}
+                      onChange={() => toggleSelectAll(displayed.map(r => r.id))}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </th>
+                )}
                 <th style={{ ...hdrCell, width: 40 }}></th>   {/* thumbnail */}
                 <th style={hdrCell}>#</th>
                 <th style={hdrCell}>Date</th>
@@ -216,11 +346,28 @@ export function OrdersTable({ rows, locked = false }: { rows: OrderRow[]; locked
                 const unknown   = isUnknown(row.artist_name_raw)
                 const isEditing = edit?.rowId === row.id
 
+                const isSel = selected.has(row.id)
+
                 return (
                   <tr
                     key={row.id}
-                    style={{ background: unknown ? 'rgba(245,158,11,0.03)' : 'transparent' }}
+                    style={{
+                      background: isSel
+                        ? 'rgba(59,130,246,0.06)'
+                        : unknown ? 'rgba(245,158,11,0.03)' : 'transparent',
+                    }}
                   >
+                    {/* Checkbox */}
+                    {!locked && (
+                      <td style={{ ...cell, textAlign: 'center', padding: '8px' }}>
+                        <input
+                          type="checkbox"
+                          checked={isSel}
+                          onChange={() => toggleSelect(row.id)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
+                    )}
                     {/* Thumbnail */}
                     <td style={{ ...cell, padding: '8px' }}>
                       <ArtistThumb url={isEditing && isValidUrl(edit.imageUrl) ? edit.imageUrl : row.artist_image_url} />
