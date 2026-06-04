@@ -3,12 +3,13 @@
 import React, { useState } from 'react'
 
 type Props = {
-  reportId:      string
-  finalPayout:   number        // gross payout (before WHT)
-  vatRate:       number        // e.g. 0.07 — from vat_rate_snapshot
-  initialPct:    number | null // existing WHT pct from DB (3, 5, or null)
-  initialAmount: number | null // existing withholding_tax_amount from DB
-  locked:        boolean       // approved or paid
+  reportId:        string
+  finalPayout:     number        // gross payout (before WHT)
+  vatRate:         number        // e.g. 0.07 — from vat_rate_snapshot
+  isVatRegistered: boolean       // partner VAT-registered? from is_vat_registered_snapshot
+  initialPct:      number | null // existing WHT pct from DB (3, 5, or null)
+  initialAmount:   number | null // existing withholding_tax_amount from DB
+  locked:          boolean       // approved or paid
 }
 
 function fmt(n: number) {
@@ -19,6 +20,7 @@ export function WithholdingTaxControl({
   reportId,
   finalPayout,
   vatRate,
+  isVatRegistered,
   initialPct,
   initialAmount,
   locked,
@@ -28,8 +30,12 @@ export function WithholdingTaxControl({
   const [saving,        setSaving]        = useState(false)
   const [saveMsg,       setSaveMsg]       = useState<{ text: string; ok: boolean } | null>(null)
 
-  // WHT base = final_payout ÷ (1 + vat_rate) — mirrors Thai tax document method
-  const autoBase   = Math.round((finalPayout / (1 + vatRate)) * 100) / 100
+  // WHT base = the ex-VAT (taxable) portion of the payout.
+  //   • VAT-registered: finalPayout includes VAT — strip it (÷ 1.07)
+  //   • Non-VAT       : finalPayout is already ex-VAT — use as-is
+  const autoBase   = Math.round(
+    (isVatRegistered ? finalPayout / (1 + vatRate) : finalPayout) * 100
+  ) / 100
   const autoAmount = Math.round(autoBase * (pct / 100) * 100) / 100
 
   // Manual override
@@ -143,7 +149,7 @@ export function WithholdingTaxControl({
           <div style={{ padding: '8px 0 4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'rgba(240,236,228,0.5)', fontSize: '12px' }}>
-                WHT {pct}% of {fmt(autoBase)} (ex-VAT)
+                WHT {pct}% of {fmt(autoBase)}{isVatRegistered ? ' (ex-VAT)' : ''}
                 {overrideMode && (
                   <span style={{
                     marginLeft: 6, fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em',
