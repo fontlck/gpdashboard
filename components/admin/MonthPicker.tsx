@@ -71,7 +71,7 @@ export function MonthPicker({ selectedMonth }: { selectedMonth: string }) {
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0,
           minWidth: '210px', zIndex: 50,
           background: '#12152b',
           border: '1px solid rgba(255,255,255,.1)',
