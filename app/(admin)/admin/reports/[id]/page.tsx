@@ -67,6 +67,9 @@ type ReportDetailRow = {
   wht_cert_path:            string | null
   wht_cert_name:            string | null
   wht_cert_uploaded_at:     string | null
+  receipt_path:             string | null
+  receipt_name:             string | null
+  receipt_uploaded_at:      string | null
   // Counts
   total_transaction_count: number
   total_skipped_currency:  number
@@ -110,6 +113,7 @@ export default async function AdminReportDetailPage({
       withholding_tax_pct, withholding_tax_amount,
       payment_slip_path, payment_slip_name, payment_slip_uploaded_at,
       wht_cert_path, wht_cert_name, wht_cert_uploaded_at,
+      receipt_path, receipt_name, receipt_uploaded_at,
       total_transaction_count, total_skipped_currency, total_skipped_date,
       compensation_amount, compensation_note,
       service_fee_amount, service_fee_note, service_fee_wht,
@@ -537,6 +541,8 @@ export default async function AdminReportDetailPage({
             slipUploadedAt={report.payment_slip_uploaded_at ?? null}
             whtName={report.wht_cert_name ?? null}
             whtUploadedAt={report.wht_cert_uploaded_at ?? null}
+            receiptName={report.receipt_name ?? null}
+            receiptUploadedAt={report.receipt_uploaded_at ?? null}
           />
         </div>
 

@@ -2,14 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react'
 
-type DocType = 'slip' | 'wht'
+type DocType = 'slip' | 'wht' | 'receipt'
 
 type Props = {
-  reportId:       string
-  slipName:       string | null
-  slipUploadedAt: string | null
-  whtName:        string | null
-  whtUploadedAt:  string | null
+  reportId:           string
+  slipName:           string | null
+  slipUploadedAt:     string | null
+  whtName:            string | null
+  whtUploadedAt:      string | null
+  receiptName?:       string | null
+  receiptUploadedAt?: string | null
 }
 
 function fmtDate(iso: string | null) {
@@ -24,11 +26,12 @@ function isImage(name: string | null) {
 // ── Single document card (Option C style) ─────────────────────────────────────
 
 function DocCard({
-  reportId, docType, label, name, uploadedAt, onUpdated,
+  reportId, docType, label, name, uploadedAt, onUpdated, readOnly = false,
 }: {
   reportId: string; docType: DocType; label: string
   name: string | null; uploadedAt: string | null
   onUpdated: (name: string | null, uploadedAt: string | null) => void
+  readOnly?: boolean
 }) {
   const inputRef             = useRef<HTMLInputElement>(null)
   const [uploading,  setUploading]  = useState(false)
@@ -196,31 +199,50 @@ function DocCard({
             >
               {downloading ? '…' : '↓'}
             </button>
-            <button
-              onClick={() => inputRef.current?.click()}
-              disabled={uploading}
-              title="Replace"
-              style={{
-                padding: '5px 10px', borderRadius: '7px', fontSize: '11px',
-                border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)',
-                color: 'rgba(240,236,228,0.5)', cursor: 'pointer', flexShrink: 0,
-              }}
-            >
-              {uploading ? '…' : '↺'}
-            </button>
-            <button
-              onClick={handleRemove}
-              disabled={removing}
-              title="Remove"
-              style={{
-                padding: '5px 8px', borderRadius: '7px', fontSize: '11px',
-                border: '1px solid rgba(239,68,68,0.18)', background: 'rgba(239,68,68,0.06)',
-                color: '#F87171', cursor: 'pointer', flexShrink: 0,
-              }}
-            >
-              {removing ? '…' : '✕'}
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  onClick={() => inputRef.current?.click()}
+                  disabled={uploading}
+                  title="Replace"
+                  style={{
+                    padding: '5px 10px', borderRadius: '7px', fontSize: '11px',
+                    border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)',
+                    color: 'rgba(240,236,228,0.5)', cursor: 'pointer', flexShrink: 0,
+                  }}
+                >
+                  {uploading ? '…' : '↺'}
+                </button>
+                <button
+                  onClick={handleRemove}
+                  disabled={removing}
+                  title="Remove"
+                  style={{
+                    padding: '5px 8px', borderRadius: '7px', fontSize: '11px',
+                    border: '1px solid rgba(239,68,68,0.18)', background: 'rgba(239,68,68,0.06)',
+                    color: '#F87171', cursor: 'pointer', flexShrink: 0,
+                  }}
+                >
+                  {removing ? '…' : '✕'}
+                </button>
+              </>
+            )}
           </div>
+        </div>
+      ) : readOnly ? (
+        /* Read-only empty state — awaiting partner upload */
+        <div
+          style={{
+            border: '1px dashed rgba(255,255,255,0.07)', borderRadius: '10px',
+            flex: 1, minHeight: '160px',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: '6px',
+            background: 'rgba(255,255,255,0.015)',
+          }}
+        >
+          <div style={{ fontSize: '20px', color: 'rgba(240,236,228,0.1)' }}>⏳</div>
+          <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.25)', fontWeight: 500 }}>Awaiting partner upload</div>
+          <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.15)' }}>Partner will upload after payment</div>
         </div>
       ) : (
         /* Empty state — upload zone */
@@ -267,8 +289,11 @@ function DocCard({
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function ReportDocumentUpload({
-  reportId, slipName: initSlipName, slipUploadedAt: initSlipAt,
-  whtName: initWhtName, whtUploadedAt: initWhtAt,
+  reportId,
+  slipName:    initSlipName,    slipUploadedAt:    initSlipAt,
+  whtName:     initWhtName,     whtUploadedAt:     initWhtAt,
+  receiptName: initReceiptName = null,
+  receiptUploadedAt: initReceiptAt = null,
 }: Props) {
   const [slipName, setSlipName] = useState(initSlipName)
   const [slipAt,   setSlipAt]   = useState(initSlipAt)
@@ -291,8 +316,8 @@ export function ReportDocumentUpload({
         PNG, JPG or PDF · max 10 MB
       </p>
 
-      {/* Side-by-side grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      {/* 3-col grid: Slip + WHT (admin upload) · Receipt (partner upload, read-only) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <DocCard
           reportId={reportId} docType="slip" label="Payment Slip"
           name={slipName} uploadedAt={slipAt}
@@ -302,6 +327,12 @@ export function ReportDocumentUpload({
           reportId={reportId} docType="wht" label="Withholding Tax Certificate (ใบหัก ณ ที่จ่าย)"
           name={whtName} uploadedAt={whtAt}
           onUpdated={(n, a) => { setWhtName(n); setWhtAt(a) }}
+        />
+        <DocCard
+          reportId={reportId} docType="receipt" label="Receipt / Tax Invoice (จาก Partner)"
+          name={initReceiptName} uploadedAt={initReceiptAt}
+          onUpdated={() => {}}
+          readOnly
         />
       </div>
     </div>
