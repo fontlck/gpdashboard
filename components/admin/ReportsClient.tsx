@@ -218,7 +218,7 @@ function DocStatus({ slip, wht, receipt }: { slip: boolean; wht: boolean; receip
               width: '12px', height: '12px',
               borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '1.5px solid #000',
+              border: '1.5px solid #06080F',
               lineHeight: 1,
             }}>✓</span>
           )}
@@ -272,7 +272,7 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
       />
 
       <div style={{
-        background: '#000',
+        background: '#06080F',
         border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: '16px',
         overflow: 'hidden',
