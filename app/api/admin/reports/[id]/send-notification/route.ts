@@ -73,6 +73,14 @@ export async function POST(
     const emailOk = results.emailResult?.ok ?? null
     const lineOk  = results.lineResult?.ok  ?? null
 
+    console.log('[send-notification]', {
+      reportId, event,
+      to:        branch.notification_email,
+      emailOk, lineOk,
+      emailErr: results.emailResult?.error,
+      lineErr:  results.lineResult?.error,
+    })
+
     if ((results.emailResult && !emailOk) || (results.lineResult && !lineOk)) {
       return NextResponse.json({
         success: false,
@@ -83,6 +91,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, emailOk, lineOk })
   } catch (err) {
+    console.error('[send-notification] threw:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
