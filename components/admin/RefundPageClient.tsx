@@ -510,7 +510,7 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
       {/* ── Form panel (create or edit) ───────────────────────────────────────── */}
       {(mode === 'create' || mode === 'edit') && (
         <div style={{
-          background: '#0D0F1A', border: '1px solid rgba(239,68,68,0.15)',
+          background: '#06080F', border: '1px solid rgba(239,68,68,0.15)',
           borderRadius: '16px', padding: '24px', marginBottom: '24px',
         }}>
           <h2 style={{
@@ -532,7 +532,7 @@ export function RefundPageClient({ branches, refunds: initialRefunds }: Props) {
 
       {/* ── Refund list table ─────────────────────────────────────────────────── */}
       <div style={{
-        background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+        background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: '16px', overflow: 'hidden',
       }}>
         {refunds.length === 0 ? (

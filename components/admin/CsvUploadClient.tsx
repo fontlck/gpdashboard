@@ -9,7 +9,7 @@ const GOLD_BG     = 'rgba(59,130,246,0.08)'
 const GOLD_BORDER = 'rgba(59,130,246,0.25)'
 const TEXT        = '#F0ECE4'
 const TEXT_MUTED  = 'rgba(240,236,228,0.45)'
-const SURFACE     = '#0D0F1A'
+const SURFACE     = '#06080F'
 const SURFACE_2   = '#080A10'
 const BORDER      = 'rgba(255,255,255,0.06)'
 

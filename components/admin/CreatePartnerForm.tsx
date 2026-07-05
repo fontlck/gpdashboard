@@ -69,7 +69,7 @@ export function CreatePartnerForm({ partners }: Props) {
 
   return (
     <div style={{
-      background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+      background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
       borderRadius: '16px', overflow: 'hidden',
     }}>
       {/* Header */}

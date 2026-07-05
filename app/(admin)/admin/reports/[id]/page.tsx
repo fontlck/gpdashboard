@@ -390,7 +390,7 @@ export default async function AdminReportDetailPage({
 
         {/* Financial Breakdown */}
         <div style={{
-          background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+          background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: '16px', padding: '24px',
         }}>
           <h2 style={{
@@ -429,7 +429,7 @@ export default async function AdminReportDetailPage({
 
           {/* Report Info */}
           <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px', padding: '24px',
           }}>
             <h2 style={{
@@ -457,7 +457,7 @@ export default async function AdminReportDetailPage({
 
           {/* Refund panel */}
           <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px', padding: '24px',
           }}>
             <h2 style={{
@@ -481,7 +481,7 @@ export default async function AdminReportDetailPage({
         {/* Daily Trend Chart — same view as partner sees */}
         {orderRows.length > 0 && (
           <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
           }}>
             <h2 style={{
@@ -501,7 +501,7 @@ export default async function AdminReportDetailPage({
         {/* Artist Breakdown — interactive uplift editor */}
         {artists.length > 0 && (
           <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
           }}>
             <h2 style={{
@@ -526,7 +526,7 @@ export default async function AdminReportDetailPage({
         {/* Order Rows — inline artist correction */}
         {orderRows.length > 0 && (
           <div style={{
-            background: '#0D0F1A', border: '1px solid rgba(255,255,255,0.06)',
+            background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
             borderRadius: '16px', padding: '24px', gridColumn: '1 / -1',
           }}>
             <OrdersTable rows={orderRows} locked={locked} />
