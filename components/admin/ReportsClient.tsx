@@ -22,6 +22,9 @@ type ReportRow = {
   revenue_share_pct_snapshot: number
   fixed_rent_snapshot: number | null
   has_negative_adjusted_net: boolean
+  has_slip: boolean
+  has_wht: boolean
+  has_receipt: boolean
   created_at: string
   updated_at: string
   branch_id: string
@@ -171,6 +174,60 @@ function PayoutModelCell({ r }: { r: ReportRow }) {
   )
 }
 
+// ── Document status icons (Slip / WHT / Receipt) ─────────────────────────────
+
+function DocStatus({ slip, wht, receipt }: { slip: boolean; wht: boolean; receipt: boolean }) {
+  const items = [
+    { label: 'Payment slip',  done: slip },
+    { label: 'WHT certificate', done: wht },
+    { label: 'Receipt (partner)', done: receipt },
+  ]
+  const tooltip = items.map(i => `${i.label}: ${i.done ? '✓ uploaded' : 'pending'}`).join(' · ')
+
+  return (
+    <span title={tooltip} style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+      {items.map((it, i) => (
+        <span
+          key={i}
+          style={{
+            position: 'relative',
+            width: '18px', height: '22px',
+            border: `1.5px solid ${it.done ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.15)'}`,
+            borderRadius: '3px',
+            background: it.done ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.02)',
+            display: 'inline-block',
+          }}
+        >
+          {/* Fake text lines */}
+          <span style={{
+            position: 'absolute',
+            top: '4px', left: '3px', right: '3px',
+            height: '1px',
+            background: it.done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.15)',
+            boxShadow: `0 3px 0 ${it.done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.15)'}, 0 6px 0 ${it.done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.15)'}`,
+          }} />
+          {/* Green check overlay */}
+          {it.done && (
+            <span style={{
+              position: 'absolute',
+              bottom: '-4px', right: '-4px',
+              background: '#22C55E',
+              color: '#fff',
+              fontSize: '9px',
+              fontWeight: 700,
+              width: '12px', height: '12px',
+              borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '1.5px solid #0D0F1A',
+              lineHeight: 1,
+            }}>✓</span>
+          )}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function ReportsClient({ reports }: { reports: ReportRow[] }) {
@@ -232,7 +289,7 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                  {['Period', 'Branch', 'Partner', 'Payout model', 'Gross Sales', 'Final Payout', 'Status', 'Updated', ''].map(h => (
+                  {['Period', 'Branch', 'Partner', 'Payout model', 'Gross Sales', 'Final Payout', 'Status', 'Docs', 'Updated', ''].map(h => (
                     <th key={h} style={TH}>{h}</th>
                   ))}
                 </tr>
@@ -302,6 +359,11 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
                     {/* Status */}
                     <td style={TD}>
                       <StatusBadge status={r.status as 'draft'} />
+                    </td>
+
+                    {/* Docs */}
+                    <td style={TD}>
+                      <DocStatus slip={r.has_slip} wht={r.has_wht} receipt={r.has_receipt} />
                     </td>
 
                     {/* Updated */}

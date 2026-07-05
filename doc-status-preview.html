@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documents Column — 5 Design Options</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #06080F;
+      font-family: 'DM Sans', sans-serif;
+      color: rgba(240,236,228,0.85);
+      padding: 32px 24px 60px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: rgba(240,236,228,0.4);
+      margin-bottom: 32px;
+    }
+    .legend {
+      display: inline-flex;
+      gap: 20px;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      margin-bottom: 40px;
+      font-size: 12px;
+    }
+    .legend b {
+      color: #F0ECE4;
+      font-weight: 600;
+    }
+    .legend .icon-inline {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .option {
+      max-width: 1200px;
+      margin: 0 auto 44px;
+      background: #0D0F1A;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .option-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .option-header .num {
+      display: inline-block;
+      background: rgba(59,130,246,0.15);
+      color: #60A5FA;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.06em;
+      margin-right: 10px;
+    }
+    .option-header h2 {
+      display: inline;
+      font-size: 15px;
+      font-weight: 600;
+      color: #F1F5F9;
+    }
+    .option-header p {
+      font-size: 12px;
+      color: rgba(240,236,228,0.4);
+      margin-top: 6px;
+    }
+
+    /* Fake report table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead th {
+      background: rgba(255,255,255,0.015);
+      padding: 10px 20px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(240,236,228,0.3);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    tbody td {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    .col-doc {
+      width: 130px;
+    }
+    .period { color: #F0ECE4; font-weight: 500; }
+    .branch { color: rgba(240,236,228,0.85); }
+    .payout { color: #F1F5F9; font-weight: 600; font-family: 'DM Mono', monospace; }
+    .status {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .status-paid { background: rgba(34,197,94,0.12); color: #22C55E; }
+    .status-draft { background: rgba(255,255,255,0.06); color: rgba(240,236,228,0.35); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Option 1 — Traffic Dots
+       ══════════════════════════════════════════════════════════════════ */
+    .dots-cluster {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+    }
+    .dot.done       { background: #22C55E; border-color: rgba(34,197,94,0.5); }
+    .dot.done-slip  { background: #60A5FA; border-color: rgba(96,165,250,0.5); }
+    .dot.done-wht   { background: #A855F7; border-color: rgba(168,85,247,0.5); }
+    .dot.done-receipt { background: #F59E0B; border-color: rgba(245,158,11,0.5); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Option 2 — Document Icons (with checkmark overlay)
+       ══════════════════════════════════════════════════════════════════ */
+    .icon-triplet {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .doc-icon {
+      position: relative;
+      width: 18px; height: 22px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 3px;
+      background: rgba(255,255,255,0.02);
+    }
+    .doc-icon::before {
+      content: '';
+      position: absolute;
+      inset: 4px 3px auto 3px;
+      height: 1px;
+      background: rgba(255,255,255,0.15);
+      box-shadow:
+        0 3px 0 rgba(255,255,255,0.15),
+        0 6px 0 rgba(255,255,255,0.15);
+    }
+    .doc-icon.done {
+      border-color: rgba(34,197,94,0.5);
+      background: rgba(34,197,94,0.08);
+    }
+    .doc-icon.done::before {
+      background: rgba(34,197,94,0.4);
+      box-shadow: 0 3px 0 rgba(34,197,94,0.4), 0 6px 0 rgba(34,197,94,0.4);
+    }
+    .doc-icon.done::after {
+      content: '✓';
+      position: absolute;
+      bottom: -4px; right: -4px;
+      background: #22C55E;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid #0D0F1A;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Option 3 — Segmented Progress Bar
+       ══════════════════════════════════════════════════════════════════ */
+    .seg-bar {
+      display: inline-flex;
+      gap: 3px;
+      align-items: center;
+    }
+    .seg {
+      width: 24px; height: 6px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.07);
+    }
+    .seg.done { background: #22C55E; }
+    .seg-label {
+      margin-left: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(240,236,228,0.4);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+    .seg-label.complete { color: #22C55E; }
+    .seg-label.partial { color: #F59E0B; }
+    .seg-label.empty { color: rgba(240,236,228,0.25); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Option 4 — Letter Chips (S / W / R)
+       ══════════════════════════════════════════════════════════════════ */
+    .chip-row {
+      display: inline-flex;
+      gap: 4px;
+    }
+    .letter-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: rgba(255,255,255,0.04);
+      color: rgba(240,236,228,0.25);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .letter-chip.done {
+      background: rgba(34,197,94,0.12);
+      color: #22C55E;
+      border-color: rgba(34,197,94,0.3);
+    }
+    .letter-chip.waiting {
+      background: rgba(245,158,11,0.1);
+      color: #F59E0B;
+      border-color: rgba(245,158,11,0.25);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Option 5 — Emoji-style Checkbox Grid + Label
+       ══════════════════════════════════════════════════════════════════ */
+    .check-grid {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .check-mini {
+      display: inline-flex;
+      gap: 3px;
+    }
+    .check-box {
+      width: 14px; height: 14px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: transparent;
+    }
+    .check-box.done {
+      border-color: #22C55E;
+      background: rgba(34,197,94,0.1);
+      color: #22C55E;
+    }
+    .check-count {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(240,236,228,0.5);
+      font-family: 'DM Mono', monospace;
+    }
+    .check-count.complete { color: #22C55E; }
+    .check-count.empty    { color: rgba(240,236,228,0.25); }
+
+  </style>
+</head>
+<body>
+
+  <h1>📄 Documents Column — 5 Design Options</h1>
+  <p class="subtitle">แสดง status ของ 3 documents ในตาราง Reports · Slip / WHT / Receipt</p>
+
+  <div class="legend">
+    <span><b>Slip</b> — payment slip (admin)</span>
+    <span><b>WHT</b> — withholding tax cert (admin)</span>
+    <span><b>Receipt</b> — ใบกำกับภาษี (partner)</span>
+  </div>
+
+  <!-- ═══════════════ OPTION 1 — Traffic Dots ═══════════════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 1</span>
+      <h2>Traffic Dots — 3 จุดเรียงกัน</h2>
+      <p>เล็กที่สุด · ใช้พื้นที่น้อย · แต่ต้อง hover เพื่อดูว่าจุดไหนคืออะไร</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>PERIOD</th><th>BRANCH</th><th>PAYOUT</th>
+          <th>STATUS</th><th class="col-doc">DOCS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td class="payout">฿8,774.36</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="dots-cluster" title="Slip ✓ · WHT ✓ · Receipt ✓">
+              <span class="dot done"></span><span class="dot done"></span><span class="dot done"></span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">DusitD2</td>
+          <td class="payout">฿5,281.02</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="dots-cluster" title="Slip ✓ · WHT ✓ · Receipt ⏳">
+              <span class="dot done"></span><span class="dot done"></span><span class="dot"></span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td class="payout">฿7,394.30</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="dots-cluster" title="Slip ✓ · WHT ⏳ · Receipt ⏳">
+              <span class="dot done"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td class="payout">฿6,955.00</td><td><span class="status status-draft">DRAFT</span></td>
+          <td>
+            <div class="dots-cluster" title="No docs uploaded">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════ OPTION 2 — Document Icons ═══════════════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 2</span>
+      <h2>Document Icons — ไอคอนเอกสารมี checkmark</h2>
+      <p>ดูรู้ทันทีว่าเป็นเอกสาร · มี ✓ overlay สีเขียวเมื่อ upload แล้ว</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>PERIOD</th><th>BRANCH</th><th>PAYOUT</th>
+          <th>STATUS</th><th class="col-doc">DOCS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td class="payout">฿8,774.36</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="icon-triplet" title="Slip ✓ · WHT ✓ · Receipt ✓">
+              <div class="doc-icon done"></div><div class="doc-icon done"></div><div class="doc-icon done"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">DusitD2</td>
+          <td class="payout">฿5,281.02</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="icon-triplet">
+              <div class="doc-icon done"></div><div class="doc-icon done"></div><div class="doc-icon"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td class="payout">฿7,394.30</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="icon-triplet">
+              <div class="doc-icon done"></div><div class="doc-icon"></div><div class="doc-icon"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td class="payout">฿6,955.00</td><td><span class="status status-draft">DRAFT</span></td>
+          <td>
+            <div class="icon-triplet">
+              <div class="doc-icon"></div><div class="doc-icon"></div><div class="doc-icon"></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════ OPTION 3 — Segmented Bar ═══════════════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 3</span>
+      <h2>Segmented Bar — บาร์ 3 ช่วง + ตัวเลข</h2>
+      <p>เห็นสัดส่วนความสำเร็จเป็น bar · ตัวเลข 3/3 บอกจำนวนที่เสร็จ</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>PERIOD</th><th>BRANCH</th><th>PAYOUT</th>
+          <th>STATUS</th><th class="col-doc">DOCS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td class="payout">฿8,774.36</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="seg-bar">
+              <span class="seg done"></span><span class="seg done"></span><span class="seg done"></span>
+              <span class="seg-label complete">3/3</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">DusitD2</td>
+          <td class="payout">฿5,281.02</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="seg-bar">
+              <span class="seg done"></span><span class="seg done"></span><span class="seg"></span>
+              <span class="seg-label partial">2/3</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td class="payout">฿7,394.30</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="seg-bar">
+              <span class="seg done"></span><span class="seg"></span><span class="seg"></span>
+              <span class="seg-label partial">1/3</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td class="payout">฿6,955.00</td><td><span class="status status-draft">DRAFT</span></td>
+          <td>
+            <div class="seg-bar">
+              <span class="seg"></span><span class="seg"></span><span class="seg"></span>
+              <span class="seg-label empty">0/3</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════ OPTION 4 — Letter Chips ═══════════════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 4</span>
+      <h2>Letter Chips — ตัวอักษร S W R ในกล่อง</h2>
+      <p>ระบุชัดเจนที่สุดว่าตัวไหนคืออะไร · S = Slip · W = WHT · R = Receipt</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>PERIOD</th><th>BRANCH</th><th>PAYOUT</th>
+          <th>STATUS</th><th class="col-doc">DOCS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td class="payout">฿8,774.36</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="chip-row">
+              <span class="letter-chip done">S</span>
+              <span class="letter-chip done">W</span>
+              <span class="letter-chip done">R</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">DusitD2</td>
+          <td class="payout">฿5,281.02</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="chip-row">
+              <span class="letter-chip done">S</span>
+              <span class="letter-chip done">W</span>
+              <span class="letter-chip waiting">R</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td class="payout">฿7,394.30</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="chip-row">
+              <span class="letter-chip done">S</span>
+              <span class="letter-chip">W</span>
+              <span class="letter-chip waiting">R</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td class="payout">฿6,955.00</td><td><span class="status status-draft">DRAFT</span></td>
+          <td>
+            <div class="chip-row">
+              <span class="letter-chip">S</span>
+              <span class="letter-chip">W</span>
+              <span class="letter-chip">R</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════ OPTION 5 — Checkbox + Counter ═══════════════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 5</span>
+      <h2>Checkboxes + Counter — checkbox เล็ก + ตัวเลข</h2>
+      <p>ดู intuitive สุด · ✓ กล่องเชกล่องเสร็จ · ตัวเลข count กำกับ</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>PERIOD</th><th>BRANCH</th><th>PAYOUT</th>
+          <th>STATUS</th><th class="col-doc">DOCS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td class="payout">฿8,774.36</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="check-grid">
+              <div class="check-mini">
+                <span class="check-box done">✓</span><span class="check-box done">✓</span><span class="check-box done">✓</span>
+              </div>
+              <span class="check-count complete">3/3</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">DusitD2</td>
+          <td class="payout">฿5,281.02</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="check-grid">
+              <div class="check-mini">
+                <span class="check-box done">✓</span><span class="check-box done">✓</span><span class="check-box">✓</span>
+              </div>
+              <span class="check-count">2/3</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td class="payout">฿7,394.30</td><td><span class="status status-paid">PAID</span></td>
+          <td>
+            <div class="check-grid">
+              <div class="check-mini">
+                <span class="check-box done">✓</span><span class="check-box">✓</span><span class="check-box">✓</span>
+              </div>
+              <span class="check-count">1/3</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td class="payout">฿6,955.00</td><td><span class="status status-draft">DRAFT</span></td>
+          <td>
+            <div class="check-grid">
+              <div class="check-mini">
+                <span class="check-box">✓</span><span class="check-box">✓</span><span class="check-box">✓</span>
+              </div>
+              <span class="check-count empty">0/3</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

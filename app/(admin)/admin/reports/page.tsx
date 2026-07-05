@@ -33,6 +33,9 @@ type RawReport = {
   revenue_share_pct_snapshot: string | number
   fixed_rent_snapshot: string | number | null
   has_negative_adjusted_net: boolean | null
+  payment_slip_path: string | null
+  wht_cert_path:     string | null
+  receipt_path:      string | null
   created_at: string
   updated_at: string
   branches: BranchJoin | BranchJoin[] | null
@@ -50,6 +53,7 @@ export default async function AdminReportsPage() {
       payout_type_snapshot, revenue_share_pct_snapshot,
       fixed_rent_snapshot,
       has_negative_adjusted_net,
+      payment_slip_path, wht_cert_path, receipt_path,
       created_at, updated_at,
       branches (
         id, name, code,
@@ -82,6 +86,9 @@ export default async function AdminReportsPage() {
       revenue_share_pct_snapshot:  Number(r.revenue_share_pct_snapshot ?? 50),
       fixed_rent_snapshot:         r.fixed_rent_snapshot != null ? Number(r.fixed_rent_snapshot) : null,
       has_negative_adjusted_net:   r.has_negative_adjusted_net ?? false,
+      has_slip:                    !!r.payment_slip_path,
+      has_wht:                     !!r.wht_cert_path,
+      has_receipt:                 !!r.receipt_path,
       created_at:                  r.created_at,
       updated_at:                  r.updated_at,
       branch_name:                 branch?.name   ?? '—',
