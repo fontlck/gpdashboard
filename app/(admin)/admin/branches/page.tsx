@@ -19,7 +19,12 @@ export default async function AdminBranchesPage() {
       fixed_rent_amount, fixed_rent_vat_mode,
       is_active, partner_id,
       notification_email, line_notify_token,
-      partners ( id, name, is_vat_registered )
+      partners (
+        id, name, is_vat_registered, vat_number,
+        contact_email, contact_phone,
+        bank_name, bank_account_name, bank_account_number,
+        doc_pp20_name, doc_id_card_name, doc_bookbank_name
+      )
     `)
     .eq('organization_id', orgId)
     .order('name', { ascending: true })

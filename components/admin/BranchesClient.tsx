@@ -5,7 +5,20 @@ import React, { useState } from 'react'
 type PayoutType = 'revenue_share' | 'fixed_rent'
 type VatMode = 'exclusive' | 'inclusive'
 
-type Partner = { id: string; name: string; is_vat_registered: boolean | null }
+type Partner = {
+  id: string
+  name: string
+  is_vat_registered: boolean | null
+  vat_number:          string | null
+  contact_email:       string | null
+  contact_phone:       string | null
+  bank_name:           string | null
+  bank_account_name:   string | null
+  bank_account_number: string | null
+  doc_pp20_name:       string | null
+  doc_id_card_name:    string | null
+  doc_bookbank_name:   string | null
+}
 type BranchRow = {
   id: string
   name: string
@@ -81,6 +94,18 @@ function EditForm({
   const [testEmailTo,    setTestEmailTo]    = useState('')
   const [showTestEmailInput, setShowTestEmailInput] = useState(false)
 
+  // ── Partner info (contact, VAT, bank) — separate save flow via /api/admin/partners ──
+  const [partnerExpanded, setPartnerExpanded] = useState(false)
+  const [pContactEmail,   setPContactEmail]   = useState(p?.contact_email       ?? '')
+  const [pContactPhone,   setPContactPhone]   = useState(p?.contact_phone       ?? '')
+  const [pVatNumber,      setPVatNumber]      = useState(p?.vat_number          ?? '')
+  const [pBankName,       setPBankName]       = useState(p?.bank_name           ?? '')
+  const [pAccName,        setPAccName]        = useState(p?.bank_account_name   ?? '')
+  const [pAccNumber,      setPAccNumber]      = useState(p?.bank_account_number ?? '')
+  const [pSaving,         setPSaving]         = useState(false)
+  const [pSaved,          setPSaved]          = useState(false)
+  const [pErr,            setPErr]            = useState('')
+
   async function save() {
     setErr(''); setSaved(false)
 
@@ -155,6 +180,46 @@ function EditForm({
       setTestLineState(res.ok ? 'ok' : 'err')
       setTimeout(() => setTestLineState('idle'), 3000)
     } catch { setTestLineState('err'); setTimeout(() => setTestLineState('idle'), 3000) }
+  }
+
+  async function savePartner() {
+    if (!p) return
+    setPErr(''); setPSaved(false); setPSaving(true)
+    try {
+      const res = await fetch(`/api/admin/partners/${p.id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contact_email:       pContactEmail.trim() || null,
+          contact_phone:       pContactPhone.trim() || null,
+          vat_number:          pVatNumber.trim()    || null,
+          bank_name:           pBankName.trim()     || null,
+          bank_account_name:   pAccName.trim()      || null,
+          bank_account_number: pAccNumber.trim()    || null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setPErr(data.error ?? 'Save failed'); setPSaving(false); return }
+      setPSaved(true)
+      setTimeout(() => setPSaved(false), 2500)
+    } catch (e) {
+      setPErr(e instanceof Error ? e.message : 'Network error')
+    } finally {
+      setPSaving(false)
+    }
+  }
+
+  async function downloadPartnerDoc(type: 'pp20' | 'id_card' | 'bookbank') {
+    if (!p) return
+    try {
+      const res  = await fetch(`/api/admin/partners/${p.id}/document-url?type=${type}`)
+      const data = await res.json()
+      if (!res.ok || !data.url) { alert(data.error ?? 'Download failed'); return }
+      const a = document.createElement('a')
+      a.href = data.url; a.download = data.name ?? type; a.click()
+    } catch {
+      alert('Network error — please try again.')
+    }
   }
 
   const toggleStyle = (active: boolean): React.CSSProperties => ({
@@ -319,6 +384,138 @@ function EditForm({
             </div>
           </div>
 
+          {/* ── Partner info section (collapsible) ── */}
+          {p && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '8px', paddingTop: '16px' }}>
+              <button
+                onClick={() => setPartnerExpanded(v => !v)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: 0, marginBottom: partnerExpanded ? '12px' : 0,
+                  color: 'rgba(240,236,228,0.55)', fontSize: '11px', fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                }}
+              >
+                <span style={{
+                  display: 'inline-block',
+                  transform: partnerExpanded ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.15s', fontSize: '10px', opacity: 0.5,
+                }}>▶</span>
+                Partner Info — {p.name}
+              </button>
+
+              {partnerExpanded && (
+                <>
+                  {/* Contact + VAT */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '14px' }}>
+                    <div>
+                      <label style={LABEL}>Contact Email</label>
+                      <input type="email" style={INPUT} value={pContactEmail}
+                        onChange={e => setPContactEmail(e.target.value)}
+                        placeholder="partner@email.com" />
+                    </div>
+                    <div>
+                      <label style={LABEL}>Contact Phone</label>
+                      <input type="tel" style={INPUT} value={pContactPhone}
+                        onChange={e => setPContactPhone(e.target.value)}
+                        placeholder="+66 ..." />
+                    </div>
+                    <div>
+                      <label style={LABEL}>VAT Number</label>
+                      <input type="text" style={INPUT} value={pVatNumber}
+                        onChange={e => setPVatNumber(e.target.value)}
+                        placeholder="0-0000-00000-00-0" />
+                    </div>
+                  </div>
+
+                  {/* Bank */}
+                  <span style={{ ...LABEL, color: 'rgba(240,236,228,0.25)', marginBottom: '10px', marginTop: '6px' }}>Bank Account</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '14px' }}>
+                    <div>
+                      <label style={LABEL}>Bank Name</label>
+                      <input type="text" style={INPUT} value={pBankName}
+                        onChange={e => setPBankName(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={LABEL}>Account Name</label>
+                      <input type="text" style={INPUT} value={pAccName}
+                        onChange={e => setPAccName(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={LABEL}>Account Number</label>
+                      <input type="text" style={INPUT} value={pAccNumber}
+                        onChange={e => setPAccNumber(e.target.value)} />
+                    </div>
+                  </div>
+
+                  {/* Documents */}
+                  <span style={{ ...LABEL, color: 'rgba(240,236,228,0.25)', marginBottom: '10px' }}>Partner Documents (จาก Partner)</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                    {[
+                      { key: 'pp20',     label: 'ภ.พ.20 (PP20)',    name: p.doc_pp20_name },
+                      { key: 'id_card',  label: 'สำเนาบัตรประชาชน',   name: p.doc_id_card_name },
+                      { key: 'bookbank', label: 'สำเนา Bookbank',    name: p.doc_bookbank_name },
+                    ].map(d => (
+                      <div key={d.key} style={{
+                        padding: '10px 12px', borderRadius: '8px',
+                        border: `1px solid ${d.name ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                        background: d.name ? 'rgba(34,197,94,0.04)' : 'rgba(255,255,255,0.02)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '11px', color: 'rgba(240,236,228,0.45)', marginBottom: '2px' }}>
+                            {d.label}
+                          </div>
+                          <div style={{
+                            fontSize: '11px', fontWeight: 500,
+                            color: d.name ? '#F0ECE4' : 'rgba(240,236,228,0.3)',
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          }}>
+                            {d.name ?? 'Not uploaded'}
+                          </div>
+                        </div>
+                        {d.name && (
+                          <button
+                            onClick={() => downloadPartnerDoc(d.key as 'pp20' | 'id_card' | 'bookbank')}
+                            title="Download"
+                            style={{
+                              padding: '4px 9px', borderRadius: '6px', fontSize: '11px',
+                              border: '1px solid rgba(20,184,166,0.3)',
+                              background: 'rgba(20,184,166,0.07)', color: '#2DD4BF',
+                              cursor: 'pointer', flexShrink: 0,
+                            }}
+                          >↓</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {pErr && (
+                    <p style={{ color: '#F87171', fontSize: '12px', margin: '0 0 8px' }}>{pErr}</p>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      onClick={savePartner}
+                      disabled={pSaving}
+                      style={{
+                        ...GOLD_BTN,
+                        background: 'rgba(59,130,246,0.15)', color: '#60A5FA',
+                        border: '1px solid rgba(59,130,246,0.3)',
+                        opacity: pSaving ? 0.6 : 1,
+                      }}
+                    >
+                      {pSaving ? 'Saving…' : 'Save Partner Info'}
+                    </button>
+                    {pSaved && (
+                      <span style={{ color: '#22C55E', fontSize: '12px' }}>✓ Saved</span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {err && (
             <p style={{ color: '#F87171', fontSize: '12px', margin: '12px 0 0' }}>{err}</p>
           )}
@@ -326,7 +523,7 @@ function EditForm({
             <p style={{ color: '#22C55E', fontSize: '12px', margin: '12px 0 0' }}>Saved</p>
           )}
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             <button style={{ ...GOLD_BTN, opacity: saving || saved ? 0.6 : 1 }} onClick={save} disabled={saving || saved}>
               {saving ? 'Saving…' : saved ? 'Saved!' : 'Save changes'}
             </button>

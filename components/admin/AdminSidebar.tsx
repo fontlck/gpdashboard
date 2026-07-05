@@ -24,7 +24,6 @@ const NAV: NavItem[] = [
   { href: '/admin/upload',   label: 'Upload CSV' },
   { href: '/admin/refunds',  label: 'Refunds'    },
   { href: '/admin/branches', label: 'Branches',  dividerBefore: true },
-  { href: '/admin/partners', label: 'Partners'   },
   { href: '/admin/artists',  label: 'Artists'    },
   { href: '/admin/users',    label: 'Users'      },
   { href: '/admin/audit',    label: 'Audit Log', dividerBefore: true },
