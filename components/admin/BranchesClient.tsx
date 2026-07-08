@@ -384,14 +384,17 @@ function EditForm({
 
               {/* Email */}
               <div>
-                <label style={LABEL}>Notification Email</label>
+                <label style={LABEL}>Notification Email(s)</label>
                 <input
-                  type="email"
-                  placeholder="partner@email.com"
+                  type="text"
+                  placeholder="a@email.com, b@email.com"
                   style={INPUT}
                   value={notifEmail}
                   onChange={e => setNotifEmail(e.target.value)}
                 />
+                <p style={{ fontSize: '10px', color: 'rgba(240,236,228,0.3)', margin: '4px 0 0' }}>
+                  หลาย email คั่นด้วย <code>,</code> (comma)
+                </p>
                 <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                   {!showTestEmailInput ? (
                     <button
@@ -669,6 +672,37 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
   const [deleting,    setDeleting]    = useState(false)
   const [deleteMsg,   setDeleteMsg]   = useState<{ text: string; ok: boolean } | null>(null)
+  const [togglingId,  setTogglingId]  = useState<string | null>(null)
+
+  // Sort: active branches first, then inactive; alphabetical within each group.
+  const sortedBranches = React.useMemo(() =>
+    [...branches].sort((a, b) => {
+      if (a.is_active !== b.is_active) return a.is_active ? -1 : 1
+      return a.name.localeCompare(b.name)
+    }),
+  [branches])
+
+  async function toggleActive(id: string, newActive: boolean) {
+    setTogglingId(id)
+    try {
+      const res  = await fetch(`/api/admin/branches/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ is_active: newActive }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setDeleteMsg({ text: data.error ?? 'Toggle failed', ok: false })
+      } else {
+        setBranches(prev => prev.map(b => b.id === id ? { ...b, is_active: newActive } : b))
+      }
+    } catch {
+      setDeleteMsg({ text: 'Network error — please try again.', ok: false })
+    } finally {
+      setTogglingId(null)
+      setTimeout(() => setDeleteMsg(null), 4000)
+    }
+  }
 
   function handleSaved(updated: BranchRow) {
     setBranches(prev => prev.map(b => b.id === updated.id ? updated : b))
@@ -741,7 +775,7 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
             </tr>
           </thead>
           <tbody>
-            {branches.map(b => {
+            {sortedBranches.map(b => {
               const p      = partner(b)
               const isEdit = editingId === b.id
 
@@ -821,6 +855,22 @@ export function BranchesClient({ initialBranches }: { initialBranches: BranchRow
                           onClick={() => setEditingId(isEdit ? null : b.id)}
                         >
                           {isEdit ? 'Close' : 'Edit'}
+                        </button>
+                        <button
+                          disabled={togglingId === b.id}
+                          style={{
+                            ...GHOST_BTN,
+                            ...(b.is_active
+                              ? { color: 'rgba(240,236,228,0.55)' }
+                              : { color: '#22C55E', border: '1px solid rgba(34,197,94,0.3)' }),
+                            opacity: togglingId === b.id ? 0.5 : 1,
+                          }}
+                          onClick={() => toggleActive(b.id, !b.is_active)}
+                          title={b.is_active ? 'Deactivate branch' : 'Reactivate branch'}
+                        >
+                          {togglingId === b.id
+                            ? '…'
+                            : b.is_active ? 'Deactivate' : '↻ Reactivate'}
                         </button>
                         <button
                           style={{

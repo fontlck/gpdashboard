@@ -25,6 +25,8 @@ type ReportRow = {
   has_slip: boolean
   has_wht: boolean
   has_receipt: boolean
+  notif_sent_at: string | null
+  notif_recipient_count: number
   created_at: string
   updated_at: string
   branch_id: string
@@ -174,19 +176,31 @@ function PayoutModelCell({ r }: { r: ReportRow }) {
   )
 }
 
-// ── Document status icons (Slip / WHT / Receipt) ─────────────────────────────
+// ── Document status icons (Slip / WHT / Receipt / Email) ─────────────────────
 
-function DocStatus({ slip, wht, receipt }: { slip: boolean; wht: boolean; receipt: boolean }) {
-  const items = [
+function DocStatus({
+  slip, wht, receipt, notifSentAt, notifCount,
+}: {
+  slip: boolean; wht: boolean; receipt: boolean
+  notifSentAt: string | null; notifCount: number
+}) {
+  const notifSent = !!notifSentAt
+  const sentDate  = notifSent ? new Date(notifSentAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''
+  const notifLabel = notifSent
+    ? `Email sent: ${sentDate}${notifCount > 1 ? ` · ${notifCount} recipients` : ''}`
+    : 'Email: not sent yet'
+
+  const docItems = [
     { label: 'Payment slip',  done: slip },
     { label: 'WHT certificate', done: wht },
     { label: 'Receipt (partner)', done: receipt },
   ]
-  const tooltip = items.map(i => `${i.label}: ${i.done ? '✓ uploaded' : 'pending'}`).join(' · ')
+  const tooltip = docItems.map(i => `${i.label}: ${i.done ? '✓ uploaded' : 'pending'}`).join(' · ')
+    + ' · ' + notifLabel
 
   return (
     <span title={tooltip} style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-      {items.map((it, i) => (
+      {docItems.map((it, i) => (
         <span
           key={i}
           style={{
@@ -198,7 +212,6 @@ function DocStatus({ slip, wht, receipt }: { slip: boolean; wht: boolean; receip
             display: 'inline-block',
           }}
         >
-          {/* Fake text lines */}
           <span style={{
             position: 'absolute',
             top: '4px', left: '3px', right: '3px',
@@ -206,24 +219,54 @@ function DocStatus({ slip, wht, receipt }: { slip: boolean; wht: boolean; receip
             background: it.done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.15)',
             boxShadow: `0 3px 0 ${it.done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.15)'}, 0 6px 0 ${it.done ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.15)'}`,
           }} />
-          {/* Green check overlay */}
           {it.done && (
             <span style={{
               position: 'absolute',
               bottom: '-4px', right: '-4px',
-              background: '#22C55E',
-              color: '#fff',
-              fontSize: '9px',
-              fontWeight: 700,
-              width: '12px', height: '12px',
-              borderRadius: '50%',
+              background: '#22C55E', color: '#fff',
+              fontSize: '9px', fontWeight: 700,
+              width: '12px', height: '12px', borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '1.5px solid #06080F',
-              lineHeight: 1,
+              border: '1.5px solid #06080F', lineHeight: 1,
             }}>✓</span>
           )}
         </span>
       ))}
+
+      {/* Envelope icon (notification email) */}
+      <span
+        style={{
+          position: 'relative',
+          width: '22px', height: '16px',
+          border: `1.5px solid ${notifSent ? 'rgba(34,197,94,0.5)' : 'rgba(255,255,255,0.15)'}`,
+          borderRadius: '2px',
+          background: notifSent ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.02)',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          marginLeft: '2px',
+        }}
+      >
+        {/* V-shape envelope flap */}
+        <svg width="14" height="9" viewBox="0 0 14 9" fill="none" style={{ display: 'block' }}>
+          <path d="M0 0 L7 6 L14 0" stroke={notifSent ? 'rgba(34,197,94,0.7)' : 'rgba(255,255,255,0.25)'} strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        {notifSent && (
+          <span style={{
+            position: 'absolute',
+            bottom: '-4px', right: '-4px',
+            background: notifCount > 1 ? '#60A5FA' : '#22C55E',
+            color: '#fff',
+            fontSize: notifCount > 1 ? '8px' : '9px',
+            fontWeight: 700,
+            minWidth: '12px', height: '12px',
+            padding: notifCount > 1 ? '0 3px' : '0',
+            borderRadius: notifCount > 1 ? '6px' : '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1.5px solid #06080F', lineHeight: 1,
+          }}>
+            {notifCount > 1 ? notifCount : '✓'}
+          </span>
+        )}
+      </span>
     </span>
   )
 }
@@ -363,7 +406,10 @@ export function ReportsClient({ reports }: { reports: ReportRow[] }) {
 
                     {/* Docs */}
                     <td style={TD}>
-                      <DocStatus slip={r.has_slip} wht={r.has_wht} receipt={r.has_receipt} />
+                      <DocStatus
+                        slip={r.has_slip} wht={r.has_wht} receipt={r.has_receipt}
+                        notifSentAt={r.notif_sent_at} notifCount={r.notif_recipient_count}
+                      />
                     </td>
 
                     {/* Updated */}

@@ -52,23 +52,32 @@ export async function sendLineNotify(
 
 // ── Email helpers ─────────────────────────────────────────────────────────────
 
+/** Split a comma-separated email string into a clean array of valid-looking emails. */
+function parseRecipients(input: string): string[] {
+  return input
+    .split(/[,;\n]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
+}
+
 export async function sendApprovedEmail(
   to:    string,
   props: ReportApprovedEmailProps,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; recipientCount?: number }> {
   const transporter = getTransporter()
   if (!transporter) return { ok: false, error: 'Gmail not configured' }
-  if (!to?.trim())  return { ok: false, error: 'No recipient email' }
+  const recipients = parseRecipients(to ?? '')
+  if (recipients.length === 0) return { ok: false, error: 'No valid recipient email' }
 
   try {
     const html = await render(ReportApprovedEmail(props))
     await transporter.sendMail({
       from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
-      to:      to.trim(),
+      to:      recipients,
       subject: `Sale Report ${props.period} ได้รับการอนุมัติแล้ว`,
       html,
     })
-    return { ok: true }
+    return { ok: true, recipientCount: recipients.length }
   } catch (e) {
     return { ok: false, error: String(e) }
   }
@@ -77,20 +86,21 @@ export async function sendApprovedEmail(
 export async function sendPaidEmail(
   to:    string,
   props: ReportPaidEmailProps,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; recipientCount?: number }> {
   const transporter = getTransporter()
   if (!transporter) return { ok: false, error: 'Gmail not configured' }
-  if (!to?.trim())  return { ok: false, error: 'No recipient email' }
+  const recipients = parseRecipients(to ?? '')
+  if (recipients.length === 0) return { ok: false, error: 'No valid recipient email' }
 
   try {
     const html = await render(ReportPaidEmail(props))
     await transporter.sendMail({
       from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
-      to:      to.trim(),
+      to:      recipients,
       subject: `Sale Report ${props.period} โอนเงินเรียบร้อยแล้ว`,
       html,
     })
-    return { ok: true }
+    return { ok: true, recipientCount: recipients.length }
   } catch (e) {
     return { ok: false, error: String(e) }
   }
@@ -131,7 +141,7 @@ export async function notifyReport(
   channels: NotifyChannels,
   payload:  NotifyReportPayload,
 ): Promise<{
-  emailResult?: { ok: boolean; error?: string }
+  emailResult?: { ok: boolean; error?: string; recipientCount?: number }
   lineResult?:  { ok: boolean; error?: string }
 }> {
   const results: {

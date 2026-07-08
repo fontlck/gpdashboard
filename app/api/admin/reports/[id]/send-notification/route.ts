@@ -89,7 +89,22 @@ export async function POST(
       }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, emailOk, lineOk })
+    // Persist sent timestamp + recipient count so the Reports table can show status
+    if (emailOk) {
+      await admin
+        .from('monthly_reports')
+        .update({
+          notification_sent_at:         new Date().toISOString(),
+          notification_recipient_count: results.emailResult?.recipientCount ?? 1,
+        })
+        .eq('id', reportId)
+    }
+
+    return NextResponse.json({
+      success: true,
+      emailOk, lineOk,
+      recipientCount: results.emailResult?.recipientCount ?? 0,
+    })
   } catch (err) {
     console.error('[send-notification] threw:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })

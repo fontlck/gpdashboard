@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notification Sent Icon — 5 Options</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #06080F;
+      font-family: 'DM Sans', sans-serif;
+      color: rgba(240,236,228,0.85);
+      padding: 32px 24px 60px;
+    }
+    h1 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: -0.02em; }
+    .sub { font-size: 13px; color: rgba(240,236,228,0.4); margin-bottom: 32px; }
+
+    .legend {
+      display: inline-flex; gap: 20px;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      margin-bottom: 32px;
+      font-size: 11px;
+    }
+    .legend span { display: flex; align-items: center; gap: 6px; }
+    .legend b { color: #F0ECE4; font-weight: 600; }
+
+    .option {
+      max-width: 1200px;
+      margin: 0 auto 36px;
+      background: #0D0F1A;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .option-header {
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .option-header .num {
+      display: inline-block;
+      background: rgba(59,130,246,0.15);
+      color: #60A5FA;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-right: 10px;
+    }
+    .option-header h2 { display: inline; font-size: 15px; font-weight: 600; color: #F1F5F9; }
+    .option-header p { font-size: 12px; color: rgba(240,236,228,0.4); margin-top: 6px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead th {
+      background: rgba(255,255,255,0.015);
+      padding: 10px 20px;
+      text-align: left;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(240,236,228,0.3);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    tbody td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    tbody tr:last-child td { border-bottom: none; }
+    .period { color: #F0ECE4; font-weight: 500; }
+    .branch { color: rgba(240,236,228,0.85); }
+    .status-pill {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .status-paid { background: rgba(34,197,94,0.12); color: #22C55E; }
+
+    /* ═══ Option 1 — Envelope with green check ═══ */
+    .env {
+      position: relative;
+      width: 24px; height: 18px;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 2px;
+      background: transparent;
+      display: inline-block;
+    }
+    .env::before {
+      content: ''; position: absolute; inset: 0;
+      border-top: 1.5px solid rgba(255,255,255,0.2);
+      transform: rotate(180deg) skewX(45deg);
+      transform-origin: bottom left;
+      clip-path: polygon(0 0, 50% 60%, 100% 0);
+      display: none;
+    }
+    .env svg { display: block; }
+    .env-sent svg path { stroke: #22C55E; }
+    .env-sent { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+    .env-sent::after {
+      content: '✓';
+      position: absolute; bottom: -6px; right: -6px;
+      background: #22C55E; color: #fff;
+      font-size: 9px; font-weight: 700;
+      width: 12px; height: 12px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid #0D0F1A;
+    }
+
+    /* ═══ Option 2 — Paper Airplane ═══ */
+    .plane {
+      width: 22px; height: 22px;
+      color: rgba(255,255,255,0.2);
+      display: inline-block;
+    }
+    .plane-sent { color: #60A5FA; }
+
+    /* ═══ Option 3 — Bell with badge dot ═══ */
+    .bell {
+      position: relative;
+      width: 22px; height: 22px;
+      display: inline-block;
+      color: rgba(255,255,255,0.2);
+    }
+    .bell-sent { color: #F59E0B; }
+    .bell-sent::after {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22C55E; border: 1.5px solid #0D0F1A;
+    }
+
+    /* ═══ Option 4 — Pill with timestamp ═══ */
+    .pill-time {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px; border-radius: 12px;
+      font-size: 10px; font-weight: 600;
+      background: rgba(255,255,255,0.04);
+      color: rgba(240,236,228,0.35);
+      border: 1px solid rgba(255,255,255,0.06);
+      font-family: 'DM Mono', monospace;
+    }
+    .pill-time.sent {
+      background: rgba(34,197,94,0.1);
+      color: #22C55E;
+      border-color: rgba(34,197,94,0.25);
+    }
+    .pill-time.multi {
+      background: rgba(59,130,246,0.1);
+      color: #60A5FA;
+      border-color: rgba(59,130,246,0.25);
+    }
+
+    /* ═══ Option 5 — Chevron chain (S → R → V) ═══ */
+    .chain {
+      display: inline-flex; align-items: center; gap: 2px;
+      background: rgba(255,255,255,0.03);
+      padding: 3px 4px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .chain-step {
+      width: 16px; height: 16px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 3px;
+      font-size: 8px; font-weight: 700;
+      background: transparent;
+      color: rgba(240,236,228,0.2);
+      letter-spacing: -0.02em;
+    }
+    .chain-step.done {
+      background: rgba(34,197,94,0.15);
+      color: #22C55E;
+    }
+    .chain-arrow {
+      font-size: 8px;
+      color: rgba(240,236,228,0.15);
+      line-height: 1;
+    }
+    .chain-arrow.done-arrow { color: rgba(34,197,94,0.35); }
+
+  </style>
+</head>
+<body>
+
+  <h1>✉ Notification Sent Icon — 5 Options</h1>
+  <p class="sub">แสดง status ว่า admin ส่ง notification email ให้ partner แล้วหรือยัง (บนแถว report)</p>
+
+  <div class="legend">
+    <span><b>NOT SENT</b> — ยังไม่ส่ง</span>
+    <span><b>SENT</b> — ส่งแล้ว 1 email</span>
+    <span><b>SENT (MULTI)</b> — ส่งแล้วหลาย email (Fringe)</span>
+  </div>
+
+  <!-- ═════ OPTION 1 ═════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 1</span>
+      <h2>Envelope + Green ✓ Badge</h2>
+      <p>ไอคอนจดหมายเล็กๆ · ติด ✓ เขียวเมื่อส่งแล้ว · dot สีต่างเมื่อส่งหลาย email</p>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Period</th><th>Branch</th><th>Status</th><th>Notify</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="env" title="Not sent">
+              <svg width="22" height="16" viewBox="0 0 24 18" fill="none">
+                <rect x="1" y="1" width="22" height="16" rx="2" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                <path d="M2 3 L12 11 L22 3" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none"/>
+              </svg>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="env env-sent" title="Sent to partner@email.com — 5 Jul 26">
+              <svg width="22" height="16" viewBox="0 0 24 18" fill="none">
+                <rect x="1" y="1" width="22" height="16" rx="2" stroke="#22C55E" stroke-width="1.5"/>
+                <path d="M2 3 L12 11 L22 3" stroke="#22C55E" stroke-width="1.5" fill="none"/>
+              </svg>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="env env-sent" style="border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.06);" title="Sent to 3 emails">
+              <svg width="22" height="16" viewBox="0 0 24 18" fill="none">
+                <rect x="1" y="1" width="22" height="16" rx="2" stroke="#60A5FA" stroke-width="1.5"/>
+                <path d="M2 3 L12 11 L22 3" stroke="#60A5FA" stroke-width="1.5" fill="none"/>
+              </svg>
+              <span style="position:absolute;bottom:-6px;right:-6px;background:#60A5FA;color:#fff;font-size:8px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;">3</span>
+            </span>
+          </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═════ OPTION 2 ═════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 2</span>
+      <h2>Paper Airplane (Telegram style)</h2>
+      <p>สื่อความหมายว่า "ส่งไปแล้ว" ดีมาก · สีฟ้าเมื่อส่ง · จำนวน bubble เมื่อ multi</p>
+    </div>
+    <table>
+      <thead><tr><th>Period</th><th>Branch</th><th>Status</th><th>Notify</th></tr></thead>
+      <tbody>
+        <tr><td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="plane" title="Not sent">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="plane plane-sent" title="Sent to partner@email.com">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#60A5FA" stroke="#60A5FA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span style="display:inline-flex; align-items:center; gap:4px">
+              <span class="plane plane-sent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#60A5FA" stroke="#60A5FA" stroke-width="1.8">
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </span>
+              <span style="font-size:10px; font-weight:700; color:#60A5FA; font-family:'DM Mono'">×3</span>
+            </span>
+          </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═════ OPTION 3 ═════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 3</span>
+      <h2>Bell + Green Dot</h2>
+      <p>Bell style — คุ้นเคยกับ notification · dot เขียวเมื่อส่งสำเร็จ</p>
+    </div>
+    <table>
+      <thead><tr><th>Period</th><th>Branch</th><th>Status</th><th>Notify</th></tr></thead>
+      <tbody>
+        <tr><td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="bell" title="Not sent">
+              <svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="bell bell-sent" title="Sent · 5 Jul 26">
+              <svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span class="bell bell-sent" style="color: #60A5FA" title="Sent to 3 emails">
+              <svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span style="position:absolute; top:0; right:-2px; background: #60A5FA; color:#fff; font-size:8px; font-weight:700; padding: 1px 4px; border-radius: 6px; border: 1.5px solid #0D0F1A; line-height: 1;">3</span>
+            </span>
+          </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═════ OPTION 4 ═════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 4</span>
+      <h2>Pill with timestamp</h2>
+      <p>บอกวันที่ส่งเลย · ตัวหนังสือชัด · ใช้พื้นที่มากกว่าไอคอน</p>
+    </div>
+    <table>
+      <thead><tr><th>Period</th><th>Branch</th><th>Status</th><th>Notify</th></tr></thead>
+      <tbody>
+        <tr><td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td><span class="pill-time">✉ Pending</span></td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td><span class="pill-time sent">✉ 5 Jul</span></td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td><span class="pill-time multi">✉ 5 Jul · 3</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═════ OPTION 5 ═════ -->
+  <div class="option">
+    <div class="option-header">
+      <span class="num">OPTION 5</span>
+      <h2>Extend Docs Column — 4th Icon</h2>
+      <p>ไม่เพิ่ม column ใหม่ · แค่เติมไอคอน @ 4 ตัวใน Docs column (Slip · WHT · Receipt · Email)</p>
+    </div>
+    <table>
+      <thead><tr><th>Period</th><th>Branch</th><th>Status</th><th>Docs (Slip · WHT · Receipt · Email)</th></tr></thead>
+      <tbody>
+        <tr><td class="period">Jun 2026</td><td class="branch">House of Benedict</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span style="display:inline-flex; gap: 6px;">
+              <span style="width:18px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:3px;background:rgba(34,197,94,0.08);position:relative">
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+              <span style="width:18px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:3px;background:rgba(34,197,94,0.08);position:relative">
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+              <span style="width:18px;height:22px;border:1.5px solid rgba(255,255,255,0.15);border-radius:3px;background:rgba(255,255,255,0.02);"></span>
+              <span style="width:22px;height:22px;border:1.5px solid rgba(255,255,255,0.15);border-radius:50%;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;color:rgba(240,236,228,0.3);font-size:12px;font-weight:700">@</span>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Neilson Hays</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span style="display:inline-flex; gap: 6px;">
+              <span style="width:18px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:3px;background:rgba(34,197,94,0.08);position:relative">
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+              <span style="width:18px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:3px;background:rgba(34,197,94,0.08);position:relative">
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+              <span style="width:18px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:3px;background:rgba(34,197,94,0.08);position:relative">
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+              <span style="width:22px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:50%;background:rgba(34,197,94,0.08);display:flex;align-items:center;justify-content:center;color:#22C55E;font-size:12px;font-weight:700;position:relative">@
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+            </span>
+          </td></tr>
+        <tr><td class="period">Jun 2026</td><td class="branch">Fringe</td>
+          <td><span class="status-pill status-paid">PAID</span></td>
+          <td>
+            <span style="display:inline-flex; gap: 6px;">
+              <span style="width:18px;height:22px;border:1.5px solid rgba(34,197,94,0.5);border-radius:3px;background:rgba(34,197,94,0.08);position:relative">
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#22C55E;color:#fff;font-size:9px;font-weight:700;width:12px;height:12px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">✓</span>
+              </span>
+              <span style="width:18px;height:22px;border:1.5px solid rgba(255,255,255,0.15);border-radius:3px;background:rgba(255,255,255,0.02);"></span>
+              <span style="width:18px;height:22px;border:1.5px solid rgba(255,255,255,0.15);border-radius:3px;background:rgba(255,255,255,0.02);"></span>
+              <span style="width:22px;height:22px;border:1.5px solid rgba(59,130,246,0.5);border-radius:50%;background:rgba(59,130,246,0.08);display:flex;align-items:center;justify-content:center;color:#60A5FA;font-size:12px;font-weight:700;position:relative">@
+                <span style="position:absolute;bottom:-4px;right:-4px;background:#60A5FA;color:#fff;font-size:8px;font-weight:700;min-width:14px;height:12px;padding:0 3px;border-radius:6px;display:flex;align-items:center;justify-content:center;border:1.5px solid #0D0F1A;line-height:1">3</span>
+              </span>
+            </span>
+          </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

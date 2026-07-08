@@ -36,6 +36,8 @@ type RawReport = {
   payment_slip_path: string | null
   wht_cert_path:     string | null
   receipt_path:      string | null
+  notification_sent_at:         string | null
+  notification_recipient_count: number | null
   created_at: string
   updated_at: string
   branches: BranchJoin | BranchJoin[] | null
@@ -54,6 +56,7 @@ export default async function AdminReportsPage() {
       fixed_rent_snapshot,
       has_negative_adjusted_net,
       payment_slip_path, wht_cert_path, receipt_path,
+      notification_sent_at, notification_recipient_count,
       created_at, updated_at,
       branches (
         id, name, code,
@@ -89,6 +92,8 @@ export default async function AdminReportsPage() {
       has_slip:                    !!r.payment_slip_path,
       has_wht:                     !!r.wht_cert_path,
       has_receipt:                 !!r.receipt_path,
+      notif_sent_at:               r.notification_sent_at,
+      notif_recipient_count:       r.notification_recipient_count ?? 0,
       created_at:                  r.created_at,
       updated_at:                  r.updated_at,
       branch_name:                 branch?.name   ?? '—',
