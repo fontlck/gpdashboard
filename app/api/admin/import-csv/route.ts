@@ -281,7 +281,11 @@ export async function POST(request: NextRequest) {
     // Fetch branch + partner — include payout_type, fixed_rent_amount, fixed_rent_vat_mode
     const { data: branchData } = await admin
       .from('branches')
-      .select('id, revenue_share_pct, payout_type, fixed_rent_amount, fixed_rent_vat_mode, partner_id, partners(is_vat_registered)')
+      .select(`
+        id, revenue_share_pct, payout_type, fixed_rent_amount, fixed_rent_vat_mode,
+        rent_vat_exempt, common_fee_amount, wht_default_pct,
+        partner_id, partners(is_vat_registered)
+      `)
       .eq('id', branchId)
       .single()
 
@@ -291,8 +295,12 @@ export async function POST(request: NextRequest) {
     const revenueSharePct = Number(branchData.revenue_share_pct ?? 50)
     const fixedRentAmount = branchData.fixed_rent_amount != null ? Number(branchData.fixed_rent_amount) : null
     const fixedRentVatMode = (branchData.fixed_rent_vat_mode ?? null) as 'exclusive' | 'inclusive' | null
+    const rentVatExempt   = Boolean(branchData.rent_vat_exempt)
+    const commonFeeAmount = Number(branchData.common_fee_amount ?? 0)
+    const whtDefaultPct   = branchData.wht_default_pct != null ? Number(branchData.wht_default_pct) : null
     const isVatRegistered =
       (branchData.partners as { is_vat_registered?: boolean } | null)?.is_vat_registered ?? false
+    const commonFeeVat    = isVatRegistered && commonFeeAmount > 0 ? commonFeeAmount * vatRate : 0
 
     // Financial calculations — always compute full transaction picture
     const gross_sales   = rows.reduce((s, r) => s + (r.refunded ? 0 : r.amount), 0)
@@ -312,24 +320,32 @@ export async function POST(request: NextRequest) {
       const rent = fixedRentAmount ?? 0
 
       if (!isVatRegistered || rent === 0) {
-        // No VAT — partner receives the flat amount as-is
+        partner_share = rent
+        vat_amount    = 0
+        final_payout  = rent
+
+      } else if (rentVatExempt) {
+        // Rent itself is VAT-exempt (e.g. real-estate lease). No VAT on rent.
         partner_share = rent
         vat_amount    = 0
         final_payout  = rent
 
       } else if (fixedRentVatMode === 'inclusive') {
-        // Rent already includes VAT (e.g. 10,700 THB = 10,000 base + 700 VAT @7%)
-        // Derive base and VAT from the inclusive amount so reports stay transparent.
         const base    = rent / (1 + vatRate)
-        partner_share = base            // base before VAT (for audit clarity)
-        vat_amount    = rent - base     // embedded VAT portion
-        final_payout  = rent            // partner receives the inclusive amount
+        partner_share = base
+        vat_amount    = rent - base
+        final_payout  = rent
 
       } else {
-        // exclusive (default) — VAT is added on top of the rent
         partner_share = rent
         vat_amount    = rent * vatRate
         final_payout  = rent + vat_amount
+      }
+
+      // Add recurring common/management fee (ex-VAT) if configured on branch
+      if (commonFeeAmount > 0) {
+        final_payout += commonFeeAmount + commonFeeVat
+        vat_amount   += commonFeeVat
       }
 
     } else {
@@ -470,6 +486,16 @@ export async function POST(request: NextRequest) {
       referred_artist_uplift:             referred_artist_uplift,
       referred_artist_uplift_vat:         referred_artist_uplift_vat,
       referred_artist_uplift_snapshot:    upliftSnapshot.length > 0 ? upliftSnapshot : null,
+      // Branch-level extras snapshot (rent VAT exemption + common fee)
+      rent_vat_exempt_snapshot:           rentVatExempt,
+      common_fee_amount_snapshot:         commonFeeAmount,
+      common_fee_vat_snapshot:            commonFeeVat,
+      // Auto-set default WHT % from branch (if configured); user can still override.
+      // WHT amount = partner_share × pct (rent only; common fee excluded)
+      withholding_tax_pct:                whtDefaultPct,
+      withholding_tax_amount:             whtDefaultPct != null
+        ? Math.round(partner_share * (whtDefaultPct / 100) * 100) / 100
+        : null,
       status:                             'draft',
     }
 

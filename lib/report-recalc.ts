@@ -27,7 +27,8 @@ export async function recalcReport(admin: SB, reportId: string): Promise<{ ok: t
       is_vat_registered_snapshot, vat_rate_snapshot,
       referred_artist_uplift_snapshot,
       service_fee_amount, service_fee_wht,
-      withholding_tax_pct
+      withholding_tax_pct,
+      rent_vat_exempt_snapshot, common_fee_amount_snapshot, common_fee_vat_snapshot
     `)
     .eq('id', reportId)
     .single()
@@ -63,8 +64,17 @@ export async function recalcReport(admin: SB, reportId: string): Promise<{ ok: t
   let vat_amount:    number
   let final_payout:  number
 
+  const rentVatExempt = Boolean(report.rent_vat_exempt_snapshot)
+  const commonFee     = Number(report.common_fee_amount_snapshot ?? 0)
+  const commonFeeVat  = Number(report.common_fee_vat_snapshot    ?? 0)
+
   if (payoutType === 'fixed_rent') {
     if (!isVatRegistered || fixedRent === 0) {
+      partner_share = fixedRent
+      vat_amount    = 0
+      final_payout  = fixedRent
+    } else if (rentVatExempt) {
+      // Rent itself is VAT-exempt (e.g. real-estate lease). No VAT on rent.
       partner_share = fixedRent
       vat_amount    = 0
       final_payout  = fixedRent
@@ -77,6 +87,12 @@ export async function recalcReport(admin: SB, reportId: string): Promise<{ ok: t
       partner_share = fixedRent
       vat_amount    = fixedRent * vatRate
       final_payout  = fixedRent + vat_amount
+    }
+
+    // Add recurring common/management fee (ex-VAT) on top of rent
+    if (commonFee > 0) {
+      final_payout += commonFee + commonFeeVat
+      vat_amount   += commonFeeVat
     }
   } else {
     const adjustedNetExVat = adjusted_net < 0 ? 0 : adjusted_net / (1 + vatRate)
@@ -135,6 +151,7 @@ export async function recalcReport(admin: SB, reportId: string): Promise<{ ok: t
   const r2 = (n: number) => Math.round(n * 100) / 100
 
   // ── Recalculate WHT if pct is set (taxable base = partner_share + uplift + optional service_fee) ──
+  //   Note: WHT is NOT applied to common fee (common fee is a management/service charge, not rental income).
   let withholding_tax_amount: number | null = null
   const whtPct = report.withholding_tax_pct != null ? Number(report.withholding_tax_pct) : null
   if (whtPct !== null && whtPct > 0) {

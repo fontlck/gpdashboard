@@ -33,6 +33,9 @@ export async function PATCH(
     partner_is_vat_registered?: boolean
     notification_email?: string | null
     line_notify_token?: string | null
+    rent_vat_exempt?: boolean
+    common_fee_amount?: number
+    wht_default_pct?: number | null
   }
   try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
@@ -69,6 +72,10 @@ export async function PATCH(
   // Notification fields
   if ('notification_email' in body) branchUpdate.notification_email = body.notification_email ?? null
   if ('line_notify_token'  in body) branchUpdate.line_notify_token  = body.line_notify_token  ?? null
+  if ('is_active'          in body) branchUpdate.is_active           = !!body.is_active
+  if ('rent_vat_exempt'    in body) branchUpdate.rent_vat_exempt     = !!body.rent_vat_exempt
+  if ('common_fee_amount'  in body) branchUpdate.common_fee_amount   = Number(body.common_fee_amount ?? 0)
+  if ('wht_default_pct'    in body) branchUpdate.wht_default_pct     = body.wht_default_pct ?? null
 
   if (body.payout_type !== undefined) {
     branchUpdate.payout_type = body.payout_type
@@ -98,7 +105,18 @@ export async function PATCH(
     .from('branches')
     .update(branchUpdate)
     .eq('id', id)
-    .select('id, name, code, payout_type, revenue_share_pct, fixed_rent_amount, fixed_rent_vat_mode, is_active, partner_id, partners(id, name, is_vat_registered)')
+    .select(`
+      id, name, code, payout_type, revenue_share_pct,
+      fixed_rent_amount, fixed_rent_vat_mode, is_active, partner_id,
+      notification_email, line_notify_token,
+      rent_vat_exempt, common_fee_amount, wht_default_pct,
+      partners (
+        id, name, is_vat_registered, vat_number,
+        contact_email, contact_phone,
+        bank_name, bank_account_name, bank_account_number,
+        doc_pp20_name, doc_id_card_name, doc_bookbank_name
+      )
+    `)
     .single()
 
   if (branchErr || !updatedBranch)

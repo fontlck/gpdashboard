@@ -32,6 +32,9 @@ type BranchRow = {
   partners: Partner | Partner[] | null
   notification_email: string | null
   line_notify_token: string | null
+  rent_vat_exempt?: boolean | null
+  common_fee_amount?: number | string | null
+  wht_default_pct?: number | string | null
 }
 
 // ── small helpers ────────────────────────────────────────────────────────────
@@ -86,6 +89,11 @@ function EditForm({
   const [partnerVat, setPartnerVat]       = useState<boolean>(p?.is_vat_registered ?? false)
   const [notifEmail, setNotifEmail]       = useState(branch.notification_email ?? '')
   const [lineToken, setLineToken]         = useState(branch.line_notify_token ?? '')
+  const [rentExempt, setRentExempt]       = useState<boolean>(!!branch.rent_vat_exempt)
+  const [commonFee,  setCommonFee]        = useState(String(branch.common_fee_amount ?? '0'))
+  const [whtDefault, setWhtDefault]       = useState<'none'|'3'|'5'>(
+    branch.wht_default_pct == null ? 'none' : String(branch.wht_default_pct) === '5' ? '5' : '3'
+  )
   const [saving, setSaving]               = useState(false)
   const [err, setErr]                     = useState('')
   const [saved, setSaved]                 = useState(false)
@@ -125,6 +133,9 @@ function EditForm({
         partner_is_vat_registered: partnerVat,
         notification_email: notifEmail.trim() || null,
         line_notify_token:  lineToken.trim()  || null,
+        rent_vat_exempt:    rentExempt,
+        common_fee_amount:  parseFloat(commonFee) || 0,
+        wht_default_pct:    whtDefault === 'none' ? null : Number(whtDefault),
       }
       if (payoutType === 'revenue_share') {
         body.revenue_share_pct = parseFloat(revShare)
@@ -310,6 +321,61 @@ function EditForm({
               </label>
             </div>
           </div>
+
+          {/* ── Fixed-rent extras (Common fee, VAT-exempt rent, WHT default) ── */}
+          {payoutType === 'fixed_rent' && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '8px', paddingTop: '16px' }}>
+              <span style={{ ...LABEL, color: 'rgba(240,236,228,0.25)', marginBottom: '12px' }}>Rental Extras (Fixed Rent Only)</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px' }}>
+                <div>
+                  <span style={LABEL}>Rent VAT status</span>
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    cursor: 'pointer', fontSize: '13px', color: '#F0ECE4', marginTop: '4px',
+                  }}>
+                    <input
+                      type="checkbox" checked={rentExempt}
+                      onChange={e => setRentExempt(e.target.checked)}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    Rent is VAT-exempt
+                  </label>
+                  <p style={{ fontSize: '10px', color: 'rgba(240,236,228,0.3)', margin: '4px 0 0' }}>
+                    ยกเว้น VAT (real-estate rental)
+                  </p>
+                </div>
+                <div>
+                  <label style={LABEL}>Common Fee /mo (ex-VAT)</label>
+                  <input
+                    type="number" min={0} step={1}
+                    style={INPUT} value={commonFee}
+                    onChange={e => setCommonFee(e.target.value)}
+                    placeholder="0"
+                  />
+                  <p style={{ fontSize: '10px', color: 'rgba(240,236,228,0.3)', margin: '4px 0 0' }}>
+                    ค่าส่วนกลาง (บวก VAT 7% อัตโนมัติ)
+                  </p>
+                </div>
+                <div>
+                  <span style={LABEL}>Default WHT %</span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {(['none','3','5'] as const).map(v => (
+                      <button
+                        key={v} type="button"
+                        onClick={() => setWhtDefault(v)}
+                        style={toggleStyle(whtDefault === v)}
+                      >
+                        {v === 'none' ? 'None' : `${v}%`}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '10px', color: 'rgba(240,236,228,0.3)', margin: '4px 0 0' }}>
+                    หัก ณ ที่จ่ายบน rent เท่านั้น
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── Notifications section ── */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '8px', paddingTop: '16px' }}>
