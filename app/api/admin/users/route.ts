@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { createClient }      from '@/lib/supabase/server'
+import { getCurrentOrgId }   from '@/lib/org'
 
 // POST /api/admin/users
 // Creates a new partner auth user + profile row.
@@ -24,6 +25,16 @@ export async function POST(req: Request) {
 
     if (callerProfile?.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // The org where this user will be added — comes from the admin's current
+    // org cookie (whichever dashboard they're operating in).
+    const orgId = await getCurrentOrgId()
+    if (!orgId) {
+      return NextResponse.json(
+        { error: 'No organization selected. Please select a dashboard first.' },
+        { status: 400 }
+      )
     }
 
     // Parse body
@@ -104,13 +115,33 @@ export async function POST(req: Request) {
       )
     }
 
+    // Add user to admin's current org so they can actually see a dashboard.
+    // Role in org_memberships mirrors the profile role.
+    const { error: memberErr } = await admin
+      .from('org_memberships')
+      .insert({
+        user_id:         newUser.id,
+        organization_id: orgId,
+        role,
+        is_active:       true,
+      })
+
+    if (memberErr) {
+      // Rollback: remove profile + auth user so we don't leave a broken account.
+      await admin.auth.admin.deleteUser(newUser.id)
+      return NextResponse.json(
+        { error: 'Failed to add to organization: ' + memberErr.message },
+        { status: 500 }
+      )
+    }
+
     // Audit log
     await admin.from('audit_logs').insert({
       actor_id:    user.id,
       action:      'user_created',
       entity_type: 'profiles',
       entity_id:   newUser.id,
-      after_state: { username: cleanUsername, full_name, partner_id: partner_id || null, role },
+      after_state: { username: cleanUsername, full_name, partner_id: partner_id || null, role, organization_id: orgId },
     })
 
     return NextResponse.json({ id: newUser.id, username: cleanUsername }, { status: 201 })
