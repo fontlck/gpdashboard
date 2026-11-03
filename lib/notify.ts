@@ -5,22 +5,27 @@ import { ReportPaidEmail }      from '@/components/emails/ReportPaidEmail'
 import type { ReportApprovedEmailProps } from '@/components/emails/ReportApprovedEmail'
 import type { ReportPaidEmailProps }     from '@/components/emails/ReportPaidEmail'
 
-const FROM_NAME    = 'Flashyourmeme'
-const GMAIL_USER   = process.env.GMAIL_USER   ?? ''
-const GMAIL_PASS   = process.env.GMAIL_APP_PASSWORD ?? ''
+const FROM_NAME = 'Flashyourmeme'
 
-// ── Gmail SMTP transporter ────────────────────────────────────────────────────
+// Generic SMTP settings — supports Zoho, Gmail, or any other SMTP provider.
+// Falls back to legacy GMAIL_* env vars if the generic MAIL_* ones aren't set.
+const MAIL_HOST = process.env.MAIL_HOST ?? 'smtp.gmail.com'
+const MAIL_PORT = Number(process.env.MAIL_PORT ?? 587)
+const MAIL_USER = process.env.MAIL_USER     ?? process.env.GMAIL_USER         ?? ''
+const MAIL_PASS = process.env.MAIL_PASSWORD ?? process.env.GMAIL_APP_PASSWORD ?? ''
+
+// ── SMTP transporter ─────────────────────────────────────────────────────────
 
 function getTransporter() {
-  if (!GMAIL_USER || !GMAIL_PASS) {
-    console.warn('[notify] GMAIL_USER or GMAIL_APP_PASSWORD not set — email skipped')
+  if (!MAIL_USER || !MAIL_PASS) {
+    console.warn('[notify] MAIL_USER or MAIL_PASSWORD not set — email skipped')
     return null
   }
   return nodemailer.createTransport({
-    host:   'smtp.gmail.com',
-    port:   587,
-    secure: false,
-    auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+    host:   MAIL_HOST,
+    port:   MAIL_PORT,
+    secure: MAIL_PORT === 465,   // true for 465 (SSL), false for 587 (STARTTLS)
+    auth:   { user: MAIL_USER, pass: MAIL_PASS },
   })
 }
 
@@ -72,7 +77,7 @@ export async function sendApprovedEmail(
   try {
     const html = await render(ReportApprovedEmail(props))
     await transporter.sendMail({
-      from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
+      from:    `"${FROM_NAME}" <${MAIL_USER}>`,
       to:      recipients,
       subject: `Sale Report ${props.period} ได้รับการอนุมัติแล้ว`,
       html,
@@ -95,7 +100,7 @@ export async function sendPaidEmail(
   try {
     const html = await render(ReportPaidEmail(props))
     await transporter.sendMail({
-      from:    `"${FROM_NAME}" <${GMAIL_USER}>`,
+      from:    `"${FROM_NAME}" <${MAIL_USER}>`,
       to:      recipients,
       subject: `Sale Report ${props.period} โอนเงินเรียบร้อยแล้ว`,
       html,
