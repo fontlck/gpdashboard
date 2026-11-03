@@ -6,7 +6,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "-p", "3002"],
       "port": 3002,
-      "cwd": "/Users/boogoo/Documents/my sandbox/gp-dashboard"
+      "cwd": "/Users/boogoo/Documents/projects/gp-dashboard"
     }
   ]
 }

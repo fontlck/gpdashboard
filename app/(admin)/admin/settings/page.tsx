@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { requireOrgId } from '@/lib/org'
 import { AdminHeader } from '@/components/admin/AdminHeader'
+import { SettingInput } from '@/components/admin/SettingInput'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Settings' }
@@ -38,6 +39,7 @@ export default async function AdminSettingsPage() {
   const vatRate     = settingsMap['vat_rate']     ?? '0.07'
   const currency    = settingsMap['system_currency'] ?? 'THB'
   const csvMaxRows  = settingsMap['csv_max_rows']  ?? '50000'
+  const defaultCc   = (settingsMap['default_notification_cc_email'] as string | undefined) ?? ''
 
   const vatPct = (parseFloat(vatRate) * 100).toFixed(0) + '%'
 
@@ -88,6 +90,26 @@ export default async function AdminSettingsPage() {
             label="Max Rows per Upload"
             value={parseInt(csvMaxRows).toLocaleString()}
             description="Files exceeding this row count are rejected during validation."
+          />
+        </div>
+
+        {/* Notifications */}
+        <div style={{
+          background: '#06080F', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '16px', padding: '24px',
+        }}>
+          <h2 style={{
+            fontSize: '14px', fontWeight: '600', color: 'rgba(240,236,228,0.6)',
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px',
+          }}>
+            Notifications
+          </h2>
+          <SettingInput
+            settingKey="default_notification_cc_email"
+            initialValue={defaultCc}
+            label="Default CC Email"
+            description="เพิ่ม email นี้เป็น CC ทุกครั้งที่ส่งรายงานให้ partner (หลาย email คั่นด้วย , )"
+            placeholder="e.g. phornthip.prai@flashyourmeme.com"
           />
         </div>
 

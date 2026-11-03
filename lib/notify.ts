@@ -65,24 +65,43 @@ function parseRecipients(input: string): string[] {
     .filter(s => s.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
 }
 
+/** Dedupe emails case-insensitively, preserving first-seen order. */
+function dedupeEmails(list: string[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const e of list) {
+    const key = e.toLowerCase()
+    if (!seen.has(key)) { seen.add(key); out.push(e) }
+  }
+  return out
+}
+
+type SendOpts = { cc?: string | string[] | null }
+
 export async function sendApprovedEmail(
   to:    string,
   props: ReportApprovedEmailProps,
+  opts:  SendOpts = {},
 ): Promise<{ ok: boolean; error?: string; recipientCount?: number }> {
   const transporter = getTransporter()
-  if (!transporter) return { ok: false, error: 'Gmail not configured' }
+  if (!transporter) return { ok: false, error: 'Mail not configured' }
   const recipients = parseRecipients(to ?? '')
   if (recipients.length === 0) return { ok: false, error: 'No valid recipient email' }
+
+  const ccRaw = Array.isArray(opts.cc) ? opts.cc.join(',') : (opts.cc ?? '')
+  // CC must not duplicate anyone already in To
+  const ccList = dedupeEmails(parseRecipients(ccRaw)).filter(e => !recipients.some(r => r.toLowerCase() === e.toLowerCase()))
 
   try {
     const html = await render(ReportApprovedEmail(props))
     await transporter.sendMail({
       from:    `"${FROM_NAME}" <${MAIL_USER}>`,
       to:      recipients,
+      cc:      ccList.length > 0 ? ccList : undefined,
       subject: `Sale Report ${props.period} ได้รับการอนุมัติแล้ว`,
       html,
     })
-    return { ok: true, recipientCount: recipients.length }
+    return { ok: true, recipientCount: recipients.length + ccList.length }
   } catch (e) {
     return { ok: false, error: String(e) }
   }
@@ -91,21 +110,26 @@ export async function sendApprovedEmail(
 export async function sendPaidEmail(
   to:    string,
   props: ReportPaidEmailProps,
+  opts:  SendOpts = {},
 ): Promise<{ ok: boolean; error?: string; recipientCount?: number }> {
   const transporter = getTransporter()
-  if (!transporter) return { ok: false, error: 'Gmail not configured' }
+  if (!transporter) return { ok: false, error: 'Mail not configured' }
   const recipients = parseRecipients(to ?? '')
   if (recipients.length === 0) return { ok: false, error: 'No valid recipient email' }
+
+  const ccRaw = Array.isArray(opts.cc) ? opts.cc.join(',') : (opts.cc ?? '')
+  const ccList = dedupeEmails(parseRecipients(ccRaw)).filter(e => !recipients.some(r => r.toLowerCase() === e.toLowerCase()))
 
   try {
     const html = await render(ReportPaidEmail(props))
     await transporter.sendMail({
       from:    `"${FROM_NAME}" <${MAIL_USER}>`,
       to:      recipients,
+      cc:      ccList.length > 0 ? ccList : undefined,
       subject: `Sale Report ${props.period} โอนเงินเรียบร้อยแล้ว`,
       html,
     })
-    return { ok: true, recipientCount: recipients.length }
+    return { ok: true, recipientCount: recipients.length + ccList.length }
   } catch (e) {
     return { ok: false, error: String(e) }
   }
@@ -130,7 +154,11 @@ export async function sendTestEmail(
 // ── Combined notify ───────────────────────────────────────────────────────────
 
 export type NotifyEvent    = 'approved' | 'paid'
-export type NotifyChannels = { email?: string | null; lineToken?: string | null }
+export type NotifyChannels = {
+  email?:     string | null
+  cc?:        string | string[] | null   // merged branch CC + default org CC
+  lineToken?: string | null
+}
 export type NotifyReportPayload = {
   partnerName: string
   branchName:  string
@@ -150,7 +178,7 @@ export async function notifyReport(
   lineResult?:  { ok: boolean; error?: string }
 }> {
   const results: {
-    emailResult?: { ok: boolean; error?: string }
+    emailResult?: { ok: boolean; error?: string; recipientCount?: number }
     lineResult?:  { ok: boolean; error?: string }
   } = {}
 
@@ -166,7 +194,7 @@ export async function notifyReport(
             amount:       payload.amount,
             approvedDate: payload.date,
             reportUrl:    payload.reportUrl,
-          })
+          }, { cc: channels.cc ?? null })
         : await sendPaidEmail(channels.email!, {
             partnerName: payload.partnerName,
             branchName:  payload.branchName,
@@ -175,7 +203,7 @@ export async function notifyReport(
             paidDate:    payload.date,
             reportUrl:   payload.reportUrl,
             reference:   payload.reference,
-          })
+          }, { cc: channels.cc ?? null })
     })())
   }
 

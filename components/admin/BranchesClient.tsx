@@ -31,6 +31,7 @@ type BranchRow = {
   partner_id: string
   partners: Partner | Partner[] | null
   notification_email: string | null
+  notification_cc_email: string | null
   line_notify_token: string | null
   rent_vat_exempt?: boolean | null
   common_fee_amount?: number | string | null
@@ -88,6 +89,7 @@ function EditForm({
   const [vatMode, setVatMode]             = useState<VatMode>(branch.fixed_rent_vat_mode ?? 'exclusive')
   const [partnerVat, setPartnerVat]       = useState<boolean>(p?.is_vat_registered ?? false)
   const [notifEmail, setNotifEmail]       = useState(branch.notification_email ?? '')
+  const [notifCc,    setNotifCc]          = useState(branch.notification_cc_email ?? '')
   const [lineToken, setLineToken]         = useState(branch.line_notify_token ?? '')
   const [rentExempt, setRentExempt]       = useState<boolean>(!!branch.rent_vat_exempt)
   const [commonFee,  setCommonFee]        = useState(String(branch.common_fee_amount ?? '0'))
@@ -131,7 +133,8 @@ function EditForm({
       const body: Record<string, unknown> = {
         payout_type: payoutType,
         partner_is_vat_registered: partnerVat,
-        notification_email: notifEmail.trim() || null,
+        notification_email:    notifEmail.trim() || null,
+        notification_cc_email: notifCc.trim()    || null,
         line_notify_token:  lineToken.trim()  || null,
         rent_vat_exempt:    rentExempt,
         common_fee_amount:  parseFloat(commonFee) || 0,
@@ -384,7 +387,7 @@ function EditForm({
 
               {/* Email */}
               <div>
-                <label style={LABEL}>Notification Email(s)</label>
+                <label style={LABEL}>Notification Email(s) — To</label>
                 <input
                   type="text"
                   placeholder="a@email.com, b@email.com"
@@ -394,6 +397,18 @@ function EditForm({
                 />
                 <p style={{ fontSize: '10px', color: 'rgba(240,236,228,0.3)', margin: '4px 0 0' }}>
                   หลาย email คั่นด้วย <code>,</code> (comma)
+                </p>
+
+                <label style={{ ...LABEL, marginTop: '12px' }}>CC (optional)</label>
+                <input
+                  type="text"
+                  placeholder="cc1@email.com, cc2@email.com"
+                  style={INPUT}
+                  value={notifCc}
+                  onChange={e => setNotifCc(e.target.value)}
+                />
+                <p style={{ fontSize: '10px', color: 'rgba(240,236,228,0.3)', margin: '4px 0 0' }}>
+                  Default CC จาก Settings จะถูกส่งทุกครั้งอัตโนมัติ
                 </p>
                 <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                   {!showTestEmailInput ? (

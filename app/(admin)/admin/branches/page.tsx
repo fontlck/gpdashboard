@@ -18,7 +18,7 @@ export default async function AdminBranchesPage() {
       id, name, code, payout_type, revenue_share_pct,
       fixed_rent_amount, fixed_rent_vat_mode,
       is_active, partner_id,
-      notification_email, line_notify_token,
+      notification_email, notification_cc_email, line_notify_token,
       partners (
         id, name, is_vat_registered, vat_number,
         contact_email, contact_phone,

@@ -32,6 +32,7 @@ export async function PATCH(
     is_active?: boolean
     partner_is_vat_registered?: boolean
     notification_email?: string | null
+    notification_cc_email?: string | null
     line_notify_token?: string | null
     rent_vat_exempt?: boolean
     common_fee_amount?: number
@@ -70,8 +71,9 @@ export async function PATCH(
   const branchUpdate: Record<string, unknown> = { updated_at: new Date().toISOString() }
 
   // Notification fields
-  if ('notification_email' in body) branchUpdate.notification_email = body.notification_email ?? null
-  if ('line_notify_token'  in body) branchUpdate.line_notify_token  = body.line_notify_token  ?? null
+  if ('notification_email'    in body) branchUpdate.notification_email    = body.notification_email    ?? null
+  if ('notification_cc_email' in body) branchUpdate.notification_cc_email = body.notification_cc_email ?? null
+  if ('line_notify_token'     in body) branchUpdate.line_notify_token     = body.line_notify_token     ?? null
   if ('is_active'          in body) branchUpdate.is_active           = !!body.is_active
   if ('rent_vat_exempt'    in body) branchUpdate.rent_vat_exempt     = !!body.rent_vat_exempt
   if ('common_fee_amount'  in body) branchUpdate.common_fee_amount   = Number(body.common_fee_amount ?? 0)
@@ -108,7 +110,7 @@ export async function PATCH(
     .select(`
       id, name, code, payout_type, revenue_share_pct,
       fixed_rent_amount, fixed_rent_vat_mode, is_active, partner_id,
-      notification_email, line_notify_token,
+      notification_email, notification_cc_email, line_notify_token,
       rent_vat_exempt, common_fee_amount, wht_default_pct,
       partners (
         id, name, is_vat_registered, vat_number,

@@ -27,7 +27,7 @@ export async function POST(
   // Fetch report
   const { data: report, error: repErr } = await admin
     .from('monthly_reports')
-    .select('id, status, final_payout, reporting_month, reporting_year, branch_id')
+    .select('id, status, final_payout, reporting_month, reporting_year, branch_id, organization_id')
     .eq('id', reportId)
     .single()
 
@@ -37,10 +37,10 @@ export async function POST(
   if (report.status !== 'approved' && report.status !== 'paid')
     return NextResponse.json({ error: 'Can only notify for approved or paid reports' }, { status: 409 })
 
-  // Fetch branch + partner
+  // Fetch branch + partner (now also pulling notification_cc_email)
   const { data: branch } = await admin
     .from('branches')
-    .select('name, notification_email, line_notify_token, partners(name)')
+    .select('name, notification_email, notification_cc_email, line_notify_token, partners(name)')
     .eq('id', report.branch_id)
     .single()
 
@@ -49,6 +49,20 @@ export async function POST(
 
   if (!branch.notification_email && !branch.line_notify_token)
     return NextResponse.json({ error: 'No notification channels configured for this branch' }, { status: 400 })
+
+  // Org-level default CC — stored in settings table as key/value
+  const { data: defaultCcSetting } = await admin
+    .from('settings')
+    .select('value')
+    .eq('organization_id', report.organization_id)
+    .eq('key', 'default_notification_cc_email')
+    .maybeSingle()
+  const defaultCc: string = (defaultCcSetting?.value as string) ?? ''
+
+  // Merge CC: branch-specific CC first, then default org CC
+  const mergedCc = [branch.notification_cc_email ?? '', defaultCc]
+    .filter(s => s.trim().length > 0)
+    .join(',')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const partnerRaw  = branch.partners as any
@@ -66,7 +80,7 @@ export async function POST(
   try {
     const results = await notifyReport(
       event,
-      { email: branch.notification_email, lineToken: branch.line_notify_token },
+      { email: branch.notification_email, cc: mergedCc, lineToken: branch.line_notify_token },
       { partnerName, branchName: branch.name, period, amount, date, reportUrl, reference },
     )
 
