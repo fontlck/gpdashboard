@@ -37,7 +37,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid or disallowed key' }, { status: 400 })
   }
 
-  const value = typeof body.value === 'string' ? body.value.trim() : null
+  // settings.value is NOT NULL — store empty string if cleared.
+  // settings.value_type is NOT NULL — current allowed values: 'string' | 'number'
+  const value = typeof body.value === 'string' ? body.value.trim() : ''
   const admin = createAdminClient()
 
   const { error: upsertErr } = await admin
@@ -45,7 +47,8 @@ export async function PATCH(request: NextRequest) {
     .upsert({
       organization_id: orgId,
       key:             body.key,
-      value:           value ?? null,
+      value,
+      value_type:      'string',
       updated_at:      new Date().toISOString(),
     }, { onConflict: 'key,organization_id' })
 
